@@ -43,6 +43,7 @@
             z-index: 50;
             border-bottom: 1px solid var(--border-color);
             display: flex;
+            flex-direction: column;
             gap: 0.5rem;
         }
 
@@ -226,7 +227,7 @@
             height: 8px;
             border-radius: 50%;
             background: var(--accent);
-            border: 2px solid var(--bg-primary);
+            border: 1px solid #fff;
             z-index: 5;
         }
 
@@ -625,17 +626,17 @@
         /* Mobile Responsive */
         @media (max-width: 768px) {
             .event-card {
-                min-width: 100px;
-                max-width: 140px;
+                min-width: 120px;
+                max-width: 160px;
                 padding: 0.3rem 0.4rem;
             }
 
             .event-card.left-side {
-                margin-left: -6px;
+                margin-left: -8px;
             }
 
             .event-card.right-side {
-                margin-left: 6px;
+                margin-left: 8px;
             }
 
             .event-date {
@@ -667,6 +668,7 @@
         <div class="action-buttons">
             <button class="action-btn" onclick="exportData()">Esporta</button>
             <button class="action-btn" onclick="document.getElementById('importInput').click()">Importa</button>
+            <button class="action-btn" onclick="confirmDeleteAll()" style="color: #ef4444;">Cancella Tutto</button>
             <input type="file" id="importInput" accept=".json" style="display: none" onchange="importData(event)">
         </div>
     </div>
@@ -693,11 +695,30 @@
                     <div class="form-group">
                         <label for="startYear">Anno Inizio *</label>
                         <input type="number" id="startYear" required placeholder="es. 1000 o -500">
-                        <small style="color: var(--text-secondary); font-size: 0.6875rem;">Negativo = a.C., Positivo = d.C.</small>
+                        <small style="color: var(--text-secondary); font-size: 0.6875rem;">Negativo = a.C.</small>
                     </div>
                     <div class="form-group">
-                        <label for="endYear">Anno Fine (opzionale)</label>
+                        <label for="startMonth">Mese (opz.)</label>
+                        <input type="number" id="startMonth" min="1" max="12" placeholder="1-12">
+                    </div>
+                    <div class="form-group">
+                        <label for="startDay">Giorno (opz.)</label>
+                        <input type="number" id="startDay" min="1" max="31" placeholder="1-31">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="endYear">Anno Fine (opz.)</label>
                         <input type="number" id="endYear" placeholder="es. 1200">
+                    </div>
+                    <div class="form-group">
+                        <label for="endMonth">Mese Fine (opz.)</label>
+                        <input type="number" id="endMonth" min="1" max="12" placeholder="1-12">
+                    </div>
+                    <div class="form-group">
+                        <label for="endDay">Giorno Fine (opz.)</label>
+                        <input type="number" id="endDay" min="1" max="31" placeholder="1-31">
                     </div>
                 </div>
 
@@ -759,6 +780,19 @@
             </form>
 
             <div class="category-list" id="categoryList"></div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteConfirmModal">
+        <div class="modal">
+            <h2>Conferma Cancellazione</h2>
+            <p>Vuoi esportare i dati prima di cancellarli?</p>
+            <div class="modal-buttons">
+                <button type="button" class="btn-cancel" onclick="closeDeleteModal()">Annulla Tutto</button>
+                <button type="button" class="btn-save" onclick="deleteWithoutExport()">Solo Cancella</button>
+                <button type="button" class="btn-save" onclick="exportAndDelete()">Esporta e Cancella</button>
+            </div>
         </div>
     </div>
 
@@ -850,16 +884,38 @@
         }
 
         // Convert year to pixel position
-        function yearToPixels(year) {
-            return (year - (START_YEAR - TOTAL_YEARS)) * PIXELS_PER_YEAR + 100;
+        function yearToPixels(year, month = null, day = null) {
+            let position = (year - (START_YEAR - TOTAL_YEARS)) * PIXELS_PER_YEAR + 100;
+            
+            // Add fractional year for month and day
+            if (month) {
+                position += (month - 1) * (PIXELS_PER_YEAR / 12);
+                if (day) {
+                    position += (day - 1) * (PIXELS_PER_YEAR / 365);
+                }
+            }
+            
+            return position;
         }
 
         // Format year for display
-        function formatYear(year) {
+        function formatYear(year, month = null, day = null) {
+            let result = '';
             if (year < 0) {
-                return `${Math.abs(year)} a.C.`;
+                result = `${Math.abs(year)} a.C.`;
+            } else {
+                result = `${year}`;
             }
-            return `${year}`;
+            
+            if (month) {
+                const monthNames = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+                result += ` ${monthNames[month - 1]}`;
+                if (day) {
+                    result += ` ${day}`;
+                }
+            }
+            
+            return result;
         }
 
         // Render events on timeline
@@ -895,7 +951,7 @@
             sortedEvents.forEach((event, index) => {
                 const category = categories.find(c => c.id === event.categoryId);
                 const defaultSide = category ? categorySides[event.categoryId] : (index % 2 === 0 ? 'left' : 'right');
-                const position = yearToPixels(event.startYear);
+                const position = yearToPixels(event.startYear, event.startMonth, event.startDay);
                 let adjustedPosition = position;
                 let offset = 0;
                 let currentSide = defaultSide;
@@ -950,7 +1006,7 @@
                 const color = category ? category.color : '#7c3aed';
 
                 const position = eventPositions[event.id];
-                const originalPosition = yearToPixels(event.startYear);
+                const originalPosition = yearToPixels(event.startYear, event.startMonth, event.startDay);
 
                 // Event node on ruler (always at original year position)
                 const node = document.createElement('div');
@@ -966,7 +1022,8 @@
                 card.style.borderColor = color;
                 card.dataset.eventId = event.id;
 
-                const yearText = formatYear(event.startYear) + (event.endYear ? ` - ${formatYear(event.endYear)}` : '');
+                const yearText = formatYear(event.startYear, event.startMonth, event.startDay) + 
+                    (event.endYear ? ` - ${formatYear(event.endYear, event.endMonth, event.endDay)}` : '');
 
                 card.innerHTML = `
                     <button class="delete-btn" onclick="event.stopPropagation(); deleteEvent(${event.id})">×</button>
@@ -1127,7 +1184,7 @@
                 
                 if (!event) return;
 
-                const yearText = formatYear(event.startYear);
+                const yearText = formatYear(event.startYear, event.startMonth, event.startDay);
                 const eventText = `${yearText} ${event.title} ${event.description || ''}`.toLowerCase();
 
                 if (eventText.includes(searchTerm)) {
@@ -1367,12 +1424,20 @@
             document.getElementById('categoryModal').addEventListener('click', function(e) {
                 if (e.target === this) closeCategoryModal();
             });
+
+            document.getElementById('deleteConfirmModal').addEventListener('click', function(e) {
+                if (e.target === this) closeDeleteModal();
+            });
         }
 
         // Save event
         function saveEvent() {
             const startYear = parseInt(document.getElementById('startYear').value);
+            const startMonth = document.getElementById('startMonth').value ? parseInt(document.getElementById('startMonth').value) : null;
+            const startDay = document.getElementById('startDay').value ? parseInt(document.getElementById('startDay').value) : null;
             const endYear = document.getElementById('endYear').value ? parseInt(document.getElementById('endYear').value) : null;
+            const endMonth = document.getElementById('endMonth').value ? parseInt(document.getElementById('endMonth').value) : null;
+            const endDay = document.getElementById('endDay').value ? parseInt(document.getElementById('endDay').value) : null;
             const title = document.getElementById('eventTitle').value.trim();
             const description = document.getElementById('eventDescription').value.trim();
             const linkedEventId = document.getElementById('linkedEventSelect').value ? parseInt(document.getElementById('linkedEventSelect').value) : null;
@@ -1394,7 +1459,11 @@
                     events[eventIndex] = {
                         ...events[eventIndex],
                         startYear,
+                        startMonth,
+                        startDay,
                         endYear,
+                        endMonth,
+                        endDay,
                         title,
                         description,
                         categoryId: selectedCategoryId,
@@ -1406,7 +1475,11 @@
                 const newEvent = {
                     id: Date.now(),
                     startYear,
+                    startMonth,
+                    startDay,
                     endYear,
+                    endMonth,
+                    endDay,
                     title,
                     description,
                     categoryId: selectedCategoryId,
@@ -1430,7 +1503,11 @@
             selectedCategoryId = event.categoryId;
 
             document.getElementById('startYear').value = event.startYear;
+            document.getElementById('startMonth').value = event.startMonth || '';
+            document.getElementById('startDay').value = event.startDay || '';
             document.getElementById('endYear').value = event.endYear || '';
+            document.getElementById('endMonth').value = event.endMonth || '';
+            document.getElementById('endDay').value = event.endDay || '';
             document.getElementById('eventTitle').value = event.title;
             document.getElementById('eventDescription').value = event.description || '';
 
@@ -1477,6 +1554,50 @@
                 saveData();
                 renderEvents();
             }
+        }
+
+        // Confirm delete all data
+        function confirmDeleteAll() {
+            if (events.length === 0 && categories.length === 0) {
+                alert('Non ci sono dati da cancellare.');
+                return;
+            }
+
+            document.getElementById('deleteConfirmModal').classList.add('active');
+        }
+
+        // Close delete modal
+        function closeDeleteModal() {
+            document.getElementById('deleteConfirmModal').classList.remove('active');
+        }
+
+        // Delete without export
+        function deleteWithoutExport() {
+            closeDeleteModal();
+            const confirmDelete = confirm('Sei sicuro di voler cancellare TUTTI i dati senza esportare?\n\nQuesta azione è irreversibile.');
+            if (confirmDelete) {
+                deleteAllData();
+            }
+        }
+
+        // Export and delete
+        function exportAndDelete() {
+            closeDeleteModal();
+            exportData();
+            const confirmDelete = confirm('Dati esportati. Sei sicuro di voler cancellare TUTTI i dati?\n\nQuesta azione è irreversibile.');
+            if (confirmDelete) {
+                deleteAllData();
+            }
+        }
+
+        // Delete all data
+        function deleteAllData() {
+            events = [];
+            categories = [];
+            saveData();
+            renderEvents();
+            renderCategorySelect();
+            alert('Tutti i dati sono stati cancellati.');
         }
 
         // Initialize on load
