@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timeline Storica</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #141414;
+            --bg-tertiary: #1f1f1f;
+            --text-primary: #e5e5e5;
+            --text-secondary: #888888;
+            --accent: #7c3aed;
+            --accent-hover: #8b5cf6;
+            --ruler-line: #2a2a2a;
+            --card-bg: #1a1a1a;
+            --border-color: #333333;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        /* Search Bar */
+        .search-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-secondary);
+            padding: 0.75rem 1rem;
+            z-index: 50;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-btn {
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .action-btn:hover {
+            background: var(--bg-primary);
+        }
+
+        /* Timeline Ruler Container */
+        .timeline-ruler {
+            position: relative;
+            width: 100%;
+            min-height: 100vh;
+            overflow-y: auto;
+            padding: 100vh 0 6rem 0;
+        }
+
+        /* Central Ruler Line */
+        .ruler-center {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--ruler-line);
+        }
+
+        /* Year Marks */
+        .year-mark {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--ruler-line);
+        }
+
+        .year-mark.year {
+            width: 8px;
+            height: 1px;
+        }
+
+        .year-mark.decade {
+            width: 16px;
+            height: 2px;
+        }
+
+        .year-mark.century {
+            width: 32px;
+            height: 3px;
+        }
+
+        /* Century Labels */
+        .century-label {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .century-label.left-side {
+            margin-left: -45px;
+            text-align: right;
+        }
+
+        .century-label.right-side {
+            margin-left: 15px;
+            text-align: left;
+        }
+
+        /* Event Card */
+        .event-card {
+            position: absolute;
+            left: 50%;
+            background: var(--card-bg);
+            border-radius: 6px;
+            padding: 0.35rem 0.5rem;
+            min-width: 120px;
+            max-width: 180px;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s, box-shadow 0.2s;
+            z-index: 10;
+        }
+
+        .event-card[data-category-color] {
+            border-color: var(--category-color, var(--border-color));
+        }
+
+        .event-card.expanded {
+            z-index: 40;
+        }
+
+        .event-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        .event-card.left-side {
+            transform: translateX(-100%);
+            margin-left: -8px;
+        }
+
+        .event-card.right-side {
+            margin-left: 8px;
+        }
+
+        /* Event Content */
+        .event-date {
+            font-size: 0.625rem;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 0.125rem;
+            line-height: 1;
+        }
+
+        .event-name {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+
+        /* Event Description (Accordion) */
+        .event-description {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+            font-size: 0.6875rem;
+            color: var(--text-secondary);
+            line-height: 1.3;
+        }
+
+        .event-card.expanded .event-description {
+            max-height: 500px;
+            padding-top: 0.35rem;
+        }
+
+        /* Event Node on Ruler */
+        .event-node {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            border: 2px solid var(--bg-primary);
+            z-index: 5;
+        }
+
+        /* Connecting Line for Same Category */
+        .category-connector {
+            position: absolute;
+            left: 50%;
+            width: 2px;
+            z-index: 1;
+        }
+
+        /* Delete Button */
+        .delete-btn {
+            position: absolute;
+            top: 0.125rem;
+            right: 0.125rem;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.75rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+            padding: 0.125rem;
+            line-height: 1;
+            pointer-events: none;
+        }
+
+        .event-card:hover .delete-btn,
+        .event-card.expanded .delete-btn {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .delete-btn:hover {
+            color: #ef4444;
+        }
+
+        /* Edit Button */
+        .edit-btn {
+            position: absolute;
+            top: 0.125rem;
+            right: 1.25rem;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.75rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+            padding: 0.125rem;
+            line-height: 1;
+            pointer-events: none;
+        }
+
+        .event-card:hover .edit-btn,
+        .event-card.expanded .edit-btn {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .edit-btn:hover {
+            color: var(--accent);
+        }
+
+        /* Mobile-specific button behavior */
+        @media (max-width: 768px) {
+            .delete-btn,
+            .edit-btn {
+                display: none;
+            }
+
+            .event-card.expanded .delete-btn,
+            .event-card.expanded .edit-btn {
+                display: block;
+                opacity: 1;
+                pointer-events: auto;
+            }
+        }
+
+        /* Floating Action Button */
+        .fab {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: white;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+            transition: transform 0.2s, background 0.2s;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            padding-bottom: 4px;
+        }
+
+        .fab:hover {
+            transform: scale(1.1);
+            background: var(--accent-hover);
+        }
+
+        .fab:active {
+            transform: scale(0.95);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            padding: 1rem;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 1.5rem;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1.25rem;
+            color: var(--text-primary);
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.9375rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        /* Category Selector */
+        .category-selector {
+            display: flex;
+            gap: 0.5rem;
+            align-items: flex-start;
+        }
+
+        .category-selector select {
+            flex: 1;
+        }
+
+        .add-category-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.125rem;
+            transition: background 0.2s;
+        }
+
+        .add-category-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        /* Selected Categories */
+        .selected-categories {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .selected-tag {
+            padding: 0.25rem 0.625rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .remove-tag {
+            cursor: pointer;
+            font-size: 0.875rem;
+            opacity: 0.7;
+        }
+
+        .remove-tag:hover {
+            opacity: 1;
+        }
+
+        /* Modal Buttons */
+        .modal-buttons {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.25rem;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-size: 0.9375rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-cancel {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-cancel:hover {
+            background: var(--border-color);
+        }
+
+        .btn-save {
+            background: var(--accent);
+            color: white;
+            border: none;
+        }
+
+        .btn-save:hover {
+            background: var(--accent-hover);
+        }
+
+        /* Color Picker */
+        .color-picker {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+
+        .color-option {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+
+        .color-option.selected {
+            border-color: white;
+            transform: scale(1.15);
+            box-shadow: 0 0 0 2px var(--accent);
+        }
+
+        .color-option.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        /* Category List */
+        .category-list {
+            margin-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1rem;
+        }
+
+        .category-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        }
+
+        .delete-category-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 0.25rem;
+            line-height: 1;
+        }
+
+        .delete-category-btn:hover {
+            color: #ef4444;
+        }
+
+        /* Empty State */
+        .empty-state {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: var(--text-secondary);
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .empty-state h3 {
+            font-size: 1.125rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .empty-state p {
+            font-size: 0.875rem;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .event-card {
+                min-width: 100px;
+                max-width: 140px;
+                padding: 0.3rem 0.4rem;
+            }
+
+            .event-card.left-side {
+                margin-left: -6px;
+            }
+
+            .event-card.right-side {
+                margin-left: 6px;
+            }
+
+            .event-date {
+                font-size: 0.5625rem;
+            }
+
+            .event-name {
+                font-size: 0.6875rem;
+            }
+
+            .century-label.left-side {
+                margin-left: -35px;
+            }
+
+            .century-label.right-side {
+                margin-left: 12px;
+            }
+
+            .fab {
+                bottom: 1.5rem;
+                right: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="search-bar">
+        <input type="text" class="search-input" id="searchInput" placeholder="Cerca per anno o parola chiave..." oninput="searchEvents()" onkeydown="handleSearchEnter(event)">
+        <div class="action-buttons">
+            <button class="action-btn" onclick="exportData()">Esporta</button>
+            <button class="action-btn" onclick="document.getElementById('importInput').click()">Importa</button>
+            <input type="file" id="importInput" accept=".json" style="display: none" onchange="importData(event)">
+        </div>
+    </div>
+
+    <div class="timeline-ruler" id="timelineRuler">
+        <div class="ruler-center"></div>
+        <div id="rulerMarks"></div>
+        <div id="eventsContainer"></div>
+    </div>
+
+    <div class="empty-state" id="emptyState">
+        <h3>Timeline Vuota</h3>
+        <p>Clicca + per aggiungere il tuo primo evento</p>
+    </div>
+
+    <button class="fab" onclick="openModal()">+</button>
+
+    <!-- Event Modal -->
+    <div class="modal-overlay" id="eventModal">
+        <div class="modal">
+            <h2>Nuovo Evento</h2>
+            <form id="eventForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="startYear">Anno Inizio *</label>
+                        <input type="number" id="startYear" required placeholder="es. 1000 o -500">
+                        <small style="color: var(--text-secondary); font-size: 0.6875rem;">Negativo = a.C., Positivo = d.C.</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="endYear">Anno Fine (opzionale)</label>
+                        <input type="number" id="endYear" placeholder="es. 1200">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="eventTitle">Nome Evento *</label>
+                    <input type="text" id="eventTitle" required placeholder="es. Caduta dell'Impero Romano">
+                </div>
+
+                <div class="form-group">
+                    <label for="eventDescription">Descrizione</label>
+                    <textarea id="eventDescription" placeholder="Descrivi l'evento..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Categoria</label>
+                    <div class="category-selector">
+                        <select id="categorySelect">
+                            <option value="">Seleziona categoria...</option>
+                        </select>
+                        <button type="button" class="add-category-btn" onclick="openCategoryModal()">+</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Collega a evento (opzionale)</label>
+                    <input type="text" id="eventSearch" placeholder="Cerca evento..." oninput="filterEvents()">
+                    <select id="linkedEventSelect" style="margin-top: 0.5rem;">
+                        <option value="">Nessun collegamento</option>
+                    </select>
+                </div>
+
+                <div class="modal-buttons">
+                    <button type="button" class="btn-cancel" onclick="closeModal()">Annulla</button>
+                    <button type="submit" class="btn-save">Salva</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Category Modal -->
+    <div class="modal-overlay" id="categoryModal">
+        <div class="modal">
+            <h2>Gestione Categorie</h2>
+            <form id="categoryForm">
+                <div class="form-group">
+                    <label for="categoryName">Nome Categoria *</label>
+                    <input type="text" id="categoryName" required placeholder="es. Politica, Cultura...">
+                </div>
+
+                <div class="form-group">
+                    <label>Colore</label>
+                    <div class="color-picker" id="colorPicker"></div>
+                </div>
+
+                <div class="modal-buttons">
+                    <button type="button" class="btn-cancel" onclick="closeCategoryModal()">Annulla</button>
+                    <button type="submit" class="btn-save">Salva</button>
+                </div>
+            </form>
+
+            <div class="category-list" id="categoryList"></div>
+        </div>
+    </div>
+
+    <script>
+        // Constants
+        const PIXELS_PER_YEAR = 20;
+        const START_YEAR = 1000;
+        const TOTAL_YEARS = 2000;
+        const STORAGE_KEYS = {
+            events: 'timeline_events_v2',
+            categories: 'timeline_categories_v2'
+        };
+
+        const availableColors = [
+            '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16',
+            '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6',
+            '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899'
+        ];
+
+        // State
+        let events = [];
+        let categories = [];
+        let selectedCategoryId = null;
+        let selectedColor = availableColors[0];
+        let editingEventId = null;
+        let searchResults = [];
+        let currentSearchIndex = 0;
+
+        // Initialize
+        function init() {
+            loadData();
+            renderRuler();
+            renderEvents();
+            setupEventListeners();
+            setupColorPicker();
+            scrollToLatestEvent();
+        }
+
+        // Load data from localStorage
+        function loadData() {
+            const storedEvents = localStorage.getItem(STORAGE_KEYS.events);
+            const storedCategories = localStorage.getItem(STORAGE_KEYS.categories);
+
+            events = storedEvents ? JSON.parse(storedEvents) : [];
+            categories = storedCategories ? JSON.parse(storedCategories) : [];
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem(STORAGE_KEYS.events, JSON.stringify(events));
+            localStorage.setItem(STORAGE_KEYS.categories, JSON.stringify(categories));
+        }
+
+        // Render ruler with year marks
+        function renderRuler() {
+            const container = document.getElementById('rulerMarks');
+            container.innerHTML = '';
+
+            for (let year = START_YEAR - TOTAL_YEARS; year <= START_YEAR + TOTAL_YEARS; year++) {
+                const position = yearToPixels(year);
+
+                if (year % 100 === 0) {
+                    // Century mark
+                    const mark = document.createElement('div');
+                    mark.className = 'year-mark century';
+                    mark.style.top = position + 'px';
+                    container.appendChild(mark);
+
+                    // Century label
+                    const label = document.createElement('div');
+                    label.className = `century-label ${year % 200 === 0 ? 'left-side' : 'right-side'}`;
+                    label.style.top = (position - 8) + 'px';
+                    label.textContent = formatYear(year);
+                    container.appendChild(label);
+                } else if (year % 10 === 0) {
+                    // Decade mark
+                    const mark = document.createElement('div');
+                    mark.className = 'year-mark decade';
+                    mark.style.top = position + 'px';
+                    container.appendChild(mark);
+                } else {
+                    // Year mark
+                    const mark = document.createElement('div');
+                    mark.className = 'year-mark year';
+                    mark.style.top = position + 'px';
+                    container.appendChild(mark);
+                }
+            }
+        }
+
+        // Convert year to pixel position
+        function yearToPixels(year) {
+            return (year - (START_YEAR - TOTAL_YEARS)) * PIXELS_PER_YEAR + 100;
+        }
+
+        // Format year for display
+        function formatYear(year) {
+            if (year < 0) {
+                return `${Math.abs(year)} a.C.`;
+            }
+            return `${year}`;
+        }
+
+        // Render events on timeline
+        function renderEvents() {
+            const container = document.getElementById('eventsContainer');
+            const emptyState = document.getElementById('emptyState');
+            
+            container.innerHTML = '';
+
+            if (events.length === 0) {
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+
+            // Sort events by year
+            const sortedEvents = [...events].sort((a, b) => a.startYear - b.startYear);
+
+            // Group events by category and assign sides
+            const categorySides = {};
+            sortedEvents.forEach(event => {
+                if (event.categoryId && !categorySides[event.categoryId]) {
+                    categorySides[event.categoryId] = Object.keys(categorySides).length % 2 === 0 ? 'left' : 'right';
+                }
+            });
+
+            // Calculate vertical offsets to prevent overlapping
+            const eventPositions = {};
+            const eventSides = {}; // Track which side each event is on
+            const minVerticalSpacing = 60; // increased minimum pixels between events
+
+            sortedEvents.forEach((event, index) => {
+                const category = categories.find(c => c.id === event.categoryId);
+                const defaultSide = category ? categorySides[event.categoryId] : (index % 2 === 0 ? 'left' : 'right');
+                const position = yearToPixels(event.startYear);
+                let adjustedPosition = position;
+                let offset = 0;
+                let currentSide = defaultSide;
+
+                // Check for overlaps with previous events
+                for (let i = 0; i < index; i++) {
+                    const prevEvent = sortedEvents[i];
+                    const prevPosition = eventPositions[prevEvent.id];
+                    const prevSide = eventSides[prevEvent.id];
+                    
+                    if (Math.abs(position - prevPosition) < minVerticalSpacing) {
+                        // If previous event is on the same side, try to shift to other side
+                        if (prevSide === currentSide) {
+                            // Check if we can switch sides
+                            const otherSide = currentSide === 'left' ? 'right' : 'left';
+                            let canSwitch = true;
+                            
+                            // Check if switching would cause overlap with other events on that side
+                            for (let j = 0; j < index; j++) {
+                                const checkEvent = sortedEvents[j];
+                                const checkSide = eventSides[checkEvent.id];
+                                const checkPosition = eventPositions[checkEvent.id];
+                                
+                                if (checkSide === otherSide && Math.abs(position - checkPosition) < minVerticalSpacing) {
+                                    canSwitch = false;
+                                    break;
+                                }
+                            }
+                            
+                            if (canSwitch) {
+                                currentSide = otherSide;
+                            } else {
+                                // Can't switch, shift down
+                                offset = Math.max(offset, minVerticalSpacing - Math.abs(position - prevPosition));
+                            }
+                        } else {
+                            // Different side, but still too close vertically
+                            offset = Math.max(offset, minVerticalSpacing - Math.abs(position - prevPosition));
+                        }
+                    }
+                }
+
+                adjustedPosition = position + offset;
+                eventPositions[event.id] = adjustedPosition;
+                eventSides[event.id] = currentSide;
+            });
+
+            // Render events
+            sortedEvents.forEach((event, index) => {
+                const category = categories.find(c => c.id === event.categoryId);
+                const side = eventSides[event.id]; // Use calculated side
+                const color = category ? category.color : '#7c3aed';
+
+                const position = eventPositions[event.id];
+                const originalPosition = yearToPixels(event.startYear);
+
+                // Event node on ruler (always at original year position)
+                const node = document.createElement('div');
+                node.className = 'event-node';
+                node.style.top = (originalPosition - 5) + 'px';
+                node.style.background = color;
+                container.appendChild(node);
+
+                // Event card
+                const card = document.createElement('div');
+                card.className = `event-card ${side}-side`;
+                card.style.top = (position - 15) + 'px';
+                card.style.borderColor = color;
+                card.dataset.eventId = event.id;
+
+                const yearText = formatYear(event.startYear) + (event.endYear ? ` - ${formatYear(event.endYear)}` : '');
+
+                card.innerHTML = `
+                    <button class="delete-btn" onclick="event.stopPropagation(); deleteEvent(${event.id})">×</button>
+                    <button class="edit-btn" onclick="event.stopPropagation(); editEvent(${event.id})">✎</button>
+                    <div class="event-date" style="color: ${color}">${yearText}</div>
+                    <div class="event-name">${escapeHtml(event.title)}</div>
+                    ${event.description ? `<div class="event-description">${escapeHtml(event.description)}</div>` : ''}
+                `;
+
+                card.addEventListener('click', () => {
+                    card.classList.toggle('expanded');
+                });
+
+                container.appendChild(card);
+            });
+
+            // Draw connecting lines for same category events
+            drawCategoryConnectors(sortedEvents, categorySides, eventPositions);
+
+            // Draw connecting lines for linked events
+            drawLinkedEventLines(sortedEvents, eventPositions);
+        }
+
+        // Draw connecting lines between events of same category
+        function drawCategoryConnectors(sortedEvents, categorySides, eventPositions) {
+            const container = document.getElementById('eventsContainer');
+            
+            // Calculate column offsets for each category
+            const categoryColumns = {};
+            let leftColumnIndex = 0;
+            let rightColumnIndex = 0;
+            
+            Object.keys(categorySides).forEach(catId => {
+                const side = categorySides[catId];
+                if (side === 'left') {
+                    categoryColumns[catId] = leftColumnIndex;
+                    leftColumnIndex++;
+                } else {
+                    categoryColumns[catId] = rightColumnIndex;
+                    rightColumnIndex++;
+                }
+            });
+
+            Object.keys(categorySides).forEach(catId => {
+                const categoryEvents = sortedEvents.filter(e => e.categoryId === parseInt(catId));
+                if (categoryEvents.length < 2) return;
+
+                const category = categories.find(c => c.id === parseInt(catId));
+                if (!category) return;
+
+                const side = categorySides[catId];
+                const columnIndex = categoryColumns[catId];
+                const isMobile = window.innerWidth <= 768;
+                const columnWidth = isMobile ? 25 : 80; // much smaller on mobile
+                const columnOffset = columnIndex * columnWidth + (isMobile ? 10 : 30); // smaller base offset on mobile
+
+                for (let i = 0; i < categoryEvents.length - 1; i++) {
+                    const currentEvent = categoryEvents[i];
+                    const nextEvent = categoryEvents[i + 1];
+
+                    const startY = eventPositions[currentEvent.id];
+                    const endY = eventPositions[nextEvent.id];
+                    const height = endY - startY;
+
+                    const connector = document.createElement('div');
+                    connector.className = 'category-connector';
+                    connector.style.background = category.color;
+                    connector.style.top = startY + 'px';
+                    connector.style.height = height + 'px';
+                    connector.style.opacity = '0.4';
+                    connector.style.width = '2px';
+
+                    if (side === 'left') {
+                        connector.style.marginLeft = `-${columnOffset}px`;
+                    } else {
+                        connector.style.marginLeft = `${columnOffset}px`;
+                    }
+
+                    container.appendChild(connector);
+                }
+            });
+        }
+
+        // Draw connecting lines between linked events
+        function drawLinkedEventLines(sortedEvents, eventPositions) {
+            const container = document.getElementById('eventsContainer');
+
+            sortedEvents.forEach(event => {
+                if (!event.linkedEventId) return;
+
+                const linkedEvent = sortedEvents.find(e => e.id === event.linkedEventId);
+                if (!linkedEvent) return;
+
+                const startY = eventPositions[event.id];
+                const endY = eventPositions[linkedEvent.id];
+                const height = Math.abs(endY - startY);
+
+                // Simple vertical connector (offset from ruler)
+                const connector = document.createElement('div');
+                connector.className = 'category-connector';
+                connector.style.background = '#666';
+                connector.style.top = Math.min(startY, endY) + 'px';
+                connector.style.height = height + 'px';
+                connector.style.opacity = '0.3';
+                connector.style.width = '2px';
+                connector.style.marginLeft = '15px';
+                container.appendChild(connector);
+            });
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Scroll to specific year
+        function scrollToYear(year) {
+            const position = yearToPixels(year);
+            const ruler = document.getElementById('timelineRuler');
+            ruler.scrollTop = position - window.innerHeight / 2;
+        }
+
+        // Scroll to latest event
+        function scrollToLatestEvent() {
+            if (events.length === 0) {
+                scrollToYear(START_YEAR);
+                return;
+            }
+
+            const latestEvent = events.reduce((latest, event) => {
+                return event.startYear > latest.startYear ? event : latest;
+            }, events[0]);
+
+            scrollToYear(latestEvent.startYear);
+        }
+
+        // Search events
+        function searchEvents() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const allCards = document.querySelectorAll('.event-card');
+
+            if (!searchTerm) {
+                allCards.forEach(card => {
+                    card.style.opacity = '1';
+                    card.style.pointerEvents = 'auto';
+                });
+                searchResults = [];
+                currentSearchIndex = 0;
+                return;
+            }
+
+            searchResults = [];
+            allCards.forEach(card => {
+                const eventId = parseInt(card.dataset.eventId);
+                const event = events.find(e => e.id === eventId);
+                
+                if (!event) return;
+
+                const yearText = formatYear(event.startYear);
+                const eventText = `${yearText} ${event.title} ${event.description || ''}`.toLowerCase();
+
+                if (eventText.includes(searchTerm)) {
+                    card.style.opacity = '1';
+                    card.style.pointerEvents = 'auto';
+                    searchResults.push(event);
+                } else {
+                    card.style.opacity = '0.2';
+                    card.style.pointerEvents = 'none';
+                }
+            });
+
+            // Jump to first result
+            if (searchResults.length > 0) {
+                currentSearchIndex = 0;
+                scrollToYear(searchResults[0].startYear);
+            }
+        }
+
+        // Handle Enter key for cycling through search results
+        function handleSearchEnter(e) {
+            if (e.key === 'Enter' && searchResults.length > 0) {
+                currentSearchIndex = (currentSearchIndex + 1) % searchResults.length;
+                scrollToYear(searchResults[currentSearchIndex].startYear);
+            }
+        }
+
+        // Export data
+        function exportData() {
+            const data = {
+                events: events,
+                categories: categories,
+                exportDate: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `timeline_export_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Import data
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if (data.events && Array.isArray(data.events)) {
+                        events = data.events;
+                    }
+                    
+                    if (data.categories && Array.isArray(data.categories)) {
+                        categories = data.categories;
+                    }
+                    
+                    saveData();
+                    renderEvents();
+                    renderCategorySelect();
+                    alert('Dati importati con successo!');
+                } catch (error) {
+                    alert('Errore durante l\'importazione: file non valido');
+                }
+            };
+            
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // Modal functions
+        function openModal() {
+            document.getElementById('eventModal').classList.add('active');
+            document.getElementById('eventForm').reset();
+            selectedCategoryId = null;
+            editingEventId = null;
+            renderCategorySelect();
+            populateLinkedEvents();
+            document.querySelector('#eventModal h2').textContent = 'Nuovo Evento';
+        }
+
+        function closeModal() {
+            document.getElementById('eventModal').classList.remove('active');
+            editingEventId = null;
+        }
+
+        function openCategoryModal() {
+            document.getElementById('categoryModal').classList.add('active');
+            document.getElementById('categoryForm').reset();
+            selectedColor = availableColors[0];
+            updateColorPicker();
+            renderCategoryList();
+        }
+
+        function closeCategoryModal() {
+            document.getElementById('categoryModal').classList.remove('active');
+        }
+
+        // Render category select
+        function renderCategorySelect() {
+            const select = document.getElementById('categorySelect');
+            select.innerHTML = '<option value="">Seleziona categoria...</option>';
+            
+            categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.id;
+                option.textContent = cat.name;
+                select.appendChild(option);
+            });
+
+            if (selectedCategoryId) {
+                select.value = selectedCategoryId;
+            }
+        }
+
+        // Render category list with delete option
+        function renderCategoryList() {
+            const list = document.getElementById('categoryList');
+            if (!list) return;
+            
+            list.innerHTML = '';
+            
+            categories.forEach(cat => {
+                const item = document.createElement('div');
+                item.className = 'category-item';
+                item.style.borderLeft = '4px solid ' + cat.color;
+                item.innerHTML = `
+                    <span>${cat.name}</span>
+                    <button class="delete-category-btn" onclick="deleteCategory(${cat.id})">×</button>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        // Delete category
+        function deleteCategory(categoryId) {
+            if (!confirm('Sei sicuro di voler eliminare questa categoria? Gli eventi associati rimarranno ma senza categoria.')) {
+                return;
+            }
+
+            categories = categories.filter(c => c.id !== categoryId);
+            
+            // Update events that had this category to have no category
+            events.forEach(event => {
+                if (event.categoryId === categoryId) {
+                    event.categoryId = null;
+                }
+            });
+
+            saveData();
+            renderCategorySelect();
+            renderCategoryList();
+            renderEvents();
+        }
+
+        // Populate linked events dropdown
+        function populateLinkedEvents() {
+            const select = document.getElementById('linkedEventSelect');
+            select.innerHTML = '<option value="">Nessun collegamento</option>';
+            
+            events.forEach(event => {
+                if (editingEventId && event.id === editingEventId) return;
+                const option = document.createElement('option');
+                option.value = event.id;
+                option.textContent = `${formatYear(event.startYear)} - ${event.title}`;
+                select.appendChild(option);
+            });
+        }
+
+        // Filter events based on search
+        function filterEvents() {
+            const searchTerm = document.getElementById('eventSearch').value.toLowerCase();
+            const select = document.getElementById('linkedEventSelect');
+            select.innerHTML = '<option value="">Nessun collegamento</option>';
+            
+            events.forEach(event => {
+                if (editingEventId && event.id === editingEventId) return;
+                const eventText = `${formatYear(event.startYear)} - ${event.title}`.toLowerCase();
+                if (eventText.includes(searchTerm)) {
+                    const option = document.createElement('option');
+                    option.value = event.id;
+                    option.textContent = `${formatYear(event.startYear)} - ${event.title}`;
+                    select.appendChild(option);
+                }
+            });
+        }
+
+        // Setup color picker
+        function setupColorPicker() {
+            const colorPicker = document.getElementById('colorPicker');
+            colorPicker.innerHTML = availableColors.map(color => `
+                <div class="color-option ${color === selectedColor ? 'selected' : ''}" 
+                     style="background: ${color}"
+                     onclick="selectColor('${color}')"></div>
+            `).join('');
+        }
+
+        function selectColor(color) {
+            selectedColor = color;
+            updateColorPicker();
+        }
+
+        function updateColorPicker() {
+            document.querySelectorAll('.color-option').forEach(option => {
+                option.classList.toggle('selected', option.style.background === selectedColor || 
+                    option.style.backgroundColor === selectedColor);
+            });
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            document.getElementById('eventForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveEvent();
+            });
+
+            document.getElementById('categoryForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveCategory();
+            });
+
+            document.getElementById('categorySelect').addEventListener('change', function() {
+                selectedCategoryId = this.value ? parseInt(this.value) : null;
+            });
+
+            document.getElementById('eventModal').addEventListener('click', function(e) {
+                if (e.target === this) closeModal();
+            });
+
+            document.getElementById('categoryModal').addEventListener('click', function(e) {
+                if (e.target === this) closeCategoryModal();
+            });
+        }
+
+        // Save event
+        function saveEvent() {
+            const startYear = parseInt(document.getElementById('startYear').value);
+            const endYear = document.getElementById('endYear').value ? parseInt(document.getElementById('endYear').value) : null;
+            const title = document.getElementById('eventTitle').value.trim();
+            const description = document.getElementById('eventDescription').value.trim();
+            const linkedEventId = document.getElementById('linkedEventSelect').value ? parseInt(document.getElementById('linkedEventSelect').value) : null;
+
+            if (isNaN(startYear) || !title) {
+                alert('Inserisci almeno l\'anno di inizio e il nome dell\'evento');
+                return;
+            }
+
+            if (!selectedCategoryId) {
+                alert('Seleziona una categoria');
+                return;
+            }
+
+            if (editingEventId) {
+                // Update existing event
+                const eventIndex = events.findIndex(e => e.id === editingEventId);
+                if (eventIndex !== -1) {
+                    events[eventIndex] = {
+                        ...events[eventIndex],
+                        startYear,
+                        endYear,
+                        title,
+                        description,
+                        categoryId: selectedCategoryId,
+                        linkedEventId
+                    };
+                }
+            } else {
+                // Create new event
+                const newEvent = {
+                    id: Date.now(),
+                    startYear,
+                    endYear,
+                    title,
+                    description,
+                    categoryId: selectedCategoryId,
+                    linkedEventId
+                };
+                events.push(newEvent);
+            }
+
+            saveData();
+            renderEvents();
+            closeModal();
+            scrollToYear(startYear);
+        }
+
+        // Edit event
+        function editEvent(eventId) {
+            const event = events.find(e => e.id === eventId);
+            if (!event) return;
+
+            editingEventId = eventId;
+            selectedCategoryId = event.categoryId;
+
+            document.getElementById('startYear').value = event.startYear;
+            document.getElementById('endYear').value = event.endYear || '';
+            document.getElementById('eventTitle').value = event.title;
+            document.getElementById('eventDescription').value = event.description || '';
+
+            renderCategorySelect();
+            populateLinkedEvents();
+            
+            if (event.linkedEventId) {
+                document.getElementById('linkedEventSelect').value = event.linkedEventId;
+            }
+
+            document.querySelector('#eventModal h2').textContent = 'Modifica Evento';
+            document.getElementById('eventModal').classList.add('active');
+        }
+
+        // Save category
+        function saveCategory() {
+            const name = document.getElementById('categoryName').value.trim();
+            
+            if (!name) {
+                alert('Inserisci il nome della categoria');
+                return;
+            }
+
+            const newCategory = {
+                id: Date.now(),
+                name,
+                color: selectedColor
+            };
+
+            categories.push(newCategory);
+            saveData();
+            renderCategorySelect();
+            closeCategoryModal();
+            
+            // Auto-select the new category
+            selectedCategoryId = newCategory.id;
+            document.getElementById('categorySelect').value = newCategory.id;
+        }
+
+        // Delete event
+        function deleteEvent(eventId) {
+            if (confirm('Eliminare questo evento?')) {
+                events = events.filter(e => e.id !== eventId);
+                saveData();
+                renderEvents();
+            }
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
