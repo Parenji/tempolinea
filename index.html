@@ -1797,11 +1797,12 @@
 
             // Draw connecting lines
             drawCategoryConnectors(filteredEvents, categorySides, eventPositions, categories);
-            drawLinkedEventLines(filteredEvents, eventPositions, categories);
+            drawLinkedEventLines(filteredEvents, basePositions, categories);
             // ==========================================
             // NUOVA LOGICA: SCROLL AL PRIMO EVENTO FILTRATO
             // ==========================================
             if (activeCategoryFilters.length > 0 && filteredEvents.length > 0) {
+
                 scrollToYear(filteredEvents[0].startYear);
             }
         }
@@ -1952,9 +1953,9 @@
                     colorB = temp;
                 }
 
-                var startY = (eventPositions[event.id] || 0) + (cardDisplacements[event.id] || 0);
-                var endY = (eventPositions[linkedEvent.id] || 0) + (cardDisplacements[linkedEvent.id] || 0);
-                var centerX = window.innerWidth * 0.5 + 15;
+                var startY = (eventPositions[event.id] || 0);
+                var endY = (eventPositions[linkedEvent.id] || 0);
+                var centerX = window.innerWidth * 0.5 ;
 
                 var curveAmount = Math.max(40, Math.abs(endY - startY) * 0.15);
                 var gradientId = 'grad_' + event.id + '_' + linkedEvent.id;
