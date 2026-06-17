@@ -307,7 +307,6 @@
             top: 0;
             bottom: 0;
             width: 2px;
-            background: var(--ruler-line);
         }
 
         .year-mark {
@@ -1457,8 +1456,18 @@
         ];
 
         const STORAGE_KEY = 'timeline_app_v3';
-        const START_YEAR = 1194;
-        const TOTAL_YEARS = 2000;
+        const MIN_YEAR = -6000;
+        const MAX_YEAR = 2100;
+        const SEGMENTS = [
+            { start: -6000, end: -1000, density: 0.4, rulerStep: 100, rulerLabel: 'century' },
+            { start: -1000, end: -500, density: 2, rulerStep: 10, rulerLabel: 'decade' },
+            { start: -500, end: 0, density: 5, rulerStep: 5, rulerLabel: 'decade' },
+            { start: 0, end: 1700, density: 20, rulerStep: 1, rulerLabel: 'year' },
+            { start: 1700, end: 1900, density: 40, rulerStep: 1, rulerLabel: 'year' },
+            { start: 1900, end: 2100, density: 60, rulerStep: 1, rulerLabel: 'year' }
+        ];
+        const DEFAULT_PIXELS_PER_YEAR = 20;
+        const STANDARD_SEGMENT = 2; // index of segment 0-1700 which has density 20
 
         // ================================================================
         //  STATE
@@ -1523,11 +1532,30 @@
         }
 
         function yearToPixels(year, month, day) {
-            var position = (year - (START_YEAR - TOTAL_YEARS)) * pixelsPerYear + 100;
+            var zoomFactor = pixelsPerYear / DEFAULT_PIXELS_PER_YEAR;
+            var position = 180;
+            for (var s = 0; s < SEGMENTS.length; s++) {
+                var seg = SEGMENTS[s];
+                if (year >= seg.end) {
+                    // Full segment
+                    position += (seg.end - seg.start) * seg.density * zoomFactor;
+                } else if (year >= seg.start) {
+                    // Partial segment
+                    position += (year - seg.start) * seg.density * zoomFactor;
+                }
+            }
             if (month) {
-                position += (month - 1) * (pixelsPerYear / 12);
+                var localDensity = 0;
+                for (var s = 0; s < SEGMENTS.length; s++) {
+                    if (year >= SEGMENTS[s].start && year < SEGMENTS[s].end) {
+                        localDensity = SEGMENTS[s].density * zoomFactor;
+                        break;
+                    }
+                }
+                if (localDensity === 0) localDensity = SEGMENTS[SEGMENTS.length - 1].density * zoomFactor;
+                position += (month - 1) * (localDensity / 12);
                 if (day) {
-                    position += (day - 1) * (pixelsPerYear / 365);
+                    position += (day - 1) * (localDensity / 365);
                 }
             }
             return position;
@@ -1750,10 +1778,16 @@
             var ruler = document.getElementById('timelineRuler');
             // Save which year is currently centered on screen
             var currentScrollY = ruler.scrollTop + window.innerHeight / 2;
-            var currentYear = Math.round((currentScrollY - 100) / pixelsPerYear) + START_YEAR - TOTAL_YEARS;
+            var currentYear = estimateYearFromScroll(currentScrollY);
 
             pixelsPerYear = parseInt(value);
-            document.getElementById('zoomLabel').textContent = pixelsPerYear + 'px';
+            var label = document.getElementById('zoomLabel');
+            label.textContent = pixelsPerYear + 'px';
+            if (pixelsPerYear === DEFAULT_PIXELS_PER_YEAR) {
+                label.style.color = 'var(--accent)';
+            } else {
+                label.style.color = '';
+            }
             document.getElementById('zoomSlider').value = pixelsPerYear;
             fullRender();
 
@@ -1762,6 +1796,18 @@
                 var yearPosition = yearToPixels(currentYear);
                 ruler.scrollTop = yearPosition - window.innerHeight / 2;
             });
+        }
+
+        function estimateYearFromScroll(scrollY) {
+            // Binary search through yearToPixels to find the year at a given scroll position
+            var lo = MIN_YEAR, hi = MAX_YEAR;
+            while (lo < hi) {
+                var mid = Math.ceil((lo + hi) / 2);
+                var pos = yearToPixels(mid);
+                if (pos < scrollY) lo = mid;
+                else hi = mid - 1;
+            }
+            return lo;
         }
 
         function zoomIn() {
@@ -1827,43 +1873,101 @@
             var container = document.getElementById('rulerMarks');
             container.innerHTML = '';
 
-            for (var year = START_YEAR - TOTAL_YEARS; year <= START_YEAR + TOTAL_YEARS; year++) {
-                var position = yearToPixels(year);
+            // Iterate through segments with appropriate step
+            for (var s = 0; s < SEGMENTS.length; s++) {
+                var seg = SEGMENTS[s];
+                var step = seg.rulerStep;
+                var labelType = seg.rulerLabel;
 
-                if (year % 100 === 0) {
-                    // Century mark
-                    var mark = document.createElement('div');
-                    mark.className = 'year-mark century';
-                    mark.style.top = position + 'px';
-                    container.appendChild(mark);
+                for (var year = seg.start; year < seg.end; year += step) {
+                    var position = yearToPixels(year);
+                    if (position < 0) continue;
 
-                    // Century label
-                    var label = document.createElement('div');
-                    var side = (year % 200 === 0) ? 'left-side' : 'right-side';
-                    label.className = 'century-label ' + side;
-                    label.style.top = (position - 8) + 'px';
-                    label.textContent = formatYear(year);
+                    if (labelType === 'century') {
+                        // Century mark + label
+                        var mark = document.createElement('div');
+                        mark.className = 'year-mark century';
+                        mark.style.top = position + 'px';
+                        container.appendChild(mark);
 
-                    // Make every 500 years more prominent
-                    if (year % 500 === 0) {
-                        label.style.fontSize = '0.85rem';
-                        label.style.color = 'var(--text-primary)';
-                        label.style.fontWeight = '700';
+                        var label = document.createElement('div');
+                        var side = (year % 200 === 0) ? 'left-side' : 'right-side';
+                        label.className = 'century-label ' + side;
+                        label.style.top = (position - 8) + 'px';
+                        label.textContent = formatYear(year);
+
+                        if (year % 500 === 0) {
+                            label.style.fontSize = '0.85rem';
+                            label.style.color = 'var(--text-primary)';
+                            label.style.fontWeight = '700';
+                        }
+
+                        container.appendChild(label);
+                    } else if (labelType === 'decade' || labelType === 'quinquennial') {
+                        if (year % 100 === 0) {
+                            // Century mark (large) + label
+                            var mark = document.createElement('div');
+                            mark.className = 'year-mark century';
+                            mark.style.top = position + 'px';
+                            container.appendChild(mark);
+
+                            var label = document.createElement('div');
+                            var side = (year % 200 === 0) ? 'left-side' : 'right-side';
+                            label.className = 'century-label ' + side;
+                            label.style.top = (position - 8) + 'px';
+                            label.textContent = formatYear(year);
+                            if (year % 500 === 0) {
+                                label.style.fontSize = '0.85rem';
+                                label.style.color = 'var(--text-primary)';
+                                label.style.fontWeight = '700';
+                            }
+                            container.appendChild(label);
+                        } else if (year % 10 === 0) {
+                            // Decade mark (medium)
+                            var mark = document.createElement('div');
+                            mark.className = 'year-mark decade';
+                            mark.style.top = position + 'px';
+                            container.appendChild(mark);
+                        } else {
+                            // Year/quinquennial mark (small)
+                            var mark = document.createElement('div');
+                            mark.className = 'year-mark year';
+                            mark.style.top = position + 'px';
+                            container.appendChild(mark);
+                        }
+                    } else if (step === 1) {
+                        for (var y = year; y < Math.min(year + step, seg.end); y++) {
+                            var yPos = yearToPixels(y);
+                            if (yPos < 0) continue;
+                            if (y % 100 === 0) {
+                                var mark = document.createElement('div');
+                                mark.className = 'year-mark century';
+                                mark.style.top = yPos + 'px';
+                                container.appendChild(mark);
+                                var label = document.createElement('div');
+                                var side = (y % 200 === 0) ? 'left-side' : 'right-side';
+                                label.className = 'century-label ' + side;
+                                label.style.top = (yPos - 8) + 'px';
+                                label.textContent = formatYear(y);
+                                if (y % 500 === 0) {
+                                    label.style.fontSize = '0.85rem';
+                                    label.style.color = 'var(--text-primary)';
+                                    label.style.fontWeight = '700';
+                                }
+                                container.appendChild(label);
+                            } else if (y % 10 === 0) {
+                                var mark = document.createElement('div');
+                                mark.className = 'year-mark decade';
+                                mark.style.top = yPos + 'px';
+                                container.appendChild(mark);
+                            } else {
+                                var mark = document.createElement('div');
+                                mark.className = 'year-mark year';
+                                mark.style.top = yPos + 'px';
+                                container.appendChild(mark);
+                            }
+                        }
                     }
-
-                    container.appendChild(label);
-                } else if (year % 10 === 0) {
-                    // Decade mark
-                    var mark = document.createElement('div');
-                    mark.className = 'year-mark decade';
-                    mark.style.top = position + 'px';
-                    container.appendChild(mark);
-                } else {
-                    // Year mark
-                    var mark = document.createElement('div');
-                    mark.className = 'year-mark year';
-                    mark.style.top = position + 'px';
-                    container.appendChild(mark);
                 }
             }
         }
@@ -2345,7 +2449,7 @@
         function scrollToLatestEvent() {
             var events = getEvents();
             if (events.length === 0) {
-                scrollToYear(START_YEAR);
+                scrollToYear(0);
                 return;
             }
             var latest = events.reduce(function (a, b) {
@@ -3013,7 +3117,7 @@
 
             function updateYearIndicator() {
                 var scrollY = ruler.scrollTop + window.innerHeight / 2;
-                var currentYear = Math.round((scrollY - 100) / pixelsPerYear) + START_YEAR - TOTAL_YEARS;
+                var currentYear = estimateYearFromScroll(scrollY);
                 yearIndicator.dataset.year = currentYear;
                 if (!yearIndicatorLocked) {
                     yearIndicator.innerHTML = formatYear(currentYear);
