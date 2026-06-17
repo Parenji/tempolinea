@@ -1,6 +1,6 @@
 {
   "timeline": {
-    "id": "1781569125895_k47pda",
+    "id": "1781599867639_5r51si",
     "name": "Storia",
     "events": [
       {
@@ -168,20 +168,28 @@
       {
         "id": "1781522000002",
         "startYear": 962,
+        "startMonth": null,
+        "startDay": null,
         "endYear": null,
+        "endMonth": null,
+        "endDay": null,
         "title": "Ottone I incoronato Imperatore",
         "description": "A Roma, Papa Giovanni XII incorona Ottone I di Sassonia, dando ufficialmente vita al Sacro Romano Impero Germanico.",
         "categoryId": "1781515897436",
-        "linkedEventId": null
+        "linkedEventId": "1781522000003"
       },
       {
         "id": "1781522000003",
         "startYear": 962,
+        "startMonth": 2,
+        "startDay": 13,
         "endYear": null,
+        "endMonth": null,
+        "endDay": null,
         "title": "Privilegium Othonis",
         "description": "Ottone I emana il decreto secondo cui l'elezione del Papa deve avvenire solo con il consenso dell'Imperatore. Inizia la subordination della Chiesa all'Impero.",
         "categoryId": "1781511160999",
-        "linkedEventId": "1781522000002"
+        "linkedEventId": null
       },
       {
         "id": "1781522000004",
@@ -797,6 +805,253 @@
         "startDay": null,
         "endMonth": null,
         "endDay": null
+      },
+      {
+        "id": "1781595689270_xbev73",
+        "startYear": 1297,
+        "startMonth": null,
+        "startDay": null,
+        "endYear": 1308,
+        "endMonth": null,
+        "endDay": null,
+        "title": "Bancarotta dei Bonsignori di Siena",
+        "description": "Tra le cause del fallimento: irresposabilità dei sovrani che presero molto denaro in prestito per le guerre locali",
+        "categoryId": "1781595687887_xux8lh",
+        "linkedEventId": null
+      },
+      {
+        "id": "1781596315077_px41cl",
+        "startYear": 1343,
+        "startMonth": null,
+        "startDay": null,
+        "endYear": 1346,
+        "endMonth": null,
+        "endDay": null,
+        "title": "Bancarotta delle grandi compagnie di Firenze",
+        "description": "Buonaccorsi, Peruzzi, Bardi, Acciaioli. Tra le cause del fallimento: irresposabilità dei sovrani che presero molto denaro in prestito per le guerre locali",
+        "categoryId": "1781595687887_xux8lh",
+        "linkedEventId": null
+      },
+      {
+        "id": "1781596349392_fzzbbf",
+        "startYear": 1315,
+        "startMonth": null,
+        "startDay": null,
+        "endYear": 1318,
+        "endMonth": null,
+        "endDay": null,
+        "title": "La \"Grande Carestia\"",
+        "description": "",
+        "categoryId": "1781595687887_xux8lh",
+        "linkedEventId": null
+      },
+      {
+        "id": "1781596374341_n3zsay",
+        "startYear": 1329,
+        "startMonth": null,
+        "startDay": null,
+        "endYear": 1330,
+        "endMonth": null,
+        "endDay": null,
+        "title": "Carestia in Toscana",
+        "description": "",
+        "categoryId": "1781595687887_xux8lh",
+        "linkedEventId": null
+      },
+      {
+        "id": "1781596725777_9er835",
+        "startYear": 1347,
+        "startMonth": null,
+        "startDay": null,
+        "endYear": 1351,
+        "endMonth": null,
+        "endDay": null,
+        "title": "La grande peste",
+        "description": "Arrivò in Italia dall’Asia attraverso\ni ratti che ne erano affetti. Il vettore\ndi contagio furono le pulci che dai ratti\ntrasmisero l’infezione agli uomini. La diffusione fu facilitata dalle\npessime condizioni igieniche dell’epoca. Le autorità pubbliche tentarono di prendere provvedimenti\nper contenere la diffusione del contagio,\ncome la messa in quarantena delle navi\ne la creazione di lazzaretti. Uccise il 30% della popolazione.",
+        "categoryId": "1781595687887_xux8lh",
+        "linkedEventId": null
+      },
+      {
+        "id": "1781596835598_cbj5uj",
+        "startYear": 1358,
+        "startMonth": null,
+        "startDay": null,
+        "endYear": null,
+        "endMonth": null,
+        "endDay": null,
+        "title": "Rivolte in Francia (Jacquerie)",
+        "description": "Da Jacques Bonhomme,\n“il buon Giacomo”, nomignolo con cui i nobili indicavano paternalisticamente\ni contadini. Durò appena dodici giorni, ma fu di una violenza senza precedenti.\nI contadini, che chiedevano di limitare i diritti signorili su di loro, fecero strage di\naristocratici e distrussero moltissimi castelli. La repressione fu altrettanto feroce:\nfurono uccisi circa 20.000 contadini.",
+        "categoryId": "1781595687887_xux8lh",
+        "linkedEventId": null
+      },
+      {
+        "id": "1781596857598_fk9628",
+        "startYear": 1378,
+        "startMonth": null,
+        "startDay": null,
+        "endYear": null,
+        "endMonth": null,
+        "endDay": null,
+        "title": "Tumulto dei Ciompi di Firenze",
+        "description": "I lavoratori giornalieri della lana,\nguidati dall’umile Michele di Lan-\ndo, il 21 luglio riuscirono con la forza a ottenere il governo della città.\nTentarono di avviare un insieme di riforme che mirava a miglioramenti salariali\ne alla creazione di tre\nnuove corporazioni composte dai salariati più sfruttati, quelle dei Ciompi, dei\nTintori e dei Farsettai. Tuttavia, l’esperimento fallì e molti dei capi della rivolta\nfurono condannati a morte.",
+        "categoryId": "1781595687887_xux8lh",
+        "linkedEventId": null
+      },
+      {
+        "id": "1781596883215_pw1dy3",
+        "startYear": 1381,
+        "startMonth": null,
+        "startDay": null,
+        "endYear": null,
+        "endMonth": null,
+        "endDay": null,
+        "title": "Rivolte inglesi contro la Poll Tax",
+        "description": "I capi della rivolta, Wat Tyler e il\nprete John Ball, furono uccisi dopo alcuni mesi e la rivolta fu repressa nel sangue.",
+        "categoryId": "1781595687887_xux8lh",
+        "linkedEventId": null
+      },
+      {
+        "id": "1781597473186_nx0pzj",
+        "startYear": 1377,
+        "startMonth": null,
+        "startDay": null,
+        "endYear": null,
+        "endMonth": null,
+        "endDay": null,
+        "title": "Poll Tax in Inghilterra",
+        "description": "Tassa uguale per tutti, dunque iniquissima, per finanziare la Guerra dei Cent'anni",
+        "categoryId": "1781595687887_xux8lh",
+        "linkedEventId": "1781598214477_yolcdw"
+      },
+      {
+        "id": "1781597718144_0wrixl",
+        "startYear": 1305,
+        "startMonth": null,
+        "startDay": null,
+        "endYear": null,
+        "endMonth": null,
+        "endDay": null,
+        "title": "Giotto affresca la Cappella degli Scrovegni",
+        "description": "a Padova",
+        "categoryId": "1781597841242_6ybbts",
+        "linkedEventId": null
+      },
+      {
+        "id": "1781597766389_e862uh",
+        "startYear": 1265,
+        "startMonth": null,
+        "startDay": null,
+        "endYear": null,
+        "endMonth": null,
+        "endDay": null,
+        "title": "Nasce Dante Alighieri",
+        "description": "",
+        "categoryId": "1781597841242_6ybbts",
+        "linkedEventId": null
+      },
+      {
+        "id": "1781597967408_tlw574",
+        "startYear": 1304,
+        "startMonth": 7,
+        "startDay": 20,
+        "endYear": null,
+        "endMonth": null,
+        "endDay": null,
+        "title": "Nasce Francesco Petrarca",
+        "description": "ad Arezzo",
+        "categoryId": "1781597841242_6ybbts",
+        "linkedEventId": null
+      },
+      {
+        "id": "1781598031510_1s4l1g",
+        "startYear": 1313,
+        "startMonth": 6,
+        "startDay": null,
+        "endYear": null,
+        "endMonth": null,
+        "endDay": null,
+        "title": "Nasce Giovanni Boccaccio",
+        "description": "a Firenze o Certaldo",
+        "categoryId": "1781597841242_6ybbts",
+        "linkedEventId": null
+      },
+      {
+        "id": "1781598214477_yolcdw",
+        "startYear": 1339,
+        "startMonth": null,
+        "startDay": null,
+        "endYear": null,
+        "endMonth": null,
+        "endDay": null,
+        "title": "Inizia la Guerra dei Cent'anni",
+        "description": "Tra Francia e Germania",
+        "categoryId": "1781598210961_grgpep",
+        "linkedEventId": null
+      },
+      {
+        "id": "1781598671567_lcsxdp",
+        "startYear": 1303,
+        "startMonth": null,
+        "startDay": null,
+        "endYear": null,
+        "endMonth": null,
+        "endDay": null,
+        "title": "Lo schiaffo di Anagni",
+        "description": "Filippo il Bello invia una spedizione armata ad Anagni, capeggiata dal giurista\nGuglielmo di Nogaret e sostenuta dalla potente famiglia romana dei Colonna,\navversaria dei Caetani. Sciarra Colonna\nschiaffeggia Bonifacio VIII. L’anziano ponte-\nfice morì di lì a pochi mesi.",
+        "categoryId": "1781598362097_yls8xo",
+        "linkedEventId": null
+      },
+      {
+        "id": "1781598756619_q2ue7l",
+        "startYear": 1296,
+        "startMonth": null,
+        "startDay": null,
+        "endYear": null,
+        "endMonth": null,
+        "endDay": null,
+        "title": "Filippo IV il Bello ordina al clero francese di pagare le tasse",
+        "description": "Il papa Bonifacio VIII risponde con la bolla Unam Sanctam, in cui ribadisce la sua supremazia assoluta",
+        "categoryId": "1781598362097_yls8xo",
+        "linkedEventId": null
+      },
+      {
+        "id": "1781598936921_5h7a8o",
+        "startYear": 1309,
+        "startMonth": null,
+        "startDay": null,
+        "endYear": 1377,
+        "endMonth": null,
+        "endDay": null,
+        "title": "Il Papato ad Avignone",
+        "description": "Il nuovo papa Clemente V, francese, cede alle richieste di Filippo di spostare la sede ad Avignone. Inizia la \"cattività Avignonese\"",
+        "categoryId": "1781598362097_yls8xo",
+        "linkedEventId": null
+      },
+      {
+        "id": "1781599132401_ssoabe",
+        "startYear": 1378,
+        "startMonth": null,
+        "startDay": null,
+        "endYear": 1417,
+        "endMonth": null,
+        "endDay": null,
+        "title": "Scisma d'Occidente",
+        "description": "Papa Gregorio XI torna a Roma, ma gli Avignonesi eleggono un Antipapa. Nascono due papati distinti.",
+        "categoryId": "1781598362097_yls8xo",
+        "linkedEventId": null
+      },
+      {
+        "id": "1781599171166_7hq9py",
+        "startYear": 1417,
+        "startMonth": null,
+        "startDay": null,
+        "endYear": null,
+        "endMonth": null,
+        "endDay": null,
+        "title": "Concilio di Costanza",
+        "description": "Martino V riporta definitivamente il Papato a Roma",
+        "categoryId": "1781598362097_yls8xo",
+        "linkedEventId": null
       }
     ],
     "categories": [
@@ -807,7 +1062,7 @@
       },
       {
         "id": "1781520000000",
-        "name": "Chiesa",
+        "name": "Il rinnovamento della Chiesa",
         "color": "#fff"
       },
       {
@@ -869,8 +1124,28 @@
         "id": "1781571279128_ll31iz",
         "name": "prova",
         "color": "#ef4444"
+      },
+      {
+        "id": "1781595687887_xux8lh",
+        "name": "Crisi del 1300",
+        "color": "#10b981"
+      },
+      {
+        "id": "1781597841242_6ybbts",
+        "name": "Arte e Letteratura",
+        "color": "#ec4899"
+      },
+      {
+        "id": "1781598210961_grgpep",
+        "name": "Guerra dei Cent'Anni",
+        "color": "#ef4444"
+      },
+      {
+        "id": "1781598362097_yls8xo",
+        "name": "La crisi del Papato",
+        "color": "#f97316"
       }
     ]
   },
-  "exportDate": "2026-06-16T04:24:32.619Z"
+  "exportDate": "2026-06-17T08:36:46.353Z"
 }

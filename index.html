@@ -707,10 +707,75 @@
             font-weight: bold;
         }
 
-        .category-list {
-            margin-top: 1.5rem;
+        .category-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            margin-bottom: 0.75rem;
+            padding-top: 0.75rem;
             border-top: 1px solid var(--border-color);
-            padding-top: 1rem;
+        }
+
+        .category-list-header h3 {
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .category-new-btn {
+            padding: 0.35rem 0.85rem;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s;
+            white-space: nowrap;
+        }
+
+        .category-new-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .category-list {
+            margin-top: 0;
+        }
+
+        .category-form-section {
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            transition: max-height 0.35s ease, opacity 0.3s ease, margin 0.3s ease;
+            margin-top: 0;
+        }
+
+        .category-form-section.open {
+            max-height: 400px;
+            opacity: 1;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+            padding: 0.75rem;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .category-form-section .form-group:last-of-type {
+            margin-bottom: 0.5rem;
+        }
+
+        .category-form-section .modal-buttons {
+            margin-top: 0.5rem;
+        }
+
+        .category-empty-msg {
+            text-align: center;
+            padding: 1rem;
+            color: var(--text-secondary);
+            font-size: 0.8125rem;
         }
 
         .category-item {
@@ -735,6 +800,143 @@
 
         .delete-category-btn:hover {
             color: #ef4444;
+        }
+
+        .category-action-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.8rem;
+            padding: 0.15rem 0.3rem;
+            line-height: 1;
+            border-radius: 4px;
+            transition: color 0.15s, background 0.15s;
+        }
+
+        .category-action-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .category-action-btn.delete:hover {
+            color: #ef4444;
+        }
+
+        .custom-color-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .custom-color-btn {
+            padding: 0.35rem 0.75rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: border-color 0.15s, color 0.15s;
+        }
+
+        .custom-color-btn:hover {
+            border-color: var(--accent);
+            color: var(--text-primary);
+        }
+
+        .custom-color-preview {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: 2px solid var(--border-color);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .custom-color-input {
+            width: 0;
+            height: 0;
+            opacity: 0;
+            position: absolute;
+        }
+
+        .category-add-btn {
+            padding: 0.65rem 0.75rem;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            line-height: 1;
+            min-width: 44px;
+            transition: background 0.15s;
+        }
+
+        .category-add-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        @keyframes fabPulse {
+            0%, 100% { box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4); }
+            50% { box-shadow: 0 4px 24px rgba(124, 58, 237, 0.8), 0 0 0 8px rgba(124, 58, 237, 0.15); }
+        }
+
+        .fab.pulse {
+            animation: fabPulse 2s ease-in-out infinite;
+        }
+
+        .fab-secondary {
+            position: fixed;
+            bottom: 6.5rem;
+            right: 2.1rem;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #444, #2a2a2a);
+            color: #bbb;
+            border: 1px solid #555;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s, background 0.15s, color 0.15s, box-shadow 0.15s;
+        }
+
+        .fab-secondary:hover {
+            transform: scale(1.1);
+            background: linear-gradient(145deg, #555, #3a3a3a);
+            color: #eee;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        .fab-secondary svg {
+            width: 20px;
+            height: 20px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        @media (max-width: 768px) {
+            .fab-secondary {
+                bottom: 5.2rem;
+                right: 1.6rem;
+                width: 38px;
+                height: 38px;
+            }
+
+            .fab-secondary svg {
+                width: 18px;
+                height: 18px;
+            }
         }
 
         /* Linked event picker */
@@ -1085,13 +1287,17 @@
     <!-- Empty state -->
     <div class="empty-state" id="emptyState">
         <h3>Timeline Vuota</h3>
-        <p>Clicca + per aggiungere il tuo primo evento</p>
+        <p style="margin-bottom:1rem;">Premi il pulsante in basso a destra per creare il tuo primo evento</p>
+        <div id="emptyArrow" style="font-size:1.5rem;opacity:0.5;">&#x2198;</div>
     </div>
 
     <!-- Year indicator -->
     <div class="year-indicator" id="yearIndicator"></div>
 
-    <button class="fab" onclick="openModal()">+</button>
+    <button class="fab-secondary" onclick="openCategoryModal()" title="Gestisci categorie">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.8-.1 2.6-.4.4-.1.6-.5.5-.9-.1-.3-.2-.6-.2-.9 0-.6.4-1 1-1h1.2c3 0 5.4-2.4 5.4-5.4C22 6.4 17.6 2 12 2z"/><circle cx="7.5" cy="11.5" r="1.5"/><circle cx="10.5" cy="7.5" r="1.5"/><circle cx="14.5" cy="7.5" r="1.5"/><circle cx="17" cy="11.5" r="1.5"/></svg>
+    </button>
+    <button class="fab pulse" id="fabBtn" onclick="openModal()">+</button>
 
     <!-- Event Modal -->
     <div class="modal-overlay" id="eventModal">
@@ -1141,9 +1347,8 @@
                         <select id="categorySelect">
                             <option value="">Seleziona categoria...</option>
                         </select>
-                        <button type="button" class="btn"
-                            style="background:var(--accent);color:#fff;border:var(--accent);"
-                            onclick="openCategoryModal()">+</button>
+                        <button type="button" class="category-add-btn"
+                            onclick="openCategoryModal(true)">+</button>
                     </div>
                 </div>
                 <div class="form-group">
@@ -1178,23 +1383,32 @@
     <!-- Category Modal -->
     <div class="modal-overlay" id="categoryModal">
         <div class="modal">
-            <h2>Gestione Categorie</h2>
-            <form id="categoryForm">
-                <div class="form-group">
-                    <label for="categoryName">Nome Categoria *</label>
-                    <input type="text" id="categoryName" required placeholder="es. Politica, Cultura...">
-                </div>
-                <div class="form-group">
-                    <label>Colore</label>
-                    <div class="color-picker" id="colorPicker"></div>
-                </div>
-                <div class="modal-buttons">
-                    <button type="button" class="btn-cancel" onclick="closeCategoryModal()">Annulla</button>
-                    <button type="submit" class="btn"
-                        style="background:var(--accent);color:#fff;border:none;">Salva</button>
-                </div>
-            </form>
+            <h2 id="categoryModalTitle">Gestione Categorie</h2>
+            <div class="category-form-section" id="categoryFormSection">
+                <form id="categoryForm">
+                    <div class="form-group">
+                        <label for="categoryName" id="categoryNameLabel">Nuova Categoria</label>
+                        <input type="text" id="categoryName" required placeholder="es. Politica, Cultura...">
+                    </div>
+                    <div class="form-group">
+                        <label>Colore</label>
+                        <div class="color-picker" id="colorPicker"></div>
+                    </div>
+                    <div class="modal-buttons">
+                        <button type="button" class="btn-cancel" onclick="closeCategoryForm()">Annulla</button>
+                        <button type="submit" class="btn"
+                            style="background:var(--accent);color:#fff;border:none;" id="categorySaveBtn">Salva</button>
+                    </div>
+                </form>
+            </div>
+            <div class="category-list-header" id="categoryListHeader">
+                <h3>Categorie Esistenti</h3>
+                <button type="button" class="category-new-btn" onclick="openCategoryForm()">+ Nuova Categoria</button>
+            </div>
             <div class="category-list" id="categoryList"></div>
+            <div class="modal-buttons" style="margin-top:1rem;">
+                <button type="button" class="btn-cancel" onclick="closeCategoryModal()" style="flex:1;">Chiudi</button>
+            </div>
         </div>
     </div>
 
@@ -1236,9 +1450,10 @@
         // ================================================================
 
         const AVAILABLE_COLORS = [
-            '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16',
-            '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6',
-            '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899'
+            '#ef4444', '#f97316', '#f59e0b', '#84cc16',
+            '#10b981', '#06b6d4', '#3b82f6', '#6366f1',
+            '#8b5cf6', '#a855f7', '#d946ef', '#ec4899',
+            '#ffffff', '#d4d4d4', '#a3a3a3', '#737373', '#404040'
         ];
 
         const STORAGE_KEY = 'timeline_app_v3';
@@ -1267,6 +1482,7 @@
         let currentSearchIndex = 0;
         let selectedLinkedEventId = null;
         let timelineModalMode = 'add'; // 'add' or 'rename'
+        let editingCategoryId = null; // for editing categories
 
         // Expanded card tracking for dynamic push-down
         let expandedEventId = null;
@@ -1703,7 +1919,8 @@
             var eventPositions = {};
             var eventSides = {};
             var basePositions = {};
-            var minSpacing = 60;
+            var isMobileLayout = window.innerWidth <= 768;
+            var minSpacing = isMobileLayout ? 60 : 80;
 
             filteredEvents.forEach(function (event, index) {
                 var category = categories.find(function (c) { return c.id === event.categoryId; });
@@ -1719,16 +1936,23 @@
                     var prevPosition = eventPositions[prevEvent.id];
                     var prevSide = eventSides[prevEvent.id];
 
-                    if (Math.abs(yearPos - prevPosition) < minSpacing) {
-                        if (prevSide === currentSide) {
-                            // Try to switch side
+                    // Only handle collisions between events on the same side
+                    if (prevSide === currentSide && (prevPosition + minSpacing) > yearPos) {
+                        // Same category events: always use vertical offset (never switch side)
+                        // Different category events: try to switch side
+                        var sameCategory = event.categoryId && prevEvent.categoryId &&
+                            String(event.categoryId) === String(prevEvent.categoryId);
+
+                        if (sameCategory) {
+                            offset = Math.max(offset, prevPosition + minSpacing - yearPos);
+                        } else {
                             var otherSide = (currentSide === 'left') ? 'right' : 'left';
                             var canSwitch = true;
 
                             for (var j = 0; j < index; j++) {
                                 var checkEvent = filteredEvents[j];
                                 if (eventSides[checkEvent.id] === otherSide &&
-                                    Math.abs(yearPos - eventPositions[checkEvent.id]) < minSpacing) {
+                                    (eventPositions[checkEvent.id] + minSpacing) > yearPos) {
                                     canSwitch = false;
                                     break;
                                 }
@@ -1737,10 +1961,8 @@
                             if (canSwitch) {
                                 currentSide = otherSide;
                             } else {
-                                offset = Math.max(offset, minSpacing - Math.abs(yearPos - prevPosition));
+                                offset = Math.max(offset, prevPosition + minSpacing - yearPos);
                             }
-                        } else {
-                            offset = Math.max(offset, minSpacing - Math.abs(yearPos - prevPosition));
                         }
                     }
                 }
@@ -1796,7 +2018,7 @@
             });
 
             // Draw connecting lines
-            drawCategoryConnectors(filteredEvents, categorySides, eventPositions, categories);
+            drawCategoryConnectors(filteredEvents, categorySides, eventSides, eventPositions, categories);
             drawLinkedEventLines(filteredEvents, basePositions, categories);
             // ==========================================
             // NUOVA LOGICA: SCROLL AL PRIMO EVENTO FILTRATO
@@ -1824,7 +2046,7 @@
         //  CATEGORY CONNECTORS (SVG)
         // ================================================================
 
-        function drawCategoryConnectors(sortedEvents, categorySides, eventPositions, categories) {
+        function drawCategoryConnectors(sortedEvents, categorySides, eventSides, eventPositions, categories) {
             var svg = document.getElementById('linksSvg');
             // Remove old category connectors
             svg.querySelectorAll('.category-connector').forEach(function (el) { el.remove(); });
@@ -1882,6 +2104,7 @@
 
                 var category = categories.find(function (c) { return String(c.id) === String(categoryId); });
                 if (!category) return;
+                if (category.showConnectors === false) return;
 
                 var side = categorySides[categoryId];
                 var slotIndex = categorySlots[categoryId] || 0;
@@ -1894,22 +2117,41 @@
                     connectorX = centerX + 15 + categoryOffset;
                 }
 
+                var leftX = centerX - 15 - categoryOffset;
+                var rightX = centerX + 15 + categoryOffset;
+
                 var points = catEvents.map(function (e) {
-                    return { y: eventPositions[e.id] || 0 };
+                    var evSide = eventSides[e.id] || side;
+                    return {
+                        x: evSide === 'left' ? leftX : rightX,
+                        y: eventPositions[e.id] || 0
+                    };
                 });
 
+                // Catmull-Rom spline: smooth curve through all points
                 var pathData = '';
-                points.forEach(function (point, index) {
-                    if (index === 0) {
-                        pathData += 'M ' + connectorX + ' ' + point.y;
-                    } else {
-                        var prevY = points[index - 1].y;
-                        var curveDir = (side === 'left') ? -15 : 15;
-                        pathData += ' C ' + (connectorX + curveDir) + ' ' + prevY +
-                            ', ' + (connectorX + curveDir) + ' ' + point.y +
-                            ', ' + connectorX + ' ' + point.y;
+                if (points.length === 1) {
+                    pathData = 'M ' + points[0].x + ' ' + points[0].y;
+                } else if (points.length === 2) {
+                    pathData = 'M ' + points[0].x + ' ' + points[0].y +
+                        ' L ' + points[1].x + ' ' + points[1].y;
+                } else {
+                    pathData = 'M ' + points[0].x + ' ' + points[0].y;
+                    for (var i = 0; i < points.length - 1; i++) {
+                        var p0 = points[Math.max(0, i - 1)];
+                        var p1 = points[i];
+                        var p2 = points[i + 1];
+                        var p3 = points[Math.min(points.length - 1, i + 2)];
+                        // Catmull-Rom to cubic bezier control points
+                        var cp1x = p1.x + (p2.x - p0.x) / 6;
+                        var cp1y = p1.y + (p2.y - p0.y) / 6;
+                        var cp2x = p2.x - (p3.x - p1.x) / 6;
+                        var cp2y = p2.y - (p3.y - p1.y) / 6;
+                        pathData += ' C ' + cp1x + ' ' + cp1y +
+                            ', ' + cp2x + ' ' + cp2y +
+                            ', ' + p2.x + ' ' + p2.y;
                     }
-                });
+                }
 
                 var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                 path.setAttribute('d', pathData);
@@ -2014,6 +2256,7 @@
             renderPills();
             renderEvents();
             renderCategorySelect();
+            updateEmptyState();
         }
 
         // ================================================================
@@ -2120,12 +2363,44 @@
             if (!timeline) return;
 
             var data = JSON.stringify({ timeline: timeline, exportDate: new Date().toISOString() }, null, 2);
+            var suggestedName = 'timeline_' + timeline.name.replace(/[^a-zA-Z0-9]/g, '_') +
+                '_' + new Date().toISOString().split('T')[0] + '.json';
+
+            // Try native "Save As" dialog (File System Access API - Chromium browsers)
+            if (window.showSaveFilePicker) {
+                window.showSaveFilePicker({
+                    suggestedName: suggestedName,
+                    types: [{
+                        description: 'File JSON',
+                        accept: { 'application/json': ['.json'] }
+                    }]
+                }).then(function (handle) {
+                    return handle.createWritable().then(function (writable) {
+                        return writable.write(data).then(function () {
+                            return writable.close();
+                        });
+                    });
+                }).then(function () {
+                    showToast('Dati esportati', 'success');
+                }).catch(function (err) {
+                    // User cancelled the dialog - do nothing
+                    if (err.name !== 'AbortError') {
+                        showToast('Errore durante esportazione', 'error');
+                    }
+                });
+                return;
+            }
+
+            // Fallback: prompt with editable filename (Firefox, Safari, etc.)
+            var filename = prompt('Salva con nome:', suggestedName);
+            if (filename === null) return; // User cancelled
+            if (!filename.trim()) filename = suggestedName;
+            if (!filename.endsWith('.json')) filename += '.json';
+
             var blob = new Blob([data], { type: 'application/json' });
             var url = URL.createObjectURL(blob);
             var a = document.createElement('a');
             a.href = url;
-            var filename = 'timeline_' + timeline.name.replace(/[^a-zA-Z0-9]/g, '_') +
-                '_' + new Date().toISOString().split('T')[0] + '.json';
             a.download = filename;
             document.body.appendChild(a);
             a.click();
@@ -2148,7 +2423,7 @@
                         var id = generateId();
                         state.timelines[id] = {
                             id: id,
-                            name: (data.timeline.name || 'Importata') + ' (importata)',
+                            name: (data.timeline.name || 'Importata'),
                             events: data.timeline.events,
                             categories: data.timeline.categories
                         };
@@ -2255,11 +2530,44 @@
                 var item = document.createElement('div');
                 item.className = 'category-item';
                 item.style.borderLeft = '4px solid ' + category.color;
+                var connectorsOn = category.showConnectors !== false;
+                var connectorsLabel = connectorsOn ? '&#x2014;&#x25C6;' : '&#x2014;&#x2716;';
                 item.innerHTML =
-                    '<span>' + category.name + '</span>' +
-                    '<button class="delete-category-btn" onclick="deleteCategory(\'' + category.id + '\')">×</button>';
+                    '<span>' + escapeHtml(category.name) +
+                    (connectorsOn ? '' : ' <small style="color:var(--text-secondary)">(senza linee)</small>') +
+                    '</span>' +
+                    '<div style="display:flex;gap:0.15rem;align-items:center;">' +
+                    '<button class="category-action-btn" title="' + (connectorsOn ? 'Disattiva linee' : 'Attiva linee') + '" onclick="toggleCategoryConnectors(\'' + category.id + '\')">' + connectorsLabel + '</button>' +
+                    '<button class="category-action-btn" title="Modifica" onclick="editCategory(\'' + category.id + '\')">&#x270E;</button>' +
+                    '<button class="category-action-btn delete" title="Elimina" onclick="deleteCategory(\'' + category.id + '\')">&#x00D7;</button>' +
+                    '</div>';
                 list.appendChild(item);
             });
+        }
+
+        function toggleCategoryConnectors(categoryId) {
+            var cats = getCategories();
+            var cat = cats.find(function (c) { return String(c.id) === String(categoryId); });
+            if (cat) {
+                cat.showConnectors = cat.showConnectors === false ? true : false;
+                setCategories(cats);
+                saveState();
+                renderCategoryList();
+                renderEvents();
+            }
+        }
+
+        function editCategory(categoryId) {
+            var cats = getCategories();
+            var cat = cats.find(function (c) { return String(c.id) === String(categoryId); });
+            if (!cat) return;
+            editingCategoryId = categoryId;
+            document.getElementById('categoryName').value = cat.name;
+            selectedColor = cat.color;
+            updateColorPicker();
+            document.getElementById('categoryNameLabel').textContent = 'Modifica Categoria';
+            document.getElementById('categorySaveBtn').textContent = 'Aggiorna';
+            openCategoryForm();
         }
 
         function deleteCategory(categoryId) {
@@ -2287,21 +2595,35 @@
                 showToast('Inserisci il nome della categoria', 'error');
                 return;
             }
-            var newCategory = {
-                id: String(Date.now()) + '_' + Math.random().toString(36).slice(2, 8),
-                name: name,
-                color: selectedColor
-            };
             var cats = getCategories();
-            cats.push(newCategory);
+            if (editingCategoryId) {
+                // Update existing category
+                var cat = cats.find(function (c) { return String(c.id) === String(editingCategoryId); });
+                if (cat) {
+                    cat.name = name;
+                    cat.color = selectedColor;
+                }
+                showToast('Categoria modificata', 'success');
+            } else {
+                // Create new category
+                var newCategory = {
+                    id: String(Date.now()) + '_' + Math.random().toString(36).slice(2, 8),
+                    name: name,
+                    color: selectedColor,
+                    showConnectors: true
+                };
+                cats.push(newCategory);
+                selectedCategoryId = newCategory.id;
+                document.getElementById('categorySelect').value = newCategory.id;
+                showToast('Categoria creata', 'success');
+            }
             setCategories(cats);
             saveState();
             renderCategorySelect();
+            renderCategoryList();
             renderPills();
+            renderEvents();
             closeCategoryModal();
-            selectedCategoryId = newCategory.id;
-            document.getElementById('categorySelect').value = newCategory.id;
-            showToast('Categoria creata', 'success');
         }
 
         // ================================================================
@@ -2436,16 +2758,58 @@
             selectedLinkedEventId = null;
         }
 
-        function openCategoryModal() {
+        function openCategoryModal(openForm) {
+            editingCategoryId = null;
+            document.getElementById('categoryModalTitle').textContent = 'Gestione Categorie';
             document.getElementById('categoryModal').classList.add('open');
             document.getElementById('categoryForm').reset();
+            document.getElementById('categoryNameLabel').textContent = 'Nuova Categoria';
+            document.getElementById('categorySaveBtn').textContent = 'Salva';
             selectedColor = AVAILABLE_COLORS[0];
             updateColorPicker();
+            closeCategoryForm();
             renderCategoryList();
+            if (openForm) {
+                openCategoryForm();
+            }
         }
 
         function closeCategoryModal() {
             document.getElementById('categoryModal').classList.remove('open');
+            editingCategoryId = null;
+            closeCategoryForm();
+        }
+
+        function openCategoryForm() {
+            var section = document.getElementById('categoryFormSection');
+            var header = document.getElementById('categoryListHeader');
+            section.classList.add('open');
+            if (header) header.style.display = 'none';
+            if (!editingCategoryId) {
+                document.getElementById('categoryForm').reset();
+                document.getElementById('categoryNameLabel').textContent = 'Nuova Categoria';
+                document.getElementById('categorySaveBtn').textContent = 'Salva';
+                selectedColor = AVAILABLE_COLORS[0];
+                updateColorPicker();
+            }
+            // Scroll to top of modal
+            var modal = document.getElementById('categoryModal').querySelector('.modal');
+            if (modal) modal.scrollTop = 0;
+            // Focus the name input
+            setTimeout(function () {
+                document.getElementById('categoryName').focus();
+            }, 350);
+        }
+
+        function closeCategoryForm() {
+            var section = document.getElementById('categoryFormSection');
+            var header = document.getElementById('categoryListHeader');
+            section.classList.remove('open');
+            if (header) header.style.display = '';
+            editingCategoryId = null;
+            document.getElementById('categoryForm').reset();
+            document.getElementById('categoryNameLabel').textContent = 'Nuova Categoria';
+            document.getElementById('categorySaveBtn').textContent = 'Salva';
         }
 
         // ================================================================
@@ -2459,9 +2823,47 @@
                 var div = document.createElement('div');
                 div.className = 'color-option' + (color === selectedColor ? ' selected' : '');
                 div.style.background = color;
+                if (color === '#ffffff') {
+                    div.style.border = '2px solid #555';
+                }
                 div.onclick = function () { selectColor(color); };
                 container.appendChild(div);
             });
+            // Custom color row
+            var row = document.createElement('div');
+            row.className = 'custom-color-row';
+            var preview = document.createElement('div');
+            preview.className = 'custom-color-preview';
+            preview.id = 'customColorPreview';
+            preview.style.background = selectedColor;
+            preview.onclick = function () { document.getElementById('customColorInput').click(); };
+            var input = document.createElement('input');
+            input.type = 'color';
+            input.id = 'customColorInput';
+            input.className = 'custom-color-input';
+            input.value = selectedColor;
+            input.oninput = function () { selectColor(this.value); };
+            var label = document.createElement('span');
+            label.textContent = 'Colore personalizzato';
+            label.style.fontSize = '0.75rem';
+            label.style.color = 'var(--text-secondary)';
+            row.appendChild(preview);
+            row.appendChild(input);
+            row.appendChild(label);
+            container.appendChild(row);
+        }
+
+        function updateEmptyState() {
+            var events = getEvents();
+            var fab = document.getElementById('fabBtn');
+            var arrow = document.getElementById('emptyArrow');
+            if (events.length === 0 && getEvents().length === 0) {
+                fab.classList.add('pulse');
+                if (arrow) arrow.style.display = 'block';
+            } else {
+                fab.classList.remove('pulse');
+                if (arrow) arrow.style.display = 'none';
+            }
         }
 
         function selectColor(color) {
@@ -2470,9 +2872,23 @@
         }
 
         function updateColorPicker() {
+            var sel = selectedColor.toLowerCase();
             document.querySelectorAll('.color-option').forEach(function (option) {
-                option.classList.toggle('selected', option.style.background === selectedColor);
+                var optColor = option.style.backgroundColor;
+                var match = optColor.match(/\d+/g);
+                if (match) {
+                    var hex = '#' + match.slice(0, 3).map(function (c) {
+                        return ('0' + parseInt(c).toString(16)).slice(-2);
+                    }).join('');
+                    option.classList.toggle('selected', hex === sel);
+                } else {
+                    option.classList.toggle('selected', optColor === sel);
+                }
             });
+            var preview = document.getElementById('customColorPreview');
+            if (preview) preview.style.background = selectedColor;
+            var input = document.getElementById('customColorInput');
+            if (input) input.value = selectedColor;
         }
 
         // ================================================================
