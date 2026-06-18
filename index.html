@@ -1292,6 +1292,35 @@
             position: absolute;
         }
 
+        .format-toolbar {
+            display: flex;
+            gap: 0.25rem;
+            margin-top: 0.3rem;
+        }
+
+        .format-btn {
+            width: 28px;
+            height: 26px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+            line-height: 1;
+            padding: 0;
+        }
+
+        .format-btn:hover {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+
         .category-add-btn {
             padding: 0.65rem 0.75rem;
             background: var(--accent);
@@ -1816,6 +1845,11 @@
                 <div class="form-group">
                     <label for="eventDescription">Descrizione</label>
                     <textarea id="eventDescription" placeholder="Descrivi l'evento..."></textarea>
+                    <div class="format-toolbar">
+                        <button type="button" class="format-btn" onclick="wrapSelection('eventDescription','**')" title="Grassetto"><b>B</b></button>
+                        <button type="button" class="format-btn" onclick="wrapSelection('eventDescription','*')" title="Corsivo"><i>I</i></button>
+                        <button type="button" class="format-btn" onclick="wrapSelection('eventDescription','__')" title="Sottolineato"><u>U</u></button>
+                    </div>
                 </div>
                 <!-- Event-only fields -->
                 <div id="eventOnlyFields">
@@ -1998,7 +2032,25 @@
 
         function formatDescription(text) {
             if (!text) return '';
-            return escapeHtml(text).replace(/\n/g, '<br>');
+            var escaped = escapeHtml(text);
+            // Convert markers to HTML (bold before italic to avoid ** vs * conflict)
+            escaped = escaped.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+            escaped = escaped.replace(/\*(.+?)\*/g, '<i>$1</i>');
+            escaped = escaped.replace(/__(.+?)__/g, '<u>$1</u>');
+            return escaped.replace(/\n/g, '<br>');
+        }
+
+        function wrapSelection(textareaId, marker) {
+            var ta = document.getElementById(textareaId);
+            if (!ta) return;
+            var start = ta.selectionStart;
+            var end = ta.selectionEnd;
+            var text = ta.value;
+            var selected = text.substring(start, end);
+            var replacement = marker + selected + marker;
+            ta.value = text.substring(0, start) + replacement + text.substring(end);
+            ta.focus();
+            ta.setSelectionRange(start + marker.length, end + marker.length);
         }
 
         function formatYear(year, month, day) {
