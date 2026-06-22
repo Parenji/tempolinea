@@ -119,6 +119,103 @@
 
         .toolbar-row.top-row {
             flex-wrap: nowrap;
+            justify-content: space-between;
+        }
+
+        /* Toolbar groups */
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            position: relative;
+        }
+
+        .toolbar-group-label {
+            position: absolute;
+            top: -0.55rem;
+            left: 0;
+            font-size: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+            background: var(--bg-secondary);
+            padding: 0 0.25rem;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        .toolbar-divider {
+            width: 1px;
+            height: 1.5rem;
+            background: var(--border-color);
+            flex-shrink: 0;
+            margin: 0 0.15rem;
+            align-self: center;
+            opacity: 0.35;
+        }
+
+        /* Button with icon + text */
+        .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.3rem 0.5rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.6875rem;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.15s, border-color 0.15s;
+            line-height: 1.3;
+            font-family: inherit;
+        }
+
+        .btn-icon:hover {
+            background: var(--bg-primary);
+            border-color: var(--accent);
+        }
+
+        .btn-icon.danger {
+            color: #ef4444;
+        }
+
+        .btn-icon.danger:hover {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .btn-icon svg {
+            width: 13px;
+            height: 13px;
+            flex-shrink: 0;
+        }
+
+        .btn-icon.danger svg {
+            stroke: #ef4444;
+        }
+
+        .btn-icon.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .btn-icon.primary:hover {
+            background: var(--accent-hover);
+            border-color: var(--accent-hover);
+        }
+
+        .btn-icon.primary svg {
+            stroke: #fff;
+        }
+
+        .tools-group {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            position: relative;
         }
 
         .search-wrapper {
@@ -248,7 +345,10 @@
             gap: 0.25rem;
             flex-wrap: wrap;
             width: 100%;
+            max-height: 4.2rem;
+            overflow-y: auto;
             padding: 0.15rem 0;
+            align-content: flex-start;
         }
 
         .pill {
@@ -262,6 +362,7 @@
             background: var(--bg-tertiary);
             user-select: none;
             transition: opacity 0.15s;
+            flex-shrink: 0;
         }
 
         .pill.active {
@@ -795,14 +896,6 @@
             pointer-events: none;
         }
 
-        .note-card:hover {
-            box-shadow:
-                0 4px 12px rgba(0, 0, 0, 0.45),
-                0 10px 28px rgba(0, 0, 0, 0.3),
-                0 1px 0 rgba(255, 255, 255, 0.4) inset;
-            background: linear-gradient(135deg, #f9efcd 0%, #f2e3af 100%);
-        }
-
         .note-card.expanded {
             z-index: 40;
             box-shadow:
@@ -835,20 +928,53 @@
                     transparent 55%);
         }
 
-        .note-card.left-side:hover {
-            transform: translateX(-100%) rotate(-0.8deg) translateY(-2px);
-        }
-
-        .note-card.right-side:hover {
-            transform: rotate(0.8deg) translateY(-2px);
-        }
-
         .note-card.expanded.left-side {
             transform: translateX(-100%);
         }
 
         .note-card.expanded.right-side {
             transform: none;
+        }
+
+        /* Hover effects only on devices with hover capability (not mobile touch) */
+        @media (hover: hover) {
+            .note-card:hover {
+                box-shadow:
+                    0 4px 12px rgba(0, 0, 0, 0.45),
+                    0 10px 28px rgba(0, 0, 0, 0.3),
+                    0 1px 0 rgba(255, 255, 255, 0.4) inset;
+                background: linear-gradient(135deg, #f9efcd 0%, #f2e3af 100%);
+            }
+
+            .note-card.left-side:hover {
+                transform: translateX(-100%) rotate(-0.8deg) translateY(-2px);
+            }
+
+            .note-card.right-side:hover {
+                transform: rotate(0.8deg) translateY(-2px);
+            }
+
+            .note-card:hover .note-btn {
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+            .note-card .note-btn:hover {
+                background: rgba(0, 0, 0, 0.12);
+            }
+
+            .note-card .note-delete-btn:hover {
+                color: #d32f2f;
+            }
+
+            .note-card .note-edit-btn:hover {
+                color: #8a7a5a;
+            }
+        }
+
+        .note-card.expanded .note-btn {
+            opacity: 1;
+            pointer-events: auto;
         }
 
         .note-card .note-title {
@@ -894,30 +1020,12 @@
             border-radius: 3px;
         }
 
-        .note-card:hover .note-btn,
-        .note-card.expanded .note-btn {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .note-card .note-btn:hover {
-            background: rgba(0, 0, 0, 0.12);
-        }
-
         .note-card .note-delete-btn {
             right: 0.2rem;
         }
 
         .note-card .note-edit-btn {
             right: 1.4rem;
-        }
-
-        .note-card .note-delete-btn:hover {
-            color: #d32f2f;
-        }
-
-        .note-card .note-edit-btn:hover {
-            color: #8a7a5a;
         }
 
         @media (max-width: 768px) {
@@ -953,7 +1061,6 @@
                 display: none;
             }
 
-            .note-card:hover .note-btn,
             .note-card.expanded .note-btn,
             .note-card:focus .note-btn {
                 display: block;
@@ -1730,6 +1837,74 @@
 
             .toolbar-row.top-row {
                 flex-wrap: wrap;
+                gap: 0.3rem;
+                justify-content: flex-start;
+            }
+
+            .toolbar-group.timeline-group {
+                width: 100%;
+                flex: none;
+                justify-content: flex-start;
+                gap: 0.25rem;
+            }
+
+            .toolbar-group.timeline-group .tl-select {
+                flex: 1;
+                max-width: none;
+            }
+
+            .toolbar-group.timeline-group .btn-icon span {
+                display: none;
+            }
+
+            .toolbar-group-label {
+                font-size: 0.45rem;
+                top: -0.5rem;
+            }
+
+            .tools-group {
+                width: 100%;
+                gap: 0.25rem;
+                justify-content: flex-start;
+                flex-wrap: nowrap;
+            }
+
+            .tools-group .zoom-group {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .tools-group .btn-icon span {
+                display: none;
+            }
+
+            .tools-group .zoom-group .btn-icon span {
+                display: none;
+            }
+
+            .tools-group .zoom-group .zoom-slider {
+                flex: 1;
+                width: auto;
+                min-width: 30px;
+            }
+
+            .tools-group .zoom-group .zoom-label {
+                display: none;
+            }
+
+            .btn-icon {
+                padding: 0.25rem 0.35rem;
+                font-size: 0.65rem;
+            }
+
+            .btn-icon svg {
+                width: 12px;
+                height: 12px;
+            }
+
+            .toolbar-divider {
+                height: 1.2rem;
+                opacity: 0.25;
             }
 
             .modal {
@@ -1802,7 +1977,7 @@
             }
 
             .mob-toggle {
-                display: inline-flex !important;
+                display: none !important;
             }
 
             .mobile-extra {
@@ -1888,36 +2063,93 @@
     <!-- Toolbar -->
     <div class="toolbar">
         <div class="toolbar-row top-row">
-            <select class="tl-select" id="timelineSelect" onchange="switchTimeline(this.value)"></select>
-            <button class="btn" onclick="addTimeline()" title="Nuova timeline">＋</button>
-            <button class="btn" onclick="renameTimeline()" title="Rinomina timeline">✎</button>
-            <button class="btn danger" onclick="deleteTimeline()" title="Elimina timeline">×</button>
+            <!-- Gruppo 1: Gestione Timeline -->
+            <div class="toolbar-group timeline-group">
+                <select class="tl-select" id="timelineSelect" onchange="switchTimeline(this.value)"></select>
+                <button class="btn-icon primary" onclick="addTimeline()" title="Crea una nuova timeline">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Nuova
+                </button>
+                <button class="btn-icon" onclick="renameTimeline()" title="Rinomina la timeline corrente">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
+                    </svg>
+                    Rinomina
+                </button>
+                <button class="btn-icon danger" onclick="deleteTimeline()" title="Elimina la timeline corrente">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    Elimina
+                </button>
+            </div>
 
+            <!-- Ricerca -->
             <span class="search-wrapper">
                 <input type="text" class="search-input" id="searchInput" placeholder="Cerca anno o parola..."
                     oninput="searchEvents()" onkeydown="handleSearchEnter(event)">
                 <button class="search-clear" id="searchClear" onclick="clearSearch()" style="display:none;">×</button>
             </span>
 
-            <span class="zoom-group">
-                <button class="btn" onclick="zoomOut()">−</button>
-                <input type="range" class="zoom-slider" id="zoomSlider" min="3" max="80" value="20" step="1"
-                    oninput="setZoom(this.value)">
-                <button class="btn" onclick="zoomIn()">＋</button>
-                <span class="zoom-label" id="zoomLabel">20px</span>
-            </span>
+            <!-- Gruppo 2: Zoom e Strumenti -->
+            <div class="tools-group">
+                <span class="zoom-group">
+                    <button class="btn-icon" onclick="zoomOut()" title="Zoom indietro">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                    </button>
+                    <input type="range" class="zoom-slider" id="zoomSlider" min="3" max="80" value="20" step="1"
+                        oninput="setZoom(this.value)">
+                    <button class="btn-icon" onclick="zoomIn()" title="Zoom avanti">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                    </button>
+                    <span class="zoom-label" id="zoomLabel">20px</span>
+                </span>
 
-            <button class="btn mob-toggle" onclick="toggleMobileMenu()">▼</button>
-            <div class="mobile-extra" id="mobileExtra">
-                <div style="display:flex;gap:0.3rem;justify-content:center;">
-                    <button class="btn" onclick="exportData()">Esporta</button>
-                    <button class="btn" onclick="document.getElementById('importInput').click()">Importa</button>
-                    <button class="btn danger" onclick="confirmDeleteAll()">Cancella tutti gli eventi</button>
-                    <input type="file" id="importInput" accept=".json" style="display:none"
-                        onchange="importData(event)">
-                </div>
+                <span class="toolbar-divider"></span>
+
+                <button class="btn-icon" onclick="exportData()" title="Esporta la timeline">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Esporta
+                </button>
+                <button class="btn-icon" onclick="document.getElementById('importInput').click()" title="Importa una timeline">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    Importa
+                </button>
+                <input type="file" id="importInput" accept=".json" style="display:none"
+                    onchange="importData(event)">
+
+                <span class="toolbar-divider"></span>
+
+                <button class="btn-icon danger" onclick="confirmDeleteAll()" title="Cancella tutti gli eventi">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                    Svuota
+                </button>
             </div>
 
+            <!-- Menu mobile -->
+            <button class="btn mob-toggle" onclick="toggleMobileMenu()" title="Menu" style="display:none">☰</button>
         </div>
 
 
@@ -2214,6 +2446,50 @@
 
         // Pending import data (stored when user needs to choose import mode)
         let pendingImportData = null;
+
+        // Category connector highlight tracking
+        let highlightedCategoryId = null;
+
+        // ================================================================
+        //  CATEGORY CONNECTOR HIGHLIGHT FUNCTIONS
+        // ================================================================
+
+        function highlightCategoryConnector(categoryId, showTooltip) {
+            if (!categoryId) return;
+            highlightedCategoryId = categoryId;
+            var svg = document.getElementById('linksSvg');
+            var mobile = isMobile();
+            svg.querySelectorAll('.category-connector[data-category-id="' + categoryId + '"]').forEach(function(p) {
+                svg.appendChild(p); // bring to front
+                p.setAttribute('opacity', '0.9');
+                p.setAttribute('stroke-width', '4');
+                if (!mobile) {
+                    p.setAttribute('filter', 'url(#glow_cat_' + categoryId + ')');
+                }
+                p.classList.add('highlighted');
+            });
+            if (showTooltip) {
+                var category = getCategories().find(function(c) { return String(c.id) === String(categoryId); });
+                if (category) {
+                    var ttHtml = '<div class="tooltip-label">Categoria</div>' +
+                        '<div class="tooltip-names" style="color:' + category.color + '">' + escapeHtml(category.name) + '</div>';
+                    showLineTooltip(ttHtml, window.innerWidth / 2, window.innerHeight / 2);
+                }
+            }
+        }
+
+        function unhighlightCategoryConnector(categoryId) {
+            if (!categoryId) return;
+            highlightedCategoryId = null;
+            var svg = document.getElementById('linksSvg');
+            svg.querySelectorAll('.category-connector[data-category-id="' + categoryId + '"]').forEach(function(p) {
+                p.setAttribute('opacity', '0.2');
+                p.setAttribute('stroke-width', '3');
+                p.removeAttribute('filter');
+                p.classList.remove('highlighted');
+            });
+            hideLineTooltip();
+        }
 
         // ================================================================
         //  HELPERS
@@ -3042,6 +3318,7 @@
                     card.style.top = (position - 15) + 'px';
                     card.style.borderColor = color;
                     card.dataset.eventId = event.id;
+                    card.dataset.categoryId = event.categoryId || '';
 
                     var yearText = formatYear(event.startYear, event.startMonth, event.startDay);
                     if (event.endYear) {
@@ -3059,10 +3336,9 @@
                         '<div class="event-name">' + escapeHtml(event.title) + '</div>' +
                         (event.description ? '<div class="event-description">' + formatDescription(event.description) + '</div>' : '');
 
-                    card.addEventListener('click', function (e) {
-                        e.stopPropagation();
-                        toggleExpand(event.id);
-                    });
+                card.addEventListener('click', function (e) {
+                    toggleExpand(event.id);
+                });
 
                     container.appendChild(card);
                 }
@@ -3217,7 +3493,7 @@
                 path.setAttribute('stroke', category.color);
                 path.setAttribute('stroke-width', '3');
                 path.setAttribute('fill', 'none');
-                path.setAttribute('opacity', '0.4');
+                path.setAttribute('opacity', '0.2');
                 path.setAttribute('class', 'category-connector');
                 path.setAttribute('pointer-events', 'visibleStroke');
                 path.dataset.categoryId = categoryId;
@@ -3247,7 +3523,7 @@
                 }
 
                 function unhighlight() {
-                    path.setAttribute('opacity', '0.4');
+                    path.setAttribute('opacity', '0.2');
                     path.setAttribute('stroke-width', '3');
                     path.removeAttribute('filter');
                     path.setAttribute('stroke', category.color);
@@ -3303,14 +3579,16 @@
                     svg.appendChild(p);
                     p.setAttribute('opacity', '0.9');
                     p.setAttribute('stroke-width', '4');
-                    p.setAttribute('filter', 'url(#' + glowIdCat + ')');
+                    if (!isMobile()) {
+                        p.setAttribute('filter', 'url(#' + glowIdCat + ')');
+                    }
                     p.setAttribute('stroke', category.color);
                     p.classList.add('highlighted');
                     isHighlighted = true;
                 }
 
                 function unhighlightConnector(p) {
-                    p.setAttribute('opacity', '0.4');
+                    p.setAttribute('opacity', '0.2');
                     p.setAttribute('stroke-width', '3');
                     p.removeAttribute('filter');
                     p.setAttribute('stroke', category.color);
@@ -3607,6 +3885,28 @@
         //  SEARCH
         // ================================================================
 
+        function filterPillsBySearch(searchTerm) {
+            var pills = document.querySelectorAll('#pillRow .pill');
+            if (!searchTerm) {
+                // Show all pills when search is empty
+                pills.forEach(function (pill) { pill.style.display = ''; });
+                return;
+            }
+            pills.forEach(function (pill) {
+                // Skip the "Tutte" pill (first one, no onclick on it would have category-specific data)
+                if (pill.textContent === 'Tutte') {
+                    pill.style.display = '';
+                    return;
+                }
+                var pillName = pill.textContent.toLowerCase();
+                if (pillName.includes(searchTerm)) {
+                    pill.style.display = '';
+                } else {
+                    pill.style.display = 'none';
+                }
+            });
+        }
+
         function searchEvents() {
             var rawTerm = document.getElementById('searchInput').value;
             var searchTerm = rawTerm.toLowerCase();
@@ -3615,6 +3915,9 @@
 
             // Show/hide clear button
             clearBtn.style.display = rawTerm ? 'block' : 'none';
+
+            // Filter pills by search term (always)
+            filterPillsBySearch(searchTerm);
 
             if (!searchTerm) {
                 allCards.forEach(function (el) {
@@ -4732,7 +5035,7 @@
         // ================================================================
 
         function toggleMobileMenu() {
-            document.getElementById('mobileExtra').classList.toggle('open');
+            // Mobile menu is now integrated into the toolbar groups; no separate panel needed.
         }
 
         // ================================================================
@@ -4786,6 +5089,41 @@
                 resizeTimer = setTimeout(function () {
                     renderEvents();
                 }, 100);
+            });
+
+            // Card hover/tap —> highlight category connector line (desktop + mobile)
+            var eventsContainer = document.getElementById('eventsContainer');
+            eventsContainer.addEventListener('mouseenter', function (e) {
+                if (isMobile()) return;
+                var card = e.target.closest('.event-card, .note-card');
+                if (!card || !card.dataset.categoryId) return;
+                highlightCategoryConnector(card.dataset.categoryId, false);
+            }, true);
+            eventsContainer.addEventListener('mouseleave', function (e) {
+                if (isMobile()) return;
+                var card = e.target.closest('.event-card, .note-card');
+                if (!card || !card.dataset.categoryId) return;
+                // Keep highlighted if any card of this category is expanded (clicked open)
+                var anyExpanded = document.querySelector('.event-card.expanded[data-category-id="' + card.dataset.categoryId + '"], .note-card.expanded[data-category-id="' + card.dataset.categoryId + '"]');
+                if (anyExpanded) return;
+                // Only unhighlight if mouse is really leaving (not transitioning between touch/descendant)
+                if (!e.relatedTarget || !e.relatedTarget.closest('.event-card[data-category-id="' + card.dataset.categoryId + '"]')) {
+                    unhighlightCategoryConnector(card.dataset.categoryId);
+                }
+            }, true);
+            // Mobile tap: highlight when card is tapped
+            eventsContainer.addEventListener('click', function (e) {
+                if (!isMobile()) return;
+                var card = e.target.closest('.event-card, .note-card');
+                if (!card || !card.dataset.categoryId) return;
+                if (highlightedCategoryId === card.dataset.categoryId) {
+                    unhighlightCategoryConnector(card.dataset.categoryId);
+                } else {
+                    if (highlightedCategoryId) {
+                        unhighlightCategoryConnector(highlightedCategoryId);
+                    }
+                    highlightCategoryConnector(card.dataset.categoryId, false);
+                }
             });
 
             // Year indicator on scroll + click to navigate
@@ -4887,9 +5225,12 @@
                     });
                 }
                 // De-highlight category connectors and linked lines when clicking anywhere else
-                if (!e.target.closest('.category-connector') && !e.target.closest('.link-connector') && !e.target.closest('.line-tooltip')) {
+                if (!e.target.closest('.category-connector') && !e.target.closest('.link-connector') && !e.target.closest('.line-tooltip') && !e.target.closest('.event-card') && !e.target.closest('.note-card')) {
+                    if (highlightedCategoryId) {
+                        unhighlightCategoryConnector(highlightedCategoryId);
+                    }
                     document.querySelectorAll('.category-connector.highlighted').forEach(function (el) {
-                        el.setAttribute('opacity', '0.4');
+                        el.setAttribute('opacity', '0.2');
                         el.setAttribute('stroke-width', '3');
                         el.removeAttribute('filter');
                         el.classList.remove('highlighted');
