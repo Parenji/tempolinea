@@ -221,9 +221,15 @@
         .search-wrapper {
             flex: 1;
             min-width: 100px;
-            position: relative;
             display: flex;
             align-items: center;
+            gap: 6px;
+        }
+
+        .search-input-wrap {
+            flex: 1;
+            min-width: 0;
+            position: relative;
         }
 
         .search-input {
@@ -264,6 +270,58 @@
         .search-clear:hover {
             color: var(--text-primary);
             background: rgba(255, 255, 255, 0.05);
+        }
+
+        .search-nav {
+            display: none;
+            align-items: center;
+            gap: 0.2rem;
+            flex-shrink: 0;
+        }
+
+        .search-nav.visible {
+            display: inline-flex;
+        }
+
+        .search-nav span {
+            font-size: 0.6875rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            min-width: 2.5rem;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .search-nav-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-size: 0.75rem;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+            transition: background 0.15s, border-color 0.15s;
+        }
+
+        .search-nav-btn:hover {
+            background: var(--bg-primary);
+            border-color: var(--accent);
+        }
+
+        .search-nav-btn:disabled {
+            opacity: 0.3;
+            cursor: default;
+        }
+
+        .search-nav-btn:disabled:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--border-color);
         }
 
         .btn {
@@ -1945,8 +2003,7 @@
             }
 
             .search-input {
-                width: 100%;
-                min-width: 100%;
+                min-width: 0;
                 font-size: 1rem;
                 padding: 0.3rem 0.5rem;
                 padding-right: 1.8rem;
@@ -2090,9 +2147,16 @@
 
             <!-- Ricerca -->
             <span class="search-wrapper">
-                <input type="text" class="search-input" id="searchInput" placeholder="Cerca anno o parola..."
-                    oninput="searchEvents()" onkeydown="handleSearchEnter(event)">
-                <button class="search-clear" id="searchClear" onclick="clearSearch()" style="display:none;">×</button>
+                <span class="search-input-wrap">
+                    <input type="text" class="search-input" id="searchInput" placeholder="Cerca anno o parola..."
+                        oninput="searchEvents()" onkeydown="handleSearchEnter(event)">
+                    <button class="search-clear" id="searchClear" onclick="clearSearch()" style="display:none;">×</button>
+                </span>
+                <span class="search-nav" id="searchNav">
+                    <button class="search-nav-btn" id="searchPrevBtn" onclick="searchPrev()">◀</button>
+                    <span id="searchCounter">0/0</span>
+                    <button class="search-nav-btn" id="searchNextBtn" onclick="searchNext()">▶</button>
+                </span>
             </span>
 
             <!-- Gruppo 2: Zoom e Strumenti -->
@@ -2864,6 +2928,9 @@
             allPill.textContent = 'Tutte';
             allPill.onclick = function () {
                 activeCategoryFilters = [];
+                if (highlightedCategoryId) {
+                    unhighlightCategoryConnector(highlightedCategoryId);
+                }
                 renderPills();
                 renderEvents();
             };
@@ -2881,11 +2948,18 @@
                     var idx = activeCategoryFilters.indexOf(category.id);
                     if (idx !== -1) {
                         activeCategoryFilters.splice(idx, 1);
+                        if (highlightedCategoryId === category.id) {
+                            unhighlightCategoryConnector(category.id);
+                        }
                     } else {
                         activeCategoryFilters.push(category.id);
                     }
                     renderPills();
                     renderEvents();
+                    // Highlight the connector after re-render (drawCategoryConnectors recreates SVG elements)
+                    if (idx === -1) {
+                        highlightCategoryConnector(category.id, false);
+                    }
                 };
                 container.appendChild(pill);
             });
@@ -3367,6 +3441,10 @@
                 expandedEventId = eventId;
             }
             renderEvents();
+            // Re-apply category connector highlight after render if a category was highlighted
+            if (highlightedCategoryId) {
+                highlightCategoryConnector(highlightedCategoryId, false);
+            }
         }
 
         // ================================================================
@@ -3496,6 +3574,7 @@
                 path.setAttribute('opacity', '0.2');
                 path.setAttribute('class', 'category-connector');
                 path.setAttribute('pointer-events', 'visibleStroke');
+                path.setAttribute('style', 'cursor:pointer');
                 path.dataset.categoryId = categoryId;
                 path.dataset.categoryName = category.name;
                 path.dataset.categoryColor = category.color;
@@ -3540,6 +3619,7 @@
 
                 path.addEventListener('mouseleave', function () {
                     if (isMobile()) return;
+                    if (path.classList.contains('persistent-highlight')) return;
                     unhighlight();
                     hideLineTooltip();
                 });
@@ -3556,22 +3636,44 @@
                 });
 
                 path.addEventListener('click', function (e) {
-                    if (!isMobile()) return;
                     e.stopPropagation();
-                    // Close any other highlighted connector
-                    svg.querySelectorAll('.category-connector.highlighted').forEach(function (el) {
-                        if (el !== path) {
-                            unhighlightConnector(el);
+                    if (isMobile()) {
+                        // Close any other highlighted connector
+                        svg.querySelectorAll('.category-connector.highlighted').forEach(function (el) {
+                            if (el !== path) {
+                                unhighlightConnector(el);
+                            }
+                        });
+                        if (isHighlighted) {
+                            unhighlightConnector(path);
+                            hideLineTooltip();
+                        } else {
+                            highlightConnector(path);
+                            var ttHtml = '<div class="tooltip-label">Categoria</div>' +
+                                '<div class="tooltip-names" style="color:' + category.color + '">' + escapeHtml(category.name) + '</div>';
+                            showLineTooltip(ttHtml, e.clientX, e.clientY);
                         }
-                    });
-                    if (isHighlighted) {
-                        unhighlightConnector(path);
-                        hideLineTooltip();
                     } else {
-                        highlightConnector(path);
-                        var ttHtml = '<div class="tooltip-label">Categoria</div>' +
-                            '<div class="tooltip-names" style="color:' + category.color + '">' + escapeHtml(category.name) + '</div>';
-                        showLineTooltip(ttHtml, e.clientX, e.clientY);
+                        // Desktop: toggle persistent highlight on click
+                        if (path.classList.contains('persistent-highlight')) {
+                            path.classList.remove('persistent-highlight');
+                            unhighlightConnector(path);
+                            hideLineTooltip();
+                        } else {
+                            // Close any other persistent-highlighted connector
+                            svg.querySelectorAll('.category-connector.persistent-highlight').forEach(function (el) {
+                                el.classList.remove('persistent-highlight');
+                                el.setAttribute('opacity', '0.2');
+                                el.setAttribute('stroke-width', '3');
+                                el.removeAttribute('filter');
+                                el.classList.remove('highlighted');
+                            });
+                            path.classList.add('persistent-highlight');
+                            highlightConnector(path);
+                            var ttHtml = '<div class="tooltip-label">Categoria</div>' +
+                                '<div class="tooltip-names" style="color:' + category.color + '">' + escapeHtml(category.name) + '</div>';
+                            showLineTooltip(ttHtml, e.clientX, e.clientY);
+                        }
                     }
                 });
 
@@ -3912,6 +4014,8 @@
             var searchTerm = rawTerm.toLowerCase();
             var allCards = document.querySelectorAll('.event-card, .period-strip');
             var clearBtn = document.getElementById('searchClear');
+            var searchNav = document.getElementById('searchNav');
+            var searchCounter = document.getElementById('searchCounter');
 
             // Show/hide clear button
             clearBtn.style.display = rawTerm ? 'block' : 'none';
@@ -3926,6 +4030,8 @@
                 });
                 searchResults = [];
                 currentSearchIndex = 0;
+                searchNav.classList.remove('visible');
+                searchCounter.textContent = '0/0';
                 return;
             }
 
@@ -3941,6 +4047,8 @@
                 });
                 searchResults = [];
                 currentSearchIndex = 0;
+                searchNav.classList.remove('visible');
+                searchCounter.textContent = '0/0';
                 scrollToYear(targetYear);
                 return;
             }
@@ -3967,7 +4075,43 @@
 
             if (searchResults.length > 0) {
                 currentSearchIndex = 0;
+                searchCounter.textContent = '1/' + searchResults.length;
+                searchNav.classList.add('visible');
+                updateSearchNavButtons();
                 scrollToYear(searchResults[0].startYear);
+            } else {
+                searchNav.classList.remove('visible');
+                searchCounter.textContent = '0/0';
+            }
+        }
+
+        function searchPrev() {
+            if (searchResults.length === 0) return;
+            currentSearchIndex = (currentSearchIndex - 1 + searchResults.length) % searchResults.length;
+            var counter = document.getElementById('searchCounter');
+            counter.textContent = (currentSearchIndex + 1) + '/' + searchResults.length;
+            updateSearchNavButtons();
+            scrollToYear(searchResults[currentSearchIndex].startYear);
+        }
+
+        function searchNext() {
+            if (searchResults.length === 0) return;
+            currentSearchIndex = (currentSearchIndex + 1) % searchResults.length;
+            var counter = document.getElementById('searchCounter');
+            counter.textContent = (currentSearchIndex + 1) + '/' + searchResults.length;
+            updateSearchNavButtons();
+            scrollToYear(searchResults[currentSearchIndex].startYear);
+        }
+
+        function updateSearchNavButtons() {
+            var prevBtn = document.getElementById('searchPrevBtn');
+            var nextBtn = document.getElementById('searchNextBtn');
+            if (searchResults.length <= 1) {
+                prevBtn.disabled = true;
+                nextBtn.disabled = true;
+            } else {
+                prevBtn.disabled = false;
+                nextBtn.disabled = false;
             }
         }
 
@@ -3980,13 +4124,21 @@
         function handleSearchEnter(e) {
             if (e.key === 'Enter' && searchResults.length > 0) {
                 currentSearchIndex = (currentSearchIndex + 1) % searchResults.length;
+                var counter = document.getElementById('searchCounter');
+                counter.textContent = (currentSearchIndex + 1) + '/' + searchResults.length;
+                updateSearchNavButtons();
                 scrollToYear(searchResults[currentSearchIndex].startYear);
             }
         }
 
         function scrollToYear(year) {
             var position = yearToPixels(year);
-            document.getElementById('timelineRuler').scrollTop = position - window.innerHeight / 2;
+            // Use visualViewport height if available (more accurate on mobile with keyboard open)
+            var viewportHeight = window.innerHeight;
+            if (window.visualViewport) {
+                viewportHeight = window.visualViewport.height;
+            }
+            document.getElementById('timelineRuler').scrollTop = position - viewportHeight / 2;
         }
 
         function scrollToLatestEvent() {
@@ -5111,14 +5263,12 @@
                     unhighlightCategoryConnector(card.dataset.categoryId);
                 }
             }, true);
-            // Mobile tap: highlight when card is tapped
+            // Mobile tap: highlight category connector when card is tapped
             eventsContainer.addEventListener('click', function (e) {
                 if (!isMobile()) return;
                 var card = e.target.closest('.event-card, .note-card');
                 if (!card || !card.dataset.categoryId) return;
-                if (highlightedCategoryId === card.dataset.categoryId) {
-                    unhighlightCategoryConnector(card.dataset.categoryId);
-                } else {
+                if (highlightedCategoryId !== card.dataset.categoryId) {
                     if (highlightedCategoryId) {
                         unhighlightCategoryConnector(highlightedCategoryId);
                     }
@@ -5225,15 +5375,15 @@
                     });
                 }
                 // De-highlight category connectors and linked lines when clicking anywhere else
-                if (!e.target.closest('.category-connector') && !e.target.closest('.link-connector') && !e.target.closest('.line-tooltip') && !e.target.closest('.event-card') && !e.target.closest('.note-card')) {
+                if (!e.target.closest('.category-connector') && !e.target.closest('.link-connector') && !e.target.closest('.line-tooltip') && !e.target.closest('.event-card') && !e.target.closest('.note-card') && !e.target.closest('.pill') && !e.target.closest('#pillRow')) {
                     if (highlightedCategoryId) {
                         unhighlightCategoryConnector(highlightedCategoryId);
                     }
-                    document.querySelectorAll('.category-connector.highlighted').forEach(function (el) {
+                    document.querySelectorAll('.category-connector.highlighted, .category-connector.persistent-highlight').forEach(function (el) {
                         el.setAttribute('opacity', '0.2');
                         el.setAttribute('stroke-width', '3');
                         el.removeAttribute('filter');
-                        el.classList.remove('highlighted');
+                        el.classList.remove('highlighted', 'persistent-highlight');
                     });
                     document.querySelectorAll('.link-connector.highlighted').forEach(function (el) {
                         if (el.classList.contains('link-glow')) {
