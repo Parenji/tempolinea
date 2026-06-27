@@ -133,29 +133,34 @@ function setupColorPicker() {
     const container = document.getElementById('colorPicker');
     container.innerHTML = '';
     AVAILABLE_COLORS.forEach(function (color) {
-        const div = document.createElement('div');
-        div.className = 'color-option' + (color === selectedColor ? ' selected' : '');
-        div.style.background = color;
-        if (color === '#ffffff') { div.style.border = '2px solid #555'; }
-        div.onclick = function () { selectColor(color); };
-        container.appendChild(div);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'color-option' + (color === selectedColor ? ' selected' : '');
+        btn.style.background = color;
+        btn.setAttribute('aria-label', 'Colore ' + color);
+        if (color === '#ffffff') { btn.style.border = '2px solid #555'; }
+        btn.onclick = function () { selectColor(color); };
+        container.appendChild(btn);
     });
     const sep = document.createElement('div');
     sep.className = 'color-picker-separator';
     container.appendChild(sep);
     const row = document.createElement('div');
     row.className = 'custom-color-row';
-    const preview = document.createElement('div');
+    const preview = document.createElement('button');
+    preview.type = 'button';
     preview.className = 'custom-color-preview';
     preview.id = 'customColorPreview';
     preview.style.background = selectedColor;
-    preview.innerHTML = '<span class="custom-color-icon"><svg viewBox="0 0 24 24"><path d="M12 2L15 8h-6l3-6z"/><circle cx="12" cy="16" r="3"/><line x1="12" y1="19" x2="12" y2="22"/></svg></span>';
+    preview.setAttribute('aria-label', 'Colore personalizzato');
+    preview.innerHTML = '<span class="custom-color-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2L15 8h-6l3-6z"/><circle cx="12" cy="16" r="3"/><line x1="12" y1="19" x2="12" y2="22"/></svg></span>';
     preview.onclick = function () { document.getElementById('customColorInput').click(); };
     const input = document.createElement('input');
     input.type = 'color';
     input.id = 'customColorInput';
     input.className = 'custom-color-input';
     input.value = selectedColor;
+    input.setAttribute('aria-label', 'Selettore colore personalizzato');
     input.oninput = function () { selectColor(this.value); };
     const label = document.createElement('span');
     label.textContent = 'Colore personalizzato';

@@ -56,6 +56,8 @@ function initMiniMap() {
 
     // Click to navigate
     container.addEventListener('click', function (e) {
+        // Ignore clicks when mini-map is hidden (mobile only)
+        if (isMobile() && !container.classList.contains('visible')) return;
         const rect = canvas.getBoundingClientRect();
         const ruler = document.getElementById('timelineRuler');
         const totalHeight = yearToPixelsCached(MAX_YEAR);

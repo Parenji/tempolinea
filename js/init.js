@@ -1,4 +1,3 @@
-// ================================================================
 //  EVENT LISTENERS & INIT
 // ================================================================
 function setupEventListeners() {
@@ -122,9 +121,8 @@ function setupEventListeners() {
             });
             hideLineTooltip();
         }
-        if (!e.target.closest('.event-card') && !e.target.closest('.note-card') && expandedEventId !== null) {
-            expandedEventId = null;
-            renderEvents();
+        if (!e.target.closest('.event-card') && !e.target.closest('.note-card') && !e.target.closest('#imageLightbox') && expandedEventId !== null) {
+            collapseAndFocus(expandedEventId);
         }
     });
 }

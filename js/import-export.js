@@ -56,8 +56,8 @@ function importData(event) {
             const currentTl = getCurrentTimeline();
             const hasContent = (currentTl && (currentTl.events.length > 0 || currentTl.categories.length > 0));
             if (hasContent) {
-                document.getElementById('importCurrentTimelineName').textContent = currentTl.name;
-                document.getElementById('importChoiceModal').classList.add('open');
+                $('importCurrentTimelineName').textContent = currentTl.name;
+                $('importChoiceModal').classList.add('open');
             } else {
                 importIntoCurrentTimeline();
             }
@@ -74,20 +74,8 @@ function importIntoCurrentTimeline() {
     const timeline = getCurrentTimeline();
     if (!timeline) return;
     pushUndo();
-    pendingImportData.events.forEach(function (evt) {
-        evt.id = String(evt.id || generateId());
-        if (evt.categoryId !== null && evt.categoryId !== undefined) { evt.categoryId = String(evt.categoryId); }
-        if (evt.linkedEventId !== null && evt.linkedEventId !== undefined) {
-            evt.linkedEvents = [{ eventId: String(evt.linkedEventId), side: 'auto' }];
-            delete evt.linkedEventId;
-        }
-        if (evt.linkedEvents && Array.isArray(evt.linkedEvents)) {
-            evt.linkedEvents = evt.linkedEvents.map(function (l) {
-                return { eventId: String(l.eventId || l), side: (l.side || 'auto') };
-            });
-        }
-    });
-    pendingImportData.categories.forEach(function (cat) { cat.id = String(cat.id || generateId()); });
+    pendingImportData.events = sanitizeImportedEvents(pendingImportData.events);
+    pendingImportData.categories = sanitizeImportedCategories(pendingImportData.categories);
     timeline.events = pendingImportData.events;
     timeline.categories = pendingImportData.categories;
     pendingImportData = null;
@@ -106,20 +94,8 @@ function importIntoNewTimeline() {
     while (Object.values(state.timelines).some(function (tl) { return tl.name.trim().toLowerCase() === candidateName.toLowerCase(); })) {
         candidateName = baseName + ' (' + (++suffix) + ')';
     }
-    pendingImportData.events.forEach(function (evt) {
-        evt.id = String(evt.id || generateId());
-        if (evt.categoryId !== null && evt.categoryId !== undefined) { evt.categoryId = String(evt.categoryId); }
-        if (evt.linkedEventId !== null && evt.linkedEventId !== undefined) {
-            evt.linkedEvents = [{ eventId: String(evt.linkedEventId), side: 'auto' }];
-            delete evt.linkedEventId;
-        }
-        if (evt.linkedEvents && Array.isArray(evt.linkedEvents)) {
-            evt.linkedEvents = evt.linkedEvents.map(function (l) {
-                return { eventId: String(l.eventId || l), side: (l.side || 'auto') };
-            });
-        }
-    });
-    pendingImportData.categories.forEach(function (cat) { cat.id = String(cat.id || generateId()); });
+    pendingImportData.events = sanitizeImportedEvents(pendingImportData.events);
+    pendingImportData.categories = sanitizeImportedCategories(pendingImportData.categories);
     const id = generateId();
     state.timelines[id] = { id: id, name: candidateName, events: pendingImportData.events, categories: pendingImportData.categories };
     state.currentTimelineId = id;
@@ -132,7 +108,7 @@ function importIntoNewTimeline() {
 }
 
 function closeImportChoiceModal() {
-    document.getElementById('importChoiceModal').classList.remove('open');
+    $('importChoiceModal').classList.remove('open');
 }
 
 function loadExampleTimeline() {
@@ -143,20 +119,9 @@ function loadExampleTimeline() {
         })
         .then(function (data) {
             if (!data.timeline || !data.timeline.events) { throw new Error('Formato non valido'); }
-            const importedEvents = data.timeline.events;
-            const importedCategories = data.timeline.categories || [];
+            const importedEvents = sanitizeImportedEvents(data.timeline.events);
+            const importedCategories = sanitizeImportedCategories(data.timeline.categories || []);
             const importedName = data.timeline.name || 'Storia';
-            importedEvents.forEach(function (evt) {
-                evt.id = String(evt.id || generateId());
-                if (evt.categoryId !== null && evt.categoryId !== undefined) { evt.categoryId = String(evt.categoryId); }
-                if (evt.linkedEventId !== null && evt.linkedEventId !== undefined) { evt.linkedEventId = String(evt.linkedEventId); }
-                if (!evt.type) evt.type = 'event';
-                evt.isPeriod = evt.isPeriod || false;
-            });
-            importedCategories.forEach(function (cat) {
-                cat.id = String(cat.id);
-                if (cat.showConnectors === undefined) cat.showConnectors = true;
-            });
             const currentTl = getCurrentTimeline();
             const hasContent = (currentTl && (currentTl.events.length > 0 || currentTl.categories.length > 0));
             if (hasContent) {

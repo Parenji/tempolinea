@@ -1,11 +1,21 @@
 // ================================================================
 //  HELPERS
 // ================================================================
+
+// DOM cache — lazy getElementById
+const _domCache = {};
+function $(id) {
+    if (!_domCache[id]) _domCache[id] = document.getElementById(id);
+    return _domCache[id];
+}
+function clearDomCache() { for (const k in _domCache) delete _domCache[k]; }
+
 function generateId() {
     return Date.now() + '_' + Math.random().toString(36).slice(2, 8);
 }
 
 function escapeHtml(text) {
+    if (text === null || text === undefined) return '';
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
@@ -149,11 +159,44 @@ function updateEmptyState() {
 }
 
 // ================================================================
+//  SANITIZE HELPERS (for import / migration)
+// ================================================================
+function sanitizeImportedEvent(evt) {
+    evt.id = String(evt.id || generateId());
+    if (evt.categoryId !== null && evt.categoryId !== undefined) evt.categoryId = String(evt.categoryId);
+    if (evt.linkedEventId !== null && evt.linkedEventId !== undefined) {
+        evt.linkedEvents = [{ eventId: String(evt.linkedEventId), side: 'auto' }];
+        delete evt.linkedEventId;
+    }
+    if (evt.linkedEvents && Array.isArray(evt.linkedEvents)) {
+        evt.linkedEvents = evt.linkedEvents.map(function (l) {
+            return { eventId: String(l.eventId || l), side: (l.side || 'auto') };
+        });
+    }
+    if (!evt.type) evt.type = 'event';
+    return evt;
+}
+
+function sanitizeImportedEvents(events) {
+    return (events || []).map(sanitizeImportedEvent);
+}
+
+function sanitizeImportedCategory(cat) {
+    cat.id = String(cat.id || generateId());
+    if (cat.showConnectors === undefined) cat.showConnectors = true;
+    return cat;
+}
+
+function sanitizeImportedCategories(categories) {
+    return (categories || []).map(sanitizeImportedCategory);
+}
+
+// ================================================================
 //  TOAST
 // ================================================================
 function showToast(message, type) {
     if (!type) type = 'info';
-    const container = document.getElementById('toastContainer');
+    const container = $('toastContainer');
     const toast = document.createElement('div');
     toast.className = 'toast ' + type;
     toast.textContent = message;
@@ -166,16 +209,17 @@ function showToast(message, type) {
 // ================================================================
 //  IMAGE LIGHTBOX
 // ================================================================
-function openImageLightbox(url) {
-    const lb = document.getElementById('imageLightbox');
-    const img = document.getElementById('imageLightboxImg');
+function openImageLightbox(url, title) {
+    const lb = $('imageLightbox');
+    const img = $('imageLightboxImg');
     if (!lb || !img || !url) return;
     img.src = url;
+    img.alt = title ? 'Immagine ingrandita: ' + title : 'Immagine ingrandita';
     lb.classList.add('open');
 }
 
 function closeImageLightbox() {
-    const lb = document.getElementById('imageLightbox');
+    const lb = $('imageLightbox');
     if (lb) lb.classList.remove('open');
 }
 

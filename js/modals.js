@@ -1,74 +1,104 @@
 // ================================================================
 //  MODALS
 // ================================================================
+// Form tab configuration — declarative, single source of truth
+const FORM_TABS = {
+    note: {
+        title: 'Nuovo Appunto',
+        fields: {
+            eventFields: 'none',
+            periodFields: 'none',
+            noteFields: 'block',
+            eventOnlyFields: 'none',
+            linkFields: 'none',
+            imageUrlGroup: 'block'
+        },
+        inputs: {
+            startYear: { required: false },
+            periodStartYear: { required: false },
+            periodEndYear: { required: false },
+            noteYear: { required: true, focus: true }
+        },
+        label: { text: 'Titolo', placeholder: 'es. Appunto sulla battaglia...', required: false }
+    },
+    period: {
+        title: 'Nuovo Periodo',
+        fields: {
+            eventFields: 'none',
+            periodFields: 'block',
+            noteFields: 'none',
+            eventOnlyFields: 'block',
+            linkFields: 'none',
+            imageUrlGroup: 'block'
+        },
+        inputs: {
+            startYear: { required: false },
+            periodStartYear: { required: true, focus: true },
+            periodEndYear: { required: true },
+            noteYear: { required: false }
+        },
+        label: { text: 'Nome *', placeholder: 'es. Impero Romano', required: true }
+    },
+    event: {
+        title: 'Nuovo Evento',
+        fields: {
+            eventFields: 'block',
+            periodFields: 'none',
+            noteFields: 'none',
+            eventOnlyFields: 'block',
+            linkFields: 'block',
+            imageUrlGroup: 'block'
+        },
+        inputs: {
+            startYear: { required: true, focus: true },
+            periodStartYear: { required: false },
+            periodEndYear: { required: false },
+            noteYear: { required: false }
+        },
+        label: { text: 'Nome *', placeholder: 'es. Caduta dell\'Impero Romano', required: true }
+    }
+};
+
 function switchFormTab(type) {
     currentFormType = type;
-    const tabs = document.querySelectorAll('.modal-tab');
-    tabs.forEach(function (t) { t.classList.toggle('active', t.dataset.tab === type); });
-    const eventFields = document.getElementById('eventFields');
-    const periodFields = document.getElementById('periodFields');
-    const noteFields = document.getElementById('noteFields');
-    const eventOnlyFields = document.getElementById('eventOnlyFields');
+    // Update tab buttons
+    document.querySelectorAll('.modal-tab').forEach(function (t) {
+        var isActive = t.dataset.tab === type;
+        t.classList.toggle('active', isActive);
+        t.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+    const cfg = FORM_TABS[type];
+    if (!cfg) return;
+    // Show/hide field groups
+    Object.keys(cfg.fields).forEach(function (fieldId) {
+        const el = document.getElementById(fieldId);
+        if (el) el.style.display = cfg.fields[fieldId];
+    });
+    // Set input required & focus
+    Object.keys(cfg.inputs).forEach(function (inputId) {
+        const el = document.getElementById(inputId);
+        if (el) {
+            el.required = cfg.inputs[inputId].required;
+            if (cfg.inputs[inputId].focus) el.focus();
+        }
+    });
+    // Set title label & placeholder
     const titleLabel = document.getElementById('eventTitleLabel');
     const title = document.getElementById('eventTitle');
-    const startYearInput = document.getElementById('startYear');
-    const periodStartYearInput = document.getElementById('periodStartYear');
-    const periodEndYearInput = document.getElementById('periodEndYear');
-    const noteYearInput = document.getElementById('noteYear');
-    const linkFields = document.getElementById('linkFields');
-    const imageGroup = document.getElementById('imageUrlGroup');
-    if (type === 'note') {
-        eventFields.style.display = 'none';
-        periodFields.style.display = 'none';
-        noteFields.style.display = 'block';
-        eventOnlyFields.style.display = 'none';
-        linkFields.style.display = 'none';
-        if (imageGroup) imageGroup.style.display = 'block';
-        titleLabel.textContent = 'Titolo';
-        title.placeholder = 'es. Appunto sulla battaglia...';
-        title.required = false;
-        startYearInput.required = false;
-        periodStartYearInput.required = false;
-        periodEndYearInput.required = false;
-        noteYearInput.required = true;
-        document.getElementById('eventModalTitle').textContent = 'Nuovo Appunto';
-        noteYearInput.focus();
-    } else if (type === 'period') {
-        eventFields.style.display = 'none';
-        periodFields.style.display = 'block';
-        noteFields.style.display = 'none';
-        eventOnlyFields.style.display = 'block';
-        linkFields.style.display = 'none';
-        if (imageGroup) imageGroup.style.display = 'block';
-        titleLabel.textContent = 'Nome *';
-        title.placeholder = 'es. Impero Romano';
-        title.required = true;
-        startYearInput.required = false;
-        periodStartYearInput.required = true;
-        periodEndYearInput.required = true;
-        noteYearInput.required = false;
-        document.getElementById('eventModalTitle').textContent = 'Nuovo Periodo';
-        periodStartYearInput.focus();
-    } else {
-        eventFields.style.display = 'block';
-        periodFields.style.display = 'none';
-        noteFields.style.display = 'none';
-        eventOnlyFields.style.display = 'block';
-        linkFields.style.display = 'block';
-        if (imageGroup) imageGroup.style.display = 'block';
-        titleLabel.textContent = 'Nome *';
-        title.placeholder = 'es. Caduta dell\'Impero Romano';
-        title.required = true;
-        startYearInput.required = true;
-        periodStartYearInput.required = false;
-        periodEndYearInput.required = false;
-        noteYearInput.required = false;
-        document.getElementById('eventModalTitle').textContent = 'Nuovo Evento';
-        startYearInput.focus();
+    if (titleLabel) titleLabel.textContent = cfg.label.text;
+    if (title) {
+        title.placeholder = cfg.label.placeholder;
+        title.required = cfg.label.required;
     }
+    // Set modal title
+    const modalTitle = document.getElementById('eventModalTitle');
+    if (modalTitle) modalTitle.textContent = cfg.title;
 }
 
+var lastFocusedElement = null;
+
 function openModal() {
+    lastFocusedElement = document.activeElement;
     document.getElementById('eventModal').classList.add('open');
     document.getElementById('eventForm').reset();
     selectedCategoryId = null;
@@ -82,12 +112,20 @@ function openModal() {
     document.getElementById('modalTabs').style.display = 'flex';
     if (document.getElementById('eventImageUrl')) document.getElementById('eventImageUrl').value = '';
     switchFormTab('event');
+    // Move focus to first focusable element in modal
+    var firstInput = document.getElementById('startYear');
+    if (firstInput) setTimeout(function () { firstInput.focus(); }, 100);
 }
 
 function closeModal() {
     document.getElementById('eventModal').classList.remove('open');
     editingEventId = null;
     selectedLinkedEvents = [];
+    // Return focus to triggering element
+    if (lastFocusedElement) {
+        setTimeout(function () { lastFocusedElement.focus(); }, 100);
+        lastFocusedElement = null;
+    }
 }
 
 // ================================================================

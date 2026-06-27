@@ -119,8 +119,11 @@ function toggleShortcutsHint() {
         hint = document.createElement('div');
         hint.id = 'shortcutsHint';
         hint.className = 'shortcuts-hint';
+        hint.setAttribute('role', 'dialog');
+        hint.setAttribute('aria-label', 'Scorciatoie da tastiera');
+        hint.setAttribute('aria-modal', 'true');
         hint.innerHTML =
-            '<button class="shortcuts-hint-close" onclick="document.getElementById(\'shortcutsHint\').classList.remove(\'open\')">×</button>' +
+            '<button class="shortcuts-hint-close" onclick="document.getElementById(\'shortcutsHint\').classList.remove(\'open\')" aria-label="Chiudi">×</button>' +
             '<h3>Scorciatoie da tastiera</h3>' +
             '<div><kbd>N</kbd> Nuovo evento</div>' +
             '<div><kbd>S</kbd> Salva evento</div>' +
@@ -134,6 +137,17 @@ function toggleShortcutsHint() {
             '<div><kbd>Ctrl+Shift+Z</kbd> Ripeti</div>' +
             '<div><kbd>?</kbd> Mostra/nascondi aiuto</div>';
         document.body.appendChild(hint);
+        // Click-outside to close
+        hint.addEventListener('click', function (e) { e.stopPropagation(); });
+        document.addEventListener('click', function (e) {
+            if (hint.classList.contains('open') && !hint.contains(e.target)) {
+                hint.classList.remove('open');
+            }
+        });
+        // Escape to close
+        hint.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') { hint.classList.remove('open'); }
+        });
     }
     hint.classList.toggle('open');
 }

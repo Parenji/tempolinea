@@ -73,22 +73,10 @@ function loadState() {
 function migrateState() {
     Object.values(state.timelines).forEach(function (tl) {
         if (tl.categories) {
-            tl.categories.forEach(function (cat) { cat.id = String(cat.id); });
+            tl.categories = sanitizeImportedCategories(tl.categories);
         }
         if (tl.events) {
-            tl.events.forEach(function (evt) {
-                evt.id = String(evt.id);
-                if (evt.categoryId !== null && evt.categoryId !== undefined) { evt.categoryId = String(evt.categoryId); }
-                if (evt.linkedEventId !== null && evt.linkedEventId !== undefined) {
-                    evt.linkedEvents = [{ eventId: String(evt.linkedEventId), side: 'auto' }];
-                    delete evt.linkedEventId;
-                }
-                if (evt.linkedEvents && Array.isArray(evt.linkedEvents)) {
-                    evt.linkedEvents = evt.linkedEvents.map(function (l) {
-                        return { eventId: String(l.eventId || l), side: (l.side || 'auto') };
-                    });
-                }
-            });
+            tl.events = sanitizeImportedEvents(tl.events);
         }
     });
 }

@@ -93,6 +93,65 @@ function renderRuler() {
 }
 
 // ================================================================
+//  SVG ICON helpers (inline SVG strings)
+// ================================================================
+const IMG_ICON_SVG = '<svg class="card-image-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
+
+// ================================================================
+//  CARD CONTENT HELPERS
+// ================================================================
+function cardImageHtml(event) {
+    var altText = event.title ? 'Immagine per ' + event.title : '';
+    var dataTitle = event.title ? ' data-title="' + escapeHtml(event.title) + '"' : '';
+    return event.imageUrl ? '<div class="event-image"><img src="' + escapeHtml(event.imageUrl) + '" alt="' + escapeHtml(altText) + '"' + dataTitle + ' loading="lazy" onclick="event.stopPropagation();openImageLightbox(this.src,this.getAttribute(\'data-title\')||\'\')" onerror="this.style.display=\'none\'"></div>' : '';
+}
+
+function cardButtonsHtml(eventId) {
+    return '<div class="card-btns">' +
+        '<button class="detail-btn" onclick="event.stopPropagation(); editEvent(\'' + eventId + '\')" aria-label="Modifica evento">Modifica</button>' +
+        '<button class="detail-btn danger" onclick="event.stopPropagation(); deleteEvent(\'' + eventId + '\')" aria-label="Elimina evento">Elimina</button>' +
+        '</div>';
+}
+
+function cardContentHtml(event, color, yearText) {
+    var html = '';
+    if (event.imageUrl) html += IMG_ICON_SVG;
+    html += '<div class="event-date" style="color:' + color + '">' + yearText + '</div>';
+    html += '<div class="event-name">' + escapeHtml(event.title) + '</div>';
+    html += cardImageHtml(event);
+    if (event.description) html += '<div class="event-description">' + formatDescription(event.description) + '</div>';
+    html += cardButtonsHtml(event.id);
+    return html;
+}
+
+function noteContentHtml(event) {
+    var html = '';
+    if (event.imageUrl) html += IMG_ICON_SVG;
+    if (event.title) html += '<div class="note-title">' + escapeHtml(event.title) + '</div>';
+    html += cardImageHtml(event);
+    if (event.description) html += '<div class="note-desc">' + formatDescription(event.description) + '</div>';
+    html += '<div class="note-btns">' +
+        '<button class="note-btn note-edit-btn" onclick="event.stopPropagation(); editEvent(\'' + event.id + '\')" aria-label="Modifica nota">Modifica</button>' +
+        '<button class="note-btn note-delete-btn" onclick="event.stopPropagation(); deleteEvent(\'' + event.id + '\')" aria-label="Elimina nota">Elimina</button>' +
+        '</div>';
+    return html;
+}
+
+function periodDetailHtml(event, color, yearText) {
+    var html = '';
+    if (event.imageUrl) html += IMG_ICON_SVG;
+    html += '<div class="detail-date" style="color:' + color + '">' + yearText + '</div>';
+    html += '<div class="detail-title">' + escapeHtml(event.title) + '</div>';
+    html += cardImageHtml(event);
+    if (event.description) html += '<div class="detail-desc">' + formatDescription(event.description) + '</div>';
+    html += '<div class="detail-btns">' +
+        '<button class="detail-btn" onclick="event.stopPropagation(); editEvent(\'' + event.id + '\')">Modifica</button>' +
+        '<button class="detail-btn danger" onclick="event.stopPropagation(); deleteEvent(\'' + event.id + '\')">Elimina</button>' +
+        '</div>';
+    return html;
+}
+
+// ================================================================
 //  EVENTS RENDER
 // ================================================================
 function renderEvents() {
@@ -165,38 +224,10 @@ function renderEvents() {
         eventSides[event.id] = currentSide;
     });
 
-    // Separate notes
-    const notes = [];
+    // Separate non-notes for node-offsets and period-lane computation
     const regularEvents = [];
     filteredEvents.forEach(function (event) {
-        if (event.type === 'note') { notes.push(event); }
-        else { regularEvents.push(event); }
-    });
-
-    // Render notes
-    notes.forEach(function (event, noteIndex) {
-        const side = eventSides[event.id] || (noteIndex % 2 === 0 ? 'left' : 'right');
-        const position = eventPositions[event.id];
-        const note = document.createElement('div');
-        note.className = 'note-card ' + side + '-side';
-        note.style.top = position + 'px';
-        note.dataset.eventId = event.id;
-        note.setAttribute('tabindex', '0');
-        note.setAttribute('role', 'article');
-        note.setAttribute('aria-label', 'Nota: ' + (event.title || 'senza titolo'));
-        note.setAttribute('aria-expanded', expandedEventId === event.id ? 'true' : 'false');
-        if (expandedEventId === event.id) { note.classList.add('expanded'); }
-            note.innerHTML = (event.imageUrl ? '<svg class="card-image-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>' : '') +
-            (event.title ? '<div class="note-title">' + escapeHtml(event.title) + '</div>' : '') +
-            (event.imageUrl ? '<div class="event-image"><img src="' + escapeHtml(event.imageUrl) + '" alt="" loading="lazy" onclick="event.stopPropagation();openImageLightbox(this.src)" onerror="this.style.display=\'none\'"></div>' : '') +
-            (event.description ? '<div class="note-desc">' + formatDescription(event.description) + '</div>' : '') +
-            '<div class="note-btns">' +
-            '<button class="note-btn note-edit-btn" onclick="event.stopPropagation(); editEvent(\'' + event.id + '\')" aria-label="Modifica nota">Modifica</button>' +
-            '<button class="note-btn note-delete-btn" onclick="event.stopPropagation(); deleteEvent(\'' + event.id + '\')" aria-label="Elimina nota">Elimina</button>' +
-            '</div>';
-        note.addEventListener('click', function (e) { e.stopPropagation(); toggleExpand(event.id); });
-        note.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); toggleExpand(event.id); } });
-        container.appendChild(note);
+        if (event.type !== 'note') { regularEvents.push(event); }
     });
 
     // Compute node offsets for events sharing the same year
@@ -217,14 +248,37 @@ function renderEvents() {
         });
     });
 
-    // Render regular events
+    // Compute period lanes
     const periodLanes = assignPeriodLanes(regularEvents);
-    regularEvents.forEach(function (event) {
+
+    // Render all items in chronological DOM order (notes, events, periods interleaved)
+    filteredEvents.forEach(function (event) {
         const category = categories.find(function (c) { return c.id === event.categoryId; });
         const side = eventSides[event.id];
         const color = category ? category.color : '#7c3aed';
         const position = eventPositions[event.id];
-        if (!event.isPeriod) {
+
+        if (event.type === 'note') {
+            const note = document.createElement('div');
+            note.className = 'note-card ' + side + '-side';
+            note.style.top = position + 'px';
+            note.dataset.eventId = event.id;
+            note.setAttribute('tabindex', '0');
+            note.setAttribute('role', 'article');
+            note.setAttribute('aria-label', 'Nota: ' + (event.title || 'senza titolo'));
+            note.setAttribute('aria-expanded', expandedEventId === event.id ? 'true' : 'false');
+            if (expandedEventId === event.id) { note.classList.add('expanded'); }
+            note.innerHTML = noteContentHtml(event);
+            var noteId = event.id;
+            note.addEventListener('click', function (e) { e.stopPropagation(); toggleExpand(noteId); });
+            note.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); toggleExpand(noteId); }
+                if (e.key === 'Escape' && expandedEventId === noteId) { e.preventDefault(); e.stopPropagation(); collapseAndFocus(noteId); }
+            });
+            container.appendChild(note);
+        } else if (event.isPeriod && event.endYear) {
+            // Render event node dot
+            var evtId = event.id;
             const offset = nodeOffsets[event.id] || 0;
             const node = document.createElement('div');
             node.className = 'event-node' + (expandedEventId === event.id ? ' expanded-node' : '');
@@ -232,8 +286,7 @@ function renderEvents() {
             node.style.background = color;
             node.style.marginLeft = offset + 'px';
             container.appendChild(node);
-        }
-        if (event.isPeriod && event.endYear) {
+
             const lane = periodLanes[event.id] || side;
             const startPos = yearToPixelsCached(event.startYear, event.startMonth, event.startDay);
             const endPos = yearToPixelsCached(event.endYear, event.endMonth, event.endDay);
@@ -266,17 +319,9 @@ function renderEvents() {
             detailCard.className = 'period-detail-card';
             detailCard.id = 'detail-' + event.id;
             const yearText = formatYear(event.startYear, event.startMonth, event.startDay) + ' - ' + formatYear(event.endYear, event.endMonth, event.endDay);
-            detailCard.innerHTML =
-                (event.imageUrl ? '<svg class="card-image-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>' : '') +
-                '<div class="detail-date" style="color:' + color + '">' + yearText + '</div>' +
-                '<div class="detail-title">' + escapeHtml(event.title) + '</div>' +
-                (event.imageUrl ? '<div class="detail-image"><img src="' + escapeHtml(event.imageUrl) + '" alt="" loading="lazy" onclick="event.stopPropagation();openImageLightbox(this.src)" onerror="this.style.display=\'none\'"></div>' : '') +
-                (event.description ? '<div class="detail-desc">' + formatDescription(event.description) + '</div>' : '') +
-                '<div class="detail-btns">' +
-                '<button class="detail-btn" onclick="event.stopPropagation(); editEvent(\'' + event.id + '\')">Modifica</button>' +
-                '<button class="detail-btn danger" onclick="event.stopPropagation(); deleteEvent(\'' + event.id + '\')">Elimina</button>' +
-                '</div>';
+            detailCard.innerHTML = periodDetailHtml(event, color, yearText);
             document.body.appendChild(detailCard);
+            var stripEvtId = event.id;
             const periodClickHandler = function (e) {
                 e.stopPropagation();
                 const wasActive = strip.classList.contains('active');
@@ -287,18 +332,20 @@ function renderEvents() {
                 else {
                     strip.classList.add('active'); strip.setAttribute('aria-expanded', 'true'); detailCard.classList.add('visible');
                     const nodes = document.querySelectorAll('.event-node');
-                    nodes.forEach(function (n) { if (n.style.background === color && Math.abs(parseFloat(n.style.top) - (basePositions[event.id] - 5)) < 2) { n.classList.add('expanded-node', 'period-highlighted'); } });
+                    nodes.forEach(function (n) { if (n.style.background === color && Math.abs(parseFloat(n.style.top) - (basePositions[stripEvtId] - 5)) < 2) { n.classList.add('expanded-node', 'period-highlighted'); } });
                 }
-                updateDetailCardPosition(strip, detailCard, side);
+                // Position vertically at click point, horizontally adjacent to strip
+                var clickY = (e && e.clientY) ? e.clientY : null;
+                updateDetailCardPosition(strip, detailCard, side, clickY);
             };
             strip.addEventListener('click', periodClickHandler);
             strip.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); periodClickHandler(e); } });
-            let hoverTimeout = null;
+            var hoverTimeout = null;
             strip.addEventListener('mouseenter', function () {
                 if (window.innerWidth <= 768) return;
                 clearTimeout(hoverTimeout);
                 detailCard.classList.add('visible');
-                updateDetailCardPosition(strip, detailCard, side);
+                updateDetailCardPosition(strip, detailCard, side, null);
             });
             strip.addEventListener('mouseleave', function () {
                 if (window.innerWidth <= 768) return;
@@ -310,6 +357,16 @@ function renderEvents() {
             detailCard.addEventListener('mouseleave', function () { if (window.innerWidth <= 768) return; if (!strip.classList.contains('active')) { detailCard.classList.remove('visible'); } });
             container.appendChild(strip);
         } else {
+            // Render event node dot
+            var evtId2 = event.id;
+            const offset2 = nodeOffsets[event.id] || 0;
+            const node2 = document.createElement('div');
+            node2.className = 'event-node' + (expandedEventId === event.id ? ' expanded-node' : '');
+            node2.style.top = (basePositions[event.id] - 5) + 'px';
+            node2.style.background = color;
+            node2.style.marginLeft = offset2 + 'px';
+            container.appendChild(node2);
+
             const card = document.createElement('div');
             card.className = 'event-card ' + side + '-side';
             card.style.top = (position - 15) + 'px';
@@ -320,21 +377,15 @@ function renderEvents() {
             card.setAttribute('role', 'article');
             card.setAttribute('aria-label', 'Evento: ' + (event.title || 'senza titolo'));
             card.setAttribute('aria-expanded', expandedEventId === event.id ? 'true' : 'false');
-            let yearText = formatYear(event.startYear, event.startMonth, event.startDay);
+            var yearText = formatYear(event.startYear, event.startMonth, event.startDay);
             if (event.endYear) { yearText += ' - ' + formatYear(event.endYear, event.endMonth, event.endDay); }
             if (expandedEventId === event.id) { card.classList.add('expanded'); }
-            card.innerHTML =
-                (event.imageUrl ? '<svg class="card-image-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>' : '') +
-                '<div class="event-date" style="color:' + color + '">' + yearText + '</div>' +
-                '<div class="event-name">' + escapeHtml(event.title) + '</div>' +
-                (event.imageUrl ? '<div class="event-image"><img src="' + escapeHtml(event.imageUrl) + '" alt="" loading="lazy" onclick="event.stopPropagation();openImageLightbox(this.src)" onerror="this.style.display=\'none\'"></div>' : '') +
-                (event.description ? '<div class="event-description">' + formatDescription(event.description) + '</div>' : '') +
-                '<div class="card-btns">' +
-                '<button class="detail-btn" onclick="event.stopPropagation(); editEvent(\'' + event.id + '\')" aria-label="Modifica evento">Modifica</button>' +
-                '<button class="detail-btn danger" onclick="event.stopPropagation(); deleteEvent(\'' + event.id + '\')" aria-label="Elimina evento">Elimina</button>' +
-                '</div>';
-            card.addEventListener('click', function (e) { toggleExpand(event.id); });
-            card.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleExpand(event.id); } });
+            card.innerHTML = cardContentHtml(event, color, yearText);
+            card.addEventListener('click', function () { toggleExpand(evtId2); });
+            card.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleExpand(evtId2); }
+                if (e.key === 'Escape' && expandedEventId === evtId2) { e.preventDefault(); collapseAndFocus(evtId2); }
+            });
             container.appendChild(card);
         }
     });
@@ -351,33 +402,190 @@ function renderEvents() {
 }
 
 function toggleExpand(eventId) {
-    const ruler = document.getElementById('timelineRuler');
-    const savedScroll = ruler.scrollTop;
-    if (expandedEventId === eventId) { expandedEventId = null; }
-    else { expandedEventId = eventId; }
-    renderEvents();
-    ruler.scrollTop = savedScroll;
+    var ruler = document.getElementById('timelineRuler');
+    // Collapse previously expanded card (if different)
+    if (expandedEventId && expandedEventId !== eventId) {
+        var prevCard = document.querySelector('[data-event-id="' + expandedEventId + '"]');
+        if (prevCard) {
+            prevCard.classList.add('collapsing');
+            prevCard.classList.remove('expanded');
+            prevCard.setAttribute('aria-expanded', 'false');
+            setTimeout(function () {
+                prevCard.classList.remove('collapsing');
+            }, 500);
+        }
+        // Also collapse the corresponding event node dot
+        var prevNode = document.querySelector('.event-node.expanded-node');
+        if (prevNode) { prevNode.classList.remove('expanded-node'); }
+    }
+    // Toggle this card
+    var card = document.querySelector('[data-event-id="' + eventId + '"]');
+    if (!card) return;
+    if (expandedEventId === eventId) {
+        // Collapse
+        card.classList.add('collapsing');
+        card.classList.remove('expanded');
+        card.setAttribute('aria-expanded', 'false');
+        expandedEventId = null;
+        setTimeout(function () {
+            card.classList.remove('collapsing');
+        }, 500);
+        // Keep focus on the card
+        card.focus({ preventScroll: true });
+    } else {
+        // Expand
+        card.classList.add('expanded');
+        card.setAttribute('aria-expanded', 'true');
+        expandedEventId = eventId;
+        // Expand the corresponding event node dot too
+        var color = window.getComputedStyle(card).borderColor;
+        var nodes = document.querySelectorAll('.event-node');
+        nodes.forEach(function (n) {
+            if (n.style.background === color) { n.classList.add('expanded-node'); }
+        });
+        // Keep focus and ensure card is visible after expansion
+        card.focus({ preventScroll: true });
+        // Wait for CSS transition to complete (0.5s) before measuring expanded size
+        setTimeout(function () {
+            ensureCardVisible(card, ruler);
+        }, 550);
+    }
     if (highlightedCategoryId) { highlightCategoryConnector(highlightedCategoryId, false); }
-    reapplySearchFilters();
 }
 
-function updateDetailCardPosition(strip, detailCard, side) {
-    const stripRect = strip.getBoundingClientRect();
-    const cardWidth = Math.min(280, window.innerWidth * 0.35);
-    let cardLeft;
-    if (side === 'left') {
-        cardLeft = Math.max(8, stripRect.right + 8);
-        if (cardLeft + cardWidth > window.innerWidth - 8) { cardLeft = window.innerWidth - cardWidth - 8; }
-    } else {
-        cardLeft = Math.min(window.innerWidth - cardWidth - 8, stripRect.left - cardWidth - 8);
-        if (cardLeft < 8) cardLeft = 8;
+// Collapse and focus — same as toggleExpand(collapse) but always collapses
+function collapseAndFocus(eventId) {
+    var ruler = document.getElementById('timelineRuler');
+    var card = document.querySelector('[data-event-id="' + eventId + '"]');
+    if (card) {
+        card.classList.add('collapsing');
+        card.classList.remove('expanded');
+        card.setAttribute('aria-expanded', 'false');
+        card.focus({ preventScroll: true });
+        setTimeout(function () {
+            card.classList.remove('collapsing');
+        }, 500);
     }
-    let cardTop = stripRect.top + stripRect.height / 2;
-    const estimatedCardHeight = 150;
-    if (cardTop - estimatedCardHeight / 2 < 8) cardTop = estimatedCardHeight / 2 + 8;
-    if (cardTop + estimatedCardHeight / 2 > window.innerHeight - 8) cardTop = window.innerHeight - estimatedCardHeight / 2 - 8;
+    var prevNode = document.querySelector('.event-node.expanded-node');
+    if (prevNode) { prevNode.classList.remove('expanded-node'); }
+    expandedEventId = null;
+    if (highlightedCategoryId) { highlightCategoryConnector(highlightedCategoryId, false); }
+}
+
+// Ensure the expanded card is fully visible in the viewport
+function ensureCardVisible(card, ruler) {
+    if (!card || !ruler) return;
+    var cardRect = card.getBoundingClientRect();
+    var rulerRect = ruler.getBoundingClientRect();
+    var toolbarHeight = 60;
+    // Reserve space for FAB at bottom
+    var bottomMargin = 140;
+    var topThreshold = rulerRect.top + toolbarHeight;
+    var bottomThreshold = rulerRect.bottom - bottomMargin;
+    var scrollNeeded = 0;
+
+    // Vertical check
+    if (cardRect.top < topThreshold) {
+        // Card is above visible area — scroll up
+        scrollNeeded = cardRect.top - topThreshold;
+    } else if (cardRect.bottom > bottomThreshold) {
+        // Card is below visible area — scroll down
+        scrollNeeded = cardRect.bottom - bottomThreshold;
+    }
+
+    if (scrollNeeded !== 0) {
+        ruler.scrollBy({ top: scrollNeeded, behavior: 'smooth' });
+    }
+
+    // Horizontal check for mobile: ensure card doesn't overflow off-screen
+    if (window.innerWidth <= 1038) {
+        var cardLeft = cardRect.left;
+        var cardRight = cardRect.right;
+        var viewportWidth = window.innerWidth;
+        var horizontalMargin = 12;
+
+        if (cardLeft < horizontalMargin) {
+            // Card overflows left — shift it right using margin
+            var missingPx = horizontalMargin - cardLeft;
+            card.style.marginLeft = (parseInt(card.style.marginLeft) || 0) + missingPx + 'px';
+        } else if (cardRight > viewportWidth - horizontalMargin) {
+            // Card overflows right — shift it left using margin
+            var overflowPx = cardRight - (viewportWidth - horizontalMargin);
+            card.style.marginLeft = (parseInt(card.style.marginLeft) || 0) - overflowPx + 'px';
+        }
+    }
+}
+
+function updateDetailCardPosition(strip, detailCard, side, clickY) {
+    const toolbar = document.querySelector('.toolbar');
+    const toolbarBottom = toolbar ? toolbar.getBoundingClientRect().bottom : 0;
+    const margin = 10;
+    const isMobile = window.innerWidth <= 768;
+    // Desktop: mini-map occupies 35px on the far right
+    const miniMapWidth = isMobile ? 0 : 35;
+    const safeMargin = 4;
+
+    // Measure actual card dimensions (card must be visible for accurate measurement)
+    const cardRect = detailCard.getBoundingClientRect();
+    const cardWidth = cardRect.width;
+    const cardHeight = cardRect.height;
+
+    const sr = strip.getBoundingClientRect();
+    const centerX = window.innerWidth / 2;
+
+    // ── STEP 1: Vertical center on click or strip center, clamp to viewport ──
+    let cardCenterY;
+    if (clickY !== null && clickY !== undefined) {
+        cardCenterY = clickY;
+    } else {
+        cardCenterY = sr.top + sr.height / 2;
+    }
+    const minTop = toolbarBottom + margin;
+    const maxBottom = window.innerHeight - margin;
+    const halfH = cardHeight / 2;
+    if (cardCenterY - halfH < minTop) cardCenterY = minTop + halfH;
+    if (cardCenterY + halfH > maxBottom) cardCenterY = maxBottom - halfH;
+
+    // ── STEP 2: Horizontal — symmetric algorithm for left and right ──
+    let cardLeft;
+    if (isMobile) {
+        // Mobile: center card horizontally in the viewport
+        cardLeft = (window.innerWidth - cardWidth) / 2;
+    } else if (side === 'left') {
+        // Strip is on the left side → card goes to the right of the strip,
+        // ideally between strip and timeline center
+        const spaceRight = centerX - sr.right - margin * 2;
+        if (cardWidth <= spaceRight) {
+            // Fits between strip and center
+            cardLeft = sr.right + margin;
+        } else {
+            // Needs more space, go beyond center
+            cardLeft = Math.max(sr.right + margin, centerX - cardWidth / 2);
+        }
+    } else {
+        // Strip is on the right side → card goes to the left of the strip,
+        // ideally between timeline center and strip (mirror of left)
+        const spaceLeft = sr.left - centerX - margin * 2;
+        if (cardWidth <= spaceLeft) {
+            // Fits between center and strip
+            cardLeft = sr.left - cardWidth - margin;
+        } else {
+            // Needs more space, go beyond center
+            cardLeft = Math.min(sr.left - cardWidth - margin, centerX - cardWidth / 2);
+        }
+    }
+
+    // ── STEP 3: Final clamp to viewport edges, respecting mini-map on desktop ──
+    const minLeft = safeMargin;
+    const maxLeft = window.innerWidth - cardWidth - miniMapWidth - safeMargin;
+    if (maxLeft > minLeft) {
+        cardLeft = Math.max(minLeft, Math.min(maxLeft, cardLeft));
+    } else {
+        cardLeft = minLeft;
+    }
+
     detailCard.style.left = cardLeft + 'px';
-    detailCard.style.top = cardTop + 'px';
+    detailCard.style.top = cardCenterY + 'px';
     detailCard.style.transform = 'translateY(-50%)';
 }
 
