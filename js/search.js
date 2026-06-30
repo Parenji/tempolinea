@@ -73,6 +73,8 @@ function applyAllFilters() {
     const events = getEvents();
     const allCards = document.querySelectorAll('.event-card, .period-strip, .note-card');
     const allEventNodes = document.querySelectorAll('.event-node');
+    // Remove previous text highlights before re-evaluating
+    removeTextHighlights();
     allCards.forEach(function (el) {
         const eventId = el.dataset.eventId;
         const event = events.find(function (e) { return e.id === eventId; });
@@ -107,6 +109,10 @@ function applyAllFilters() {
             node.style.opacity = '';
         }
     });
+    // Apply text highlights on visible matching cards
+    if (hasSearch && !isYearSearch) {
+        highlightTextInCards(searchTerm);
+    }
 }
 
 function searchEvents() {
@@ -155,6 +161,7 @@ function searchEvents() {
         searchCounter.textContent = '1/' + searchResults.length;
         searchNav.classList.add('visible');
         updateSearchNavButtons();
+        applySearchGlow(searchResults[0]);
         scrollToYear(searchResults[0].startYear);
     } else {
         searchNav.classList.remove('visible');
@@ -171,6 +178,7 @@ function searchPrev() {
     currentSearchIndex = (currentSearchIndex - 1 + searchResults.length) % searchResults.length;
     document.getElementById('searchCounter').textContent = (currentSearchIndex + 1) + '/' + searchResults.length;
     updateSearchNavButtons();
+    applySearchGlow(searchResults[currentSearchIndex]);
     scrollToYear(searchResults[currentSearchIndex].startYear);
 }
 
@@ -179,6 +187,7 @@ function searchNext() {
     currentSearchIndex = (currentSearchIndex + 1) % searchResults.length;
     document.getElementById('searchCounter').textContent = (currentSearchIndex + 1) + '/' + searchResults.length;
     updateSearchNavButtons();
+    applySearchGlow(searchResults[currentSearchIndex]);
     scrollToYear(searchResults[currentSearchIndex].startYear);
 }
 
@@ -197,7 +206,109 @@ function updateSearchNavButtons() {
 function clearSearch() {
     document.getElementById('searchInput').value = '';
     document.getElementById('searchClear').style.display = 'none';
+    removeTextHighlights();
+    removeSearchGlow();
     searchEvents();
+}
+
+function applySearchGlow(event) {
+    removeSearchGlow();
+    // Find the DOM element for this event (card, period strip, or note card)
+    var el = document.querySelector(
+        '.event-card[data-event-id="' + event.id + '"], ' +
+        '.period-strip[data-event-id="' + event.id + '"], ' +
+        '.note-card[data-event-id="' + event.id + '"]'
+    );
+    if (el) {
+        el.classList.add('search-glow');
+        // Auto-remove glow after 2s of inactivity
+        clearTimeout(_searchGlowTimer);
+        _searchGlowTimer = setTimeout(removeSearchGlow, 2000);
+    }
+}
+
+function removeSearchGlow() {
+    clearTimeout(_searchGlowTimer);
+    document.querySelectorAll('.search-glow').forEach(function (el) {
+        el.classList.remove('search-glow');
+    });
+}
+
+var _searchGlowTimer = null;
+
+function removeTextHighlights() {
+    document.querySelectorAll('mark.search-highlight').forEach(function (mark) {
+        var parent = mark.parentNode;
+        if (parent) {
+            parent.replaceChild(document.createTextNode(mark.textContent), mark);
+            parent.normalize();
+        }
+    });
+}
+
+function highlightTextInCards(searchTerm) {
+    if (!searchTerm) return;
+    var lowerTerm = searchTerm.toLowerCase();
+    // Only target cards that are currently visible (opacity = 1)
+    var matchingCards = document.querySelectorAll(
+        '.event-card[style*="opacity: 1"], .period-strip[style*="opacity: 1"], .note-card[style*="opacity: 1"]'
+    );
+    matchingCards.forEach(function (card) {
+        // Text-bearing elements within the card
+        var textElements = card.querySelectorAll(
+            '.event-name, .event-description, .event-date, ' +
+            '.note-title, .note-desc, ' +
+            '.detail-title, .detail-desc, .detail-date, ' +
+            '.period-title, .period-strip-date-marker'
+        );
+        textElements.forEach(function (el) {
+            highlightTextNode(el, lowerTerm);
+        });
+    });
+}
+
+// TreeWalker-based text node highlighter — safely wraps matches in <mark>
+function highlightTextNode(root, lowerTerm) {
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+        acceptNode: function (node) {
+            // Skip text nodes inside existing <mark>, <script>, <style>, <svg>
+            if (node.parentNode && node.parentNode.nodeName === 'MARK') return NodeFilter.FILTER_REJECT;
+            if (node.parentNode && ['SCRIPT', 'STYLE', 'SVG'].indexOf(node.parentNode.nodeName) !== -1) return NodeFilter.FILTER_REJECT;
+            return node.textContent.toLowerCase().indexOf(lowerTerm) !== -1 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+        }
+    });
+    var nodesToReplace = [];
+    var node;
+    while (node = walker.nextNode()) {
+        nodesToReplace.push(node);
+    }
+    nodesToReplace.forEach(function (textNode) {
+        var text = textNode.textContent;
+        var lowerText = text.toLowerCase();
+        var parent = textNode.parentNode;
+        if (!parent) return;
+        var fragment = document.createDocumentFragment();
+        var lastIndex = 0;
+        var idx = lowerText.indexOf(lowerTerm, lastIndex);
+        while (idx !== -1) {
+            // Text before match
+            if (idx > lastIndex) {
+                fragment.appendChild(document.createTextNode(text.substring(lastIndex, idx)));
+            }
+            // Highlighted match
+            var mark = document.createElement('mark');
+            mark.className = 'search-highlight';
+            mark.textContent = text.substring(idx, idx + lowerTerm.length);
+            fragment.appendChild(mark);
+            lastIndex = idx + lowerTerm.length;
+            idx = lowerText.indexOf(lowerTerm, lastIndex);
+        }
+        // Remaining text after last match
+        if (lastIndex < text.length) {
+            fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+        }
+        parent.replaceChild(fragment, textNode);
+    });
 }
 
 function handleSearchEnter(e) {
@@ -205,6 +316,7 @@ function handleSearchEnter(e) {
         currentSearchIndex = (currentSearchIndex + 1) % searchResults.length;
         document.getElementById('searchCounter').textContent = (currentSearchIndex + 1) + '/' + searchResults.length;
         updateSearchNavButtons();
+        applySearchGlow(searchResults[currentSearchIndex]);
         scrollToYear(searchResults[currentSearchIndex].startYear);
     }
 }

@@ -153,6 +153,11 @@
             <div class="ruler-center"></div>
             <div id="rulerMarks"></div>
             <div id="eventsContainer"></div>
+            <!-- Quick Create Cursor & Label (inside timeline-container for proper scroll positioning) -->
+            <div class="quick-create-cursor" id="quickCreateCursor">
+                <div class="quick-create-cursor-line"></div>
+                <div class="quick-create-cursor-handle" id="quickCreateHandle"></div>
+            </div>
         </div>
     </main>
 
@@ -326,6 +331,9 @@
     <div class="modal-overlay" id="categoryModal">
         <div class="modal">
             <h2 id="categoryModalTitle">Gestione Categorie</h2>
+            <div class="category-top-actions">
+                <button type="button" class="category-new-btn" onclick="openCategoryForm()">+ Nuova Categoria</button>
+            </div>
             <div class="category-form-section" id="categoryFormSection">
                 <form id="categoryForm">
                     <div class="form-group">
@@ -346,6 +354,11 @@
                         <small style="color:var(--text-secondary);font-size:0.6875rem;">Gli eventi potranno comunque
                             cambiare lato se necessario per trovare spazio.</small>
                     </div>
+                    <!-- Split accordion (only visible when editing) -->
+                    <button type="button" class="category-split-toggle" id="categorySplitToggle" onclick="toggleSplitAccordion()" style="display:none;">Dividi eventi ►</button>
+                    <div class="category-split-container" id="categorySplitContainer">
+                        <div class="category-split-section" id="categorySplitSection"></div>
+                    </div>
                     <div class="modal-buttons">
                         <button type="button" class="btn-cancel" onclick="closeCategoryForm()">Annulla</button>
                         <button type="submit" class="btn" style="background:var(--accent);color:#fff;border:none;"
@@ -355,7 +368,39 @@
             </div>
             <div class="category-list-header" id="categoryListHeader">
                 <h3>Categorie Esistenti</h3>
-                <button type="button" class="category-new-btn" onclick="openCategoryForm()">+ Nuova Categoria</button>
+                <div class="category-list-header-actions" id="categoryListHeaderActions">
+                    <div class="category-selection-actions" id="categorySelectionActions" style="display:none;">
+                        <button type="button" class="category-selection-btn merge-btn" id="categoryMergeBtn" onclick="showMergeForm()" disabled>Unisci</button>
+                        <button type="button" class="category-selection-btn delete-selection-btn" id="categoryDeleteBtn" onclick="deleteSelectedCategories()" disabled>Elimina</button>
+                        <button type="button" class="category-selection-cancel" id="categorySelectionCancel" onclick="exitSelectionMode()">Annulla</button>
+                    </div>
+                    <button type="button" class="category-select-mode-btn" id="categorySelectModeBtn" onclick="enterSelectionMode()">Seleziona</button>
+                </div>
+            </div>
+            <div class="category-search-wrap">
+                <input type="text" class="category-search-input" id="categorySearchInput" placeholder="Cerca categoria..." oninput="renderCategoryList()">
+            </div>
+            <div class="category-merge-form" id="categoryMergeForm">
+                <div class="form-group">
+                    <label for="mergeCategoryName">Nome nuova categoria unificata</label>
+                    <input type="text" id="mergeCategoryName" placeholder="es. Politica e Società">
+                </div>
+                <div class="form-group">
+                    <label>Colore</label>
+                    <div class="color-picker" id="mergeColorPicker"></div>
+                </div>
+                <div class="form-group">
+                    <label for="mergeCategorySide">Lato preferito</label>
+                    <select id="mergeCategorySide">
+                        <option value="auto">Automatico (alternato)</option>
+                        <option value="left">Preferibilmente a sinistra</option>
+                        <option value="right">Preferibilmente a destra</option>
+                    </select>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn-cancel" onclick="hideMergeForm()">Annulla</button>
+                    <button type="button" class="btn" style="background:var(--accent);color:#fff;border:none;" onclick="executeMerge()">Unisci</button>
+                </div>
             </div>
             <div class="category-list" id="categoryList"></div>
             <div class="modal-buttons" style="margin-top:1rem;">
@@ -437,6 +482,23 @@
         <img id="imageLightboxImg" src="" alt="" onclick="event.stopPropagation()">
     </div>
 
+    <div class="quick-create-balloon" id="quickCreateBalloon">
+        <div class="quick-create-balloon-arrow"></div>
+        <div class="quick-create-balloon-title">Crea in <span id="quickCreateBalloonYear"></span></div>
+        <button class="quick-create-btn event-btn" onclick="quickCreateSelect('event')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Nuovo Evento
+        </button>
+        <button class="quick-create-btn period-btn" onclick="quickCreateSelect('period')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Nuovo Periodo
+        </button>
+        <button class="quick-create-btn note-btn" onclick="quickCreateSelect('note')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Nuovo Appunto
+        </button>
+    </div>
+
     <script src="js/state.js"></script>
     <script src="js/helpers.js"></script>
     <script src="js/tooltip.js"></script>
@@ -449,6 +511,7 @@
     <script src="js/import-export.js"></script>
     <script src="js/mini-map.js"></script>
     <script src="js/shortcuts.js"></script>
+    <script src="js/quick-create.js"></script>
     <script src="js/init.js"></script>
 
 </body>

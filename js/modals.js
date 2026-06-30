@@ -97,24 +97,43 @@ function switchFormTab(type) {
 
 var lastFocusedElement = null;
 
-function openModal() {
+function openModal(opts) {
+    if (!opts) opts = {};
+    // Hide quick create if it's visible (e.g. user pressed N shortcut)
+    if (typeof hideQuickCreate === 'function') { hideQuickCreate(); }
     lastFocusedElement = document.activeElement;
     document.getElementById('eventModal').classList.add('open');
+    var modal = document.getElementById('eventModal').querySelector('.modal');
+    if (modal) modal.scrollTop = 0;
     document.getElementById('eventForm').reset();
     selectedCategoryId = null;
     editingEventId = null;
     selectedLinkedEvents = [];
-    currentFormType = 'event';
+    var type = opts.type || 'event';
+    currentFormType = type;
     renderCategorySelect();
     document.getElementById('eventSearchInput').value = '';
     renderLinkedEventsList();
     populateLinkedEvents();
     document.getElementById('modalTabs').style.display = 'flex';
     if (document.getElementById('eventImageUrl')) document.getElementById('eventImageUrl').value = '';
-    switchFormTab('event');
+    switchFormTab(type);
+    // Pre-fill year if provided
+    if (opts.year !== undefined && opts.year !== null) {
+        if (type === 'note') {
+            document.getElementById('noteYear').value = opts.year;
+        } else if (type === 'period') {
+            document.getElementById('periodStartYear').value = opts.year;
+        } else {
+            document.getElementById('startYear').value = opts.year;
+        }
+    }
     // Move focus to first focusable element in modal
-    var firstInput = document.getElementById('startYear');
-    if (firstInput) setTimeout(function () { firstInput.focus(); }, 100);
+    var firstInput;
+    if (type === 'note') firstInput = document.getElementById('noteYear');
+    else if (type === 'period') firstInput = document.getElementById('periodStartYear');
+    else firstInput = document.getElementById('startYear');
+    if (firstInput) setTimeout(function () { firstInput.focus(); firstInput.select(); }, 100);
 }
 
 function closeModal() {
@@ -123,8 +142,9 @@ function closeModal() {
     selectedLinkedEvents = [];
     // Return focus to triggering element
     if (lastFocusedElement) {
-        setTimeout(function () { lastFocusedElement.focus(); }, 100);
+        var el = lastFocusedElement;
         lastFocusedElement = null;
+        setTimeout(function () { el.focus(); }, 100);
     }
 }
 

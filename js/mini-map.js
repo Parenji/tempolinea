@@ -61,21 +61,32 @@ function initMiniMap() {
         const rect = canvas.getBoundingClientRect();
         const ruler = document.getElementById('timelineRuler');
         const totalHeight = yearToPixelsCached(MAX_YEAR);
+        const events = getEvents();
+        var drawMinPx, drawMaxPx, drawRange;
+        if (scrollRestricted && events.length > 0) {
+            var range = getScrollablePixelRange();
+            drawMinPx = range.minPx;
+            drawMaxPx = range.maxPx;
+        } else {
+            drawMinPx = 0;
+            drawMaxPx = totalHeight;
+        }
+        drawRange = Math.max(1, drawMaxPx - drawMinPx);
         if (isMobile()) {
             const clickX = e.clientX - rect.left;
             const ratio = clickX / rect.width;
-            ruler.scrollTop = ratio * totalHeight - window.innerHeight / 2;
+            ruler.scrollTop = drawMinPx + ratio * drawRange - window.innerHeight / 2;
         } else {
             const clickY = e.clientY - rect.top;
             const ratio = clickY / rect.height;
-            ruler.scrollTop = ratio * totalHeight - window.innerHeight / 2;
+            ruler.scrollTop = drawMinPx + ratio * drawRange - window.innerHeight / 2;
         }
     });
 
     const ruler = document.getElementById('timelineRuler');
     ruler.addEventListener('scroll', function () {
         updateMiniMapViewport();
-        if (isMobile()) {
+        if (isMobile() && !window._suppressMiniMap) {
             container.classList.add('visible');
             clearTimeout(miniMapHideTimer);
             miniMapHideTimer = setTimeout(function () {
@@ -114,15 +125,27 @@ function updateMiniMap() {
     const events = getEvents();
     const categories = getCategories();
 
+    // Determine pixel range for drawing and scaling
+    var drawMinPx, drawMaxPx, drawRange;
+    if (scrollRestricted && events.length > 0) {
+        var range = getScrollablePixelRange();
+        drawMinPx = range.minPx;
+        drawMaxPx = range.maxPx;
+    } else {
+        drawMinPx = 0;
+        drawMaxPx = totalHeight;
+    }
+    drawRange = Math.max(1, drawMaxPx - drawMinPx);
+
     if (isMobile()) {
         // Horizontal layout: timeline runs left-to-right
-        const scaleX = width / totalHeight;
+        const scaleX = width / drawRange;
         events.forEach(function (event) {
-            const x = yearToPixelsCached(event.startYear, event.startMonth, event.startDay) * scaleX;
+            const x = (yearToPixelsCached(event.startYear, event.startMonth, event.startDay) - drawMinPx) * scaleX;
             const category = categories.find(function (c) { return c.id === event.categoryId; });
             const color = category ? category.color : '#7c3aed';
             if (event.isPeriod && event.endYear) {
-                const endX = yearToPixelsCached(event.endYear, event.endMonth, event.endDay) * scaleX;
+                const endX = (yearToPixelsCached(event.endYear, event.endMonth, event.endDay) - drawMinPx) * scaleX;
                 const w = Math.max(1, endX - x);
                 miniMapCtx.fillStyle = color;
                 miniMapCtx.globalAlpha = 0.5;
@@ -137,13 +160,13 @@ function updateMiniMap() {
         });
     } else {
         // Vertical layout: timeline runs top-to-bottom
-        const scaleY = height / totalHeight;
+        const scaleY = height / drawRange;
         events.forEach(function (event) {
-            const y = yearToPixelsCached(event.startYear, event.startMonth, event.startDay) * scaleY;
+            const y = (yearToPixelsCached(event.startYear, event.startMonth, event.startDay) - drawMinPx) * scaleY;
             const category = categories.find(function (c) { return c.id === event.categoryId; });
             const color = category ? category.color : '#7c3aed';
             if (event.isPeriod && event.endYear) {
-                const endY = yearToPixelsCached(event.endYear, event.endMonth, event.endDay) * scaleY;
+                const endY = (yearToPixelsCached(event.endYear, event.endMonth, event.endDay) - drawMinPx) * scaleY;
                 const h = Math.max(1, endY - y);
                 miniMapCtx.fillStyle = color;
                 miniMapCtx.globalAlpha = 0.5;
@@ -169,18 +192,30 @@ function updateMiniMapViewport() {
     const totalHeight = yearToPixelsCached(MAX_YEAR);
     const scrollTop = ruler.scrollTop;
     const viewportWinHeight = window.innerHeight;
+    const events = getEvents();
+
+    var drawMinPx, drawMaxPx, drawRange;
+    if (scrollRestricted && events.length > 0) {
+        var range = getScrollablePixelRange();
+        drawMinPx = range.minPx;
+        drawMaxPx = range.maxPx;
+    } else {
+        drawMinPx = 0;
+        drawMaxPx = totalHeight;
+    }
+    drawRange = Math.max(1, drawMaxPx - drawMinPx);
 
     if (isMobile()) {
         const containerWidth = container.clientWidth;
-        const scaleX = containerWidth / totalHeight;
-        const left = scrollTop * scaleX;
+        const scaleX = containerWidth / drawRange;
+        const left = (scrollTop - drawMinPx) * scaleX;
         const vw = viewportWinHeight * scaleX;
         viewport.style.left = Math.max(0, left) + 'px';
         viewport.style.width = Math.min(containerWidth - left, vw) + 'px';
     } else {
         const containerHeight = container.clientHeight;
-        const scaleY = containerHeight / totalHeight;
-        const top = scrollTop * scaleY;
+        const scaleY = containerHeight / drawRange;
+        const top = (scrollTop - drawMinPx) * scaleY;
         const vh = viewportWinHeight * scaleY;
         viewport.style.top = Math.max(0, top) + 'px';
         viewport.style.height = Math.min(containerHeight - top, vh) + 'px';

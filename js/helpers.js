@@ -141,6 +141,34 @@ function scrollToLatestEvent() {
     scrollToYear(latest.startYear);
 }
 
+function getEventYearRange() {
+    const events = getEvents();
+    if (events.length === 0) {
+        return { minYear: MIN_YEAR, maxYear: MAX_YEAR };
+    }
+    let minY = Infinity;
+    let maxY = -Infinity;
+    events.forEach(function (event) {
+        if (event.startYear < minY) minY = event.startYear;
+        if (event.startYear > maxY) maxY = event.startYear;
+        if (event.endYear !== undefined && event.endYear !== null) {
+            if (event.endYear < minY) minY = event.endYear;
+            if (event.endYear > maxY) maxY = event.endYear;
+        }
+    });
+    const BUFFER = 100;
+    minY = Math.max(MIN_YEAR, minY - BUFFER);
+    maxY = Math.min(MAX_YEAR, maxY + BUFFER);
+    return { minYear: minY, maxYear: maxY };
+}
+
+function getScrollablePixelRange() {
+    const range = getEventYearRange();
+    const minPx = yearToPixelsCached(range.minYear);
+    const maxPx = yearToPixelsCached(range.maxYear);
+    return { minPx: minPx, maxPx: maxPx, minYear: range.minYear, maxYear: range.maxYear };
+}
+
 function isMobile() {
     return window.innerWidth <= 1038;
 }

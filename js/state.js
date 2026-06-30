@@ -2,10 +2,10 @@
 //  STATE & PERSISTENCE
 // ================================================================
 const STORAGE_KEY = 'timeline_app_v3';
-const MIN_YEAR = -6000;
+const MIN_YEAR = -10000;
 const MAX_YEAR = 2100;
 const SEGMENTS = [
-    { start: -6000, end: -1500, density: 0.5, rulerStep: 100, rulerLabel: 'century' },
+    { start: -10000, end: -1500, density: 0.5, rulerStep: 100, rulerLabel: 'century' },
     { start: -1500, end: -800, density: 3, rulerStep: 10, rulerLabel: 'decade' },
     { start: -800, end: 1000, density: 10, rulerStep: 1, rulerLabel: 'year' },
     { start: 1000, end: 1700, density: 20, rulerStep: 1, rulerLabel: 'year' },
@@ -36,6 +36,7 @@ let activeCategoryFilters = [];
 let currentFormType = 'event';
 let pendingImportData = null;
 let highlightedCategoryId = null;
+let scrollRestricted = true;
 
 function loadState() {
     const stored = localStorage.getItem(STORAGE_KEY);

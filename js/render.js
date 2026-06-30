@@ -22,7 +22,7 @@ function renderRuler() {
                 label.style.top = (position - 8) + 'px';
                 label.textContent = formatYear(year);
                 if (year % 500 === 0) {
-                    label.style.fontSize = '0.85rem';
+                    label.style.fontSize = '0.9rem';
                     label.style.color = 'var(--text-primary)';
                     label.style.fontWeight = '700';
                 }
@@ -39,7 +39,7 @@ function renderRuler() {
                     label.style.top = (position - 8) + 'px';
                     label.textContent = formatYear(year);
                     if (year % 500 === 0) {
-                        label.style.fontSize = '0.85rem';
+                        label.style.fontSize = '0.9rem';
                         label.style.color = 'var(--text-primary)';
                         label.style.fontWeight = '700';
                     }
@@ -49,6 +49,12 @@ function renderRuler() {
                     mark.className = 'year-mark decade';
                     mark.style.top = position + 'px';
                     container.appendChild(mark);
+                    const label = document.createElement('div');
+                    const side = (year % 20 === 0) ? 'left-side' : 'right-side';
+                    label.className = 'decade-label ' + side;
+                    label.style.top = (position - 6) + 'px';
+                    label.textContent = formatYear(year);
+                    container.appendChild(label);
                 } else {
                     const mark = document.createElement('div');
                     mark.className = 'year-mark year';
@@ -70,7 +76,7 @@ function renderRuler() {
                         label.style.top = (yPos - 8) + 'px';
                         label.textContent = formatYear(y);
                         if (y % 500 === 0) {
-                            label.style.fontSize = '0.85rem';
+                            label.style.fontSize = '0.9rem';
                             label.style.color = 'var(--text-primary)';
                             label.style.fontWeight = '700';
                         }
@@ -80,6 +86,12 @@ function renderRuler() {
                         mark.className = 'year-mark decade';
                         mark.style.top = yPos + 'px';
                         container.appendChild(mark);
+                        const label = document.createElement('div');
+                        const side = (y % 20 === 0) ? 'left-side' : 'right-side';
+                        label.className = 'decade-label ' + side;
+                        label.style.top = (yPos - 6) + 'px';
+                        label.textContent = formatYear(y);
+                        container.appendChild(label);
                     } else {
                         const mark = document.createElement('div');
                         mark.className = 'year-mark year';
@@ -165,6 +177,8 @@ function renderEvents() {
         emptyState.style.display = 'block';
         emptyState.querySelector('h3').textContent = 'Timeline Vuota';
         emptyState.querySelector('p').textContent = 'Premi il pulsante in basso a destra per aggiungere il tuo primo evento, oppure...';
+        const svg = document.getElementById('linksSvg');
+        svg.querySelectorAll('.category-connector, .link-connector, .link-defs').forEach(function (el) { el.remove(); });
         return;
     }
     emptyState.style.display = 'none';
@@ -285,6 +299,7 @@ function renderEvents() {
             node.style.top = (basePositions[event.id] - 5) + 'px';
             node.style.background = color;
             node.style.marginLeft = offset + 'px';
+            node.dataset.eventId = event.id;
             container.appendChild(node);
 
             const lane = periodLanes[event.id] || side;
@@ -328,11 +343,11 @@ function renderEvents() {
                 document.querySelectorAll('.period-strip.active').forEach(function (el) {
                     if (el !== strip) { el.classList.remove('active'); el.setAttribute('aria-expanded', 'false'); const otherCard = document.getElementById('detail-' + el.dataset.eventId); if (otherCard) otherCard.classList.remove('visible'); const nodes = document.querySelectorAll('.event-node.period-highlighted'); nodes.forEach(function (n) { n.classList.remove('expanded-node', 'period-highlighted'); }); }
                 });
-                if (wasActive) { strip.classList.remove('active'); strip.setAttribute('aria-expanded', 'false'); detailCard.classList.remove('visible'); }
+                if (wasActive) { strip.classList.remove('active'); strip.setAttribute('aria-expanded', 'false'); detailCard.classList.remove('visible'); var node = document.querySelector('.event-node[data-event-id="' + stripEvtId + '"]'); if (node) { node.classList.remove('expanded-node', 'period-highlighted'); } }
                 else {
                     strip.classList.add('active'); strip.setAttribute('aria-expanded', 'true'); detailCard.classList.add('visible');
-                    const nodes = document.querySelectorAll('.event-node');
-                    nodes.forEach(function (n) { if (n.style.background === color && Math.abs(parseFloat(n.style.top) - (basePositions[stripEvtId] - 5)) < 2) { n.classList.add('expanded-node', 'period-highlighted'); } });
+                    var node = document.querySelector('.event-node[data-event-id="' + stripEvtId + '"]');
+                    if (node) { node.classList.add('expanded-node', 'period-highlighted'); }
                 }
                 // Position vertically at click point, horizontally adjacent to strip
                 var clickY = (e && e.clientY) ? e.clientY : null;
@@ -365,6 +380,7 @@ function renderEvents() {
             node2.style.top = (basePositions[event.id] - 5) + 'px';
             node2.style.background = color;
             node2.style.marginLeft = offset2 + 'px';
+            node2.dataset.eventId = event.id;
             container.appendChild(node2);
 
             const card = document.createElement('div');
@@ -405,7 +421,7 @@ function toggleExpand(eventId) {
     var ruler = document.getElementById('timelineRuler');
     // Collapse previously expanded card (if different)
     if (expandedEventId && expandedEventId !== eventId) {
-        var prevCard = document.querySelector('[data-event-id="' + expandedEventId + '"]');
+        var prevCard = document.querySelector('.event-card[data-event-id="' + expandedEventId + '"], .note-card[data-event-id="' + expandedEventId + '"]');
         if (prevCard) {
             prevCard.classList.add('collapsing');
             prevCard.classList.remove('expanded');
@@ -414,12 +430,13 @@ function toggleExpand(eventId) {
                 prevCard.classList.remove('collapsing');
             }, 500);
         }
-        // Also collapse the corresponding event node dot
-        var prevNode = document.querySelector('.event-node.expanded-node');
-        if (prevNode) { prevNode.classList.remove('expanded-node'); }
+        // Also collapse ALL previously expanded event node dots
+        document.querySelectorAll('.event-node.expanded-node').forEach(function (n) {
+            n.classList.remove('expanded-node');
+        });
     }
     // Toggle this card
-    var card = document.querySelector('[data-event-id="' + eventId + '"]');
+    var card = document.querySelector('.event-card[data-event-id="' + eventId + '"], .note-card[data-event-id="' + eventId + '"]');
     if (!card) return;
     if (expandedEventId === eventId) {
         // Collapse
@@ -430,6 +447,9 @@ function toggleExpand(eventId) {
         setTimeout(function () {
             card.classList.remove('collapsing');
         }, 500);
+        // Collapse the corresponding event node dot
+        var thisNode = document.querySelector('.event-node[data-event-id="' + eventId + '"]');
+        if (thisNode) { thisNode.classList.remove('expanded-node'); }
         // Keep focus on the card
         card.focus({ preventScroll: true });
     } else {
@@ -437,12 +457,9 @@ function toggleExpand(eventId) {
         card.classList.add('expanded');
         card.setAttribute('aria-expanded', 'true');
         expandedEventId = eventId;
-        // Expand the corresponding event node dot too
-        var color = window.getComputedStyle(card).borderColor;
-        var nodes = document.querySelectorAll('.event-node');
-        nodes.forEach(function (n) {
-            if (n.style.background === color) { n.classList.add('expanded-node'); }
-        });
+        // Expand only the corresponding event node dot
+        var thisNode = document.querySelector('.event-node[data-event-id="' + eventId + '"]');
+        if (thisNode) { thisNode.classList.add('expanded-node'); }
         // Keep focus and ensure card is visible after expansion
         card.focus({ preventScroll: true });
         // Wait for CSS transition to complete (0.5s) before measuring expanded size
@@ -456,7 +473,7 @@ function toggleExpand(eventId) {
 // Collapse and focus — same as toggleExpand(collapse) but always collapses
 function collapseAndFocus(eventId) {
     var ruler = document.getElementById('timelineRuler');
-    var card = document.querySelector('[data-event-id="' + eventId + '"]');
+    var card = document.querySelector('.event-card[data-event-id="' + eventId + '"], .note-card[data-event-id="' + eventId + '"]');
     if (card) {
         card.classList.add('collapsing');
         card.classList.remove('expanded');
@@ -466,8 +483,9 @@ function collapseAndFocus(eventId) {
             card.classList.remove('collapsing');
         }, 500);
     }
-    var prevNode = document.querySelector('.event-node.expanded-node');
-    if (prevNode) { prevNode.classList.remove('expanded-node'); }
+    document.querySelectorAll('.event-node.expanded-node').forEach(function (n) {
+        n.classList.remove('expanded-node');
+    });
     expandedEventId = null;
     if (highlightedCategoryId) { highlightCategoryConnector(highlightedCategoryId, false); }
 }
@@ -477,39 +495,59 @@ function ensureCardVisible(card, ruler) {
     if (!card || !ruler) return;
     var cardRect = card.getBoundingClientRect();
     var rulerRect = ruler.getBoundingClientRect();
-    var toolbarHeight = 60;
-    // Reserve space for FAB at bottom
-    var bottomMargin = 140;
-    var topThreshold = rulerRect.top + toolbarHeight;
-    var bottomThreshold = rulerRect.bottom - bottomMargin;
+    // Measure actual toolbar height from the DOM
+    var toolbar = document.querySelector('.toolbar');
+    var toolbarBottom = toolbar ? toolbar.getBoundingClientRect().bottom : 0;
+    // Reserve space for FAB at bottom — less on mobile since FAB is smaller and screen is tighter
+    var isMobile = window.innerWidth <= 1038;
+    var fabReserve = isMobile ? 100 : 0;
+    var topThreshold = Math.max(rulerRect.top, toolbarBottom);
+    var bottomThreshold = rulerRect.bottom - fabReserve;
+    // Usable viewport height for the card
+    var availableHeight = bottomThreshold - topThreshold;
+    var cardHeight = cardRect.height;
     var scrollNeeded = 0;
 
-    // Vertical check
-    if (cardRect.top < topThreshold) {
-        // Card is above visible area — scroll up
-        scrollNeeded = cardRect.top - topThreshold;
-    } else if (cardRect.bottom > bottomThreshold) {
-        // Card is below visible area — scroll down
-        scrollNeeded = cardRect.bottom - bottomThreshold;
-    }
+    var cardFullyVisible = cardRect.top >= topThreshold && cardRect.bottom <= bottomThreshold;
 
-    if (scrollNeeded !== 0) {
-        ruler.scrollBy({ top: scrollNeeded, behavior: 'smooth' });
+    if (!cardFullyVisible) {
+        // ── Vertical: top-priority approach ──
+        // If the card is taller than the available space, only ensure the top is visible
+        if (cardHeight > availableHeight) {
+            // Card too tall — align its top just below the toolbar
+            scrollNeeded = cardRect.top - topThreshold;
+        } else {
+            // Card fits — only scroll the minimum needed to bring it into view
+            var overflowTop = topThreshold - cardRect.top;
+            var overflowBottom = cardRect.bottom - bottomThreshold;
+            if (overflowTop > 0) {
+                // Card extends above the top threshold — scroll up to show its top
+                scrollNeeded = -overflowTop;
+            } else if (overflowBottom > 0) {
+                // Card extends below the bottom threshold — scroll down to show its bottom
+                scrollNeeded = overflowBottom;
+            }
+        }
+
+        if (scrollNeeded !== 0) {
+            // Suppress mini-map visibility during automatic scroll on mobile
+            if (isMobile) { window._suppressMiniMap = true; }
+            ruler.scrollBy({ top: scrollNeeded, behavior: 'smooth' });
+            if (isMobile) { setTimeout(function () { window._suppressMiniMap = false; }, 600); }
+        }
     }
 
     // Horizontal check for mobile: ensure card doesn't overflow off-screen
-    if (window.innerWidth <= 1038) {
+    if (isMobile) {
         var cardLeft = cardRect.left;
         var cardRight = cardRect.right;
         var viewportWidth = window.innerWidth;
         var horizontalMargin = 12;
 
         if (cardLeft < horizontalMargin) {
-            // Card overflows left — shift it right using margin
             var missingPx = horizontalMargin - cardLeft;
             card.style.marginLeft = (parseInt(card.style.marginLeft) || 0) + missingPx + 'px';
         } else if (cardRight > viewportWidth - horizontalMargin) {
-            // Card overflows right — shift it left using margin
             var overflowPx = cardRight - (viewportWidth - horizontalMargin);
             card.style.marginLeft = (parseInt(card.style.marginLeft) || 0) - overflowPx + 'px';
         }
@@ -769,11 +807,11 @@ function drawCategoryConnectors(sortedEvents, categorySides, eventSides, eventPo
             e.stopPropagation();
             if (isMobile()) {
                 svg.querySelectorAll('.category-connector.highlighted').forEach(function (el) { if (el !== path) { unhighlightConnector(el); } });
-                if (isHighlighted) { unhighlightConnector(path); hideLineTooltip(); }
-                else { highlightConnector(path); const ttHtml = '<div class="tooltip-label">Categoria</div><div class="tooltip-names" style="color:' + category.color + '">' + escapeHtml(category.name) + '</div>'; showLineTooltip(ttHtml, e.clientX, e.clientY); }
+                if (isHighlighted) { unhighlightConnector(path); hideLineTooltip(); highlightedCategoryId = null; }
+                else { highlightConnector(path); highlightedCategoryId = categoryId; const ttHtml = '<div class="tooltip-label">Categoria</div><div class="tooltip-names" style="color:' + category.color + '">' + escapeHtml(category.name) + '</div>'; showLineTooltip(ttHtml, e.clientX, e.clientY); }
             } else {
-                if (path.classList.contains('persistent-highlight')) { path.classList.remove('persistent-highlight'); unhighlightConnector(path); hideLineTooltip(); }
-                else { svg.querySelectorAll('.category-connector.persistent-highlight').forEach(function (el) { el.classList.remove('persistent-highlight'); el.setAttribute('opacity', '0.2'); el.setAttribute('stroke-width', '3'); el.removeAttribute('filter'); el.classList.remove('highlighted'); }); path.classList.add('persistent-highlight'); highlightConnector(path); const ttHtml = '<div class="tooltip-label">Categoria</div><div class="tooltip-names" style="color:' + category.color + '">' + escapeHtml(category.name) + '</div>'; showLineTooltip(ttHtml, e.clientX, e.clientY); }
+                if (path.classList.contains('persistent-highlight')) { path.classList.remove('persistent-highlight'); unhighlightConnector(path); hideLineTooltip(); highlightedCategoryId = null; }
+                else { svg.querySelectorAll('.category-connector.persistent-highlight').forEach(function (el) { el.classList.remove('persistent-highlight'); el.setAttribute('opacity', '0.2'); el.setAttribute('stroke-width', '3'); el.removeAttribute('filter'); el.classList.remove('highlighted'); }); path.classList.add('persistent-highlight'); highlightConnector(path); highlightedCategoryId = categoryId; const ttHtml = '<div class="tooltip-label">Categoria</div><div class="tooltip-names" style="color:' + category.color + '">' + escapeHtml(category.name) + '</div>'; showLineTooltip(ttHtml, e.clientX, e.clientY); }
             }
         });
         function highlightConnector(p) { svg.appendChild(p); p.setAttribute('opacity', '0.9'); p.setAttribute('stroke-width', '4'); if (!isMobile()) { p.setAttribute('filter', 'url(#' + glowIdCat + ')'); } p.setAttribute('stroke', category.color); p.classList.add('highlighted'); isHighlighted = true; }
@@ -797,17 +835,18 @@ function drawLinkedEventLines(sortedEvents, eventPositions, categories) {
             const dateA = new Date(event.startYear, event.startMonth || 0, event.startDay || 1);
             const dateB = new Date(linkedEvent.startYear, linkedEvent.startMonth || 0, linkedEvent.startDay || 1);
             const linkedIsEarlier = dateB < dateA;
-            let colorA = categoryA ? categoryA.color : '#7c3aed';
-            let colorB = categoryB ? categoryB.color : '#7c3aed';
-            if (linkedIsEarlier) { const tempColor = colorA; colorA = colorB; colorB = tempColor; }
+            const colorA = categoryA ? categoryA.color : '#7c3aed';
+            const colorB = categoryB ? categoryB.color : '#7c3aed';
             const startY = (eventPositions[event.id] || 0);
             const endY = (eventPositions[linkedEvent.id] || 0);
             const centerX = getTimelineCenterX();
             const curveAmount = Math.max(40, Math.abs(endY - startY) * 0.15);
             const gradientId = 'grad_' + event.id + '_' + linkedEventId;
             const glowId = 'glow_' + event.id + '_' + linkedEventId;
+            const gradColorTop = (startY < endY) ? colorA : colorB;
+            const gradColorBottom = (startY < endY) ? colorB : colorA;
             const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-            defs.innerHTML = '<linearGradient id="' + gradientId + '" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="' + colorA + '"/><stop offset="100%" stop-color="' + colorB + '"/></linearGradient><filter id="' + glowId + '" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>';
+            defs.innerHTML = '<linearGradient id="' + gradientId + '" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="' + gradColorTop + '"/><stop offset="100%" stop-color="' + gradColorBottom + '"/></linearGradient><filter id="' + glowId + '" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>';
             defs.classList.add('link-defs');
             svg.appendChild(defs);
             const side = link.side || 'auto';
@@ -844,7 +883,7 @@ function drawLinkedEventLines(sortedEvents, eventPositions, categories) {
             function highlightLink() { svg.appendChild(glowPath); svg.appendChild(linkPath); glowPath.setAttribute('opacity', '0.65'); glowPath.setAttribute('stroke-width', '14'); linkPath.setAttribute('opacity', '1'); linkPath.setAttribute('stroke-width', '5.5'); }
             function unhighlightLink() { glowPath.setAttribute('opacity', '0.3'); glowPath.setAttribute('stroke-width', '9'); linkPath.setAttribute('opacity', '0.8'); linkPath.setAttribute('stroke-width', '3.5'); }
             paths.forEach(function (p) {
-                p.addEventListener('mouseenter', function (e) { if (isMobile()) return; highlightLink(); isLinkHighlighted = true; const ttHtml = '<div class="tooltip-label">Eventi Collegati</div><div class="tooltip-names"><span style="color:' + colorA + '">' + escapeHtml(event.title) + '</span><span class="tooltip-separator">' + (side === 'left' ? '←' : '→') + '</span><span style="color:' + colorB + '">' + escapeHtml(linkedEvent.title) + '</span></div>'; showLineTooltip(ttHtml, e.clientX, e.clientY); });
+                p.addEventListener('mouseenter', function (e) { if (isMobile()) return; highlightLink(); isLinkHighlighted = true; var olderEvent, olderColor, newerEvent, newerColor; if (dateA < dateB) { olderEvent = event; olderColor = colorA; newerEvent = linkedEvent; newerColor = colorB; } else { olderEvent = linkedEvent; olderColor = colorB; newerEvent = event; newerColor = colorA; } const ttHtml = '<div class="tooltip-label">Eventi Collegati</div><div class="tooltip-names"><span style="color:' + olderColor + '">' + escapeHtml(olderEvent.title) + '</span><span class="tooltip-separator">→</span><span style="color:' + newerColor + '">' + escapeHtml(newerEvent.title) + '</span></div>'; showLineTooltip(ttHtml, e.clientX, e.clientY); });
                 p.addEventListener('mouseleave', function () { if (isMobile()) return; unhighlightLink(); isLinkHighlighted = false; hideLineTooltip(); });
                 p.addEventListener('mousemove', function (e) { if (isMobile()) return; if (isLinkHighlighted) { const tt = document.getElementById('lineTooltip'); if (tt) { tt.style.left = e.clientX + 'px'; tt.style.top = e.clientY + 'px'; } } });
                 p.addEventListener('click', function (e) {
@@ -852,7 +891,7 @@ function drawLinkedEventLines(sortedEvents, eventPositions, categories) {
                     e.stopPropagation();
                     svg.querySelectorAll('.link-connector.highlighted').forEach(function (el) { if (el !== glowPath && el !== linkPath) { unhighlightOtherLink(el); } });
                     if (isLinkHighlighted) { unhighlightLink(); isLinkHighlighted = false; svg.querySelectorAll('.link-connector.highlighted').forEach(function (el) { el.classList.remove('highlighted'); }); hideLineTooltip(); }
-                    else { highlightLink(); isLinkHighlighted = true; glowPath.classList.add('highlighted'); linkPath.classList.add('highlighted'); const ttHtml = '<div class="tooltip-label">Eventi Collegati</div><div class="tooltip-names"><span style="color:' + colorA + '">' + escapeHtml(event.title) + '</span><span class="tooltip-separator">' + (side === 'left' ? '←' : '→') + '</span><span style="color:' + colorB + '">' + escapeHtml(linkedEvent.title) + '</span></div>'; showLineTooltip(ttHtml, e.clientX, e.clientY); }
+                    else { highlightLink(); isLinkHighlighted = true; glowPath.classList.add('highlighted'); linkPath.classList.add('highlighted'); var olderEvent, olderColor, newerEvent, newerColor; if (dateA < dateB) { olderEvent = event; olderColor = colorA; newerEvent = linkedEvent; newerColor = colorB; } else { olderEvent = linkedEvent; olderColor = colorB; newerEvent = event; newerColor = colorA; } const ttHtml = '<div class="tooltip-label">Eventi Collegati</div><div class="tooltip-names"><span style="color:' + olderColor + '">' + escapeHtml(olderEvent.title) + '</span><span class="tooltip-separator">→</span><span style="color:' + newerColor + '">' + escapeHtml(newerEvent.title) + '</span></div>'; showLineTooltip(ttHtml, e.clientX, e.clientY); }
                 });
             });
             function unhighlightOtherLink(el) {

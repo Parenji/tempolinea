@@ -18,6 +18,11 @@ function setupKeyboardShortcuts() {
 
         if (e.key === 'Escape') {
             e.preventDefault();
+            // Close quick create first if visible
+            if (typeof hideQuickCreate === 'function' && isQuickCreateVisible()) {
+                hideQuickCreate();
+                return;
+            }
             // Close lightbox first if open
             const lightbox = document.getElementById('imageLightbox');
             if (lightbox && lightbox.classList.contains('open')) {
