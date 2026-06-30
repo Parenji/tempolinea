@@ -406,7 +406,7 @@ function renderEvents() {
         }
     });
     drawCategoryConnectors(filteredEvents, categorySides, eventSides, eventPositions, categories);
-    drawLinkedEventLines(filteredEvents, basePositions, categories);
+    drawLinkedEventLines(filteredEvents, eventPositions, eventSides, categories);
     updateMiniMap();
     if (activeCategoryFilters.length > 0 && filteredEvents.length > 0) {
         const firstMatching = filteredEvents.find(function (e) {
@@ -820,9 +820,23 @@ function drawCategoryConnectors(sortedEvents, categorySides, eventSides, eventPo
     });
 }
 
-function drawLinkedEventLines(sortedEvents, eventPositions, categories) {
+function drawLinkedEventLines(sortedEvents, eventPositions, eventSides, categories) {
     const svg = document.getElementById('linksSvg');
     svg.querySelectorAll('.link-connector, .link-defs').forEach(function (el) { el.remove(); });
+
+    // Helper: get the horizontal center of a card element in the DOM
+    function getCardCenterX(eventId, expectedSide) {
+        const card = document.querySelector('.event-card[data-event-id="' + eventId + '"], .note-card[data-event-id="' + eventId + '"]');
+        if (card) {
+            const rect = card.getBoundingClientRect();
+            return rect.left + rect.width / 2;
+        }
+        // Fallback: compute from side and centerX if card not found in DOM
+        const centerX = getTimelineCenterX();
+        const margin = window.innerWidth <= 1038 ? 14 : 16;
+        return expectedSide === 'left' ? centerX - margin - 180 : centerX + margin + 180;
+    }
+
     sortedEvents.forEach(function (event) {
         if (!event.linkedEvents || !Array.isArray(event.linkedEvents)) return;
         if (event.isPeriod) return;
@@ -839,6 +853,10 @@ function drawLinkedEventLines(sortedEvents, eventPositions, categories) {
             const colorB = categoryB ? categoryB.color : '#7c3aed';
             const startY = (eventPositions[event.id] || 0);
             const endY = (eventPositions[linkedEvent.id] || 0);
+            const startSide = eventSides[event.id] || 'left';
+            const endSide = eventSides[linkedEvent.id] || 'right';
+            const startX = getCardCenterX(event.id, startSide);
+            const endX = getCardCenterX(linkedEvent.id, endSide);
             const centerX = getTimelineCenterX();
             const curveAmount = Math.max(40, Math.abs(endY - startY) * 0.15);
             const gradientId = 'grad_' + event.id + '_' + linkedEventId;
@@ -854,7 +872,8 @@ function drawLinkedEventLines(sortedEvents, eventPositions, categories) {
             if (side === 'left') { curveDir = -1; }
             else if (side === 'right') { curveDir = 1; }
             else { curveDir = linkedIsEarlier ? 1 : -1; }
-            const d = 'M ' + centerX + ' ' + startY + ' C ' + (centerX + curveAmount * curveDir) + ' ' + startY + ', ' + (centerX + curveAmount * curveDir) + ' ' + endY + ', ' + centerX + ' ' + endY;
+            const midX = (startX + endX) / 2;
+            const d = 'M ' + startX + ' ' + startY + ' C ' + (midX + curveAmount * curveDir) + ' ' + startY + ', ' + (midX + curveAmount * curveDir) + ' ' + endY + ', ' + endX + ' ' + endY;
             const glowPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             glowPath.setAttribute('d', d);
             glowPath.setAttribute('stroke', 'url(#' + gradientId + ')');

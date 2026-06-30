@@ -1295,6 +1295,26 @@ mark.search-highlight {
 
 .btn-cancel:hover { background: var(--border-color); }
 
+.btn-convert-period {
+    display: inline-block;
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    background: linear-gradient(135deg, rgba(16,185,129,0.12), rgba(5,150,105,0.08));
+    color: #10b981;
+    border: 1px solid rgba(16,185,129,0.3);
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+
+.btn-convert-period:hover {
+    background: linear-gradient(135deg, rgba(16,185,129,0.22), rgba(5,150,105,0.15));
+    border-color: rgba(16,185,129,0.5);
+    transform: translateY(-1px);
+}
+
 .color-picker {
     display: flex;
     gap: 0.4rem;

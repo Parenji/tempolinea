@@ -121,6 +121,11 @@ function editEvent(eventId) {
         renderLinkedEventsList();
         document.getElementById('eventModalTitle').textContent = 'Modifica Periodo';
         switchFormTab('period');
+        // Show convert-to-event button for periods
+        var convertEventContainer = document.getElementById('convertToEventContainer');
+        if (convertEventContainer) {
+            convertEventContainer.style.display = 'block';
+        }
     } else {
         currentFormType = 'event';
         selectedCategoryId = event.categoryId;
@@ -140,8 +145,44 @@ function editEvent(eventId) {
         populateLinkedEvents();
         document.getElementById('eventModalTitle').textContent = 'Modifica Evento';
         switchFormTab('event');
+        // Show convert-to-period button if event has endYear
+        var convertContainer = document.getElementById('convertToPeriodContainer');
+        if (convertContainer) {
+            convertContainer.style.display = event.endYear ? 'block' : 'none';
+        }
     }
     document.getElementById('eventModal').classList.add('open');
+}
+
+function convertToPeriod() {
+    if (!editingEventId) return;
+    const allEvents = getEvents();
+    const event = allEvents.find(function (e) { return String(e.id) === String(editingEventId); });
+    if (!event) return;
+    if (event.isPeriod) { showToast('È già un periodo', 'info'); return; }
+    if (!event.endYear) { showToast('L\'evento non ha una data di fine', 'error'); return; }
+    pushUndo();
+    event.isPeriod = true;
+    setEvents(allEvents);
+    saveState();
+    closeModal();
+    renderEvents();
+    showToast('Evento trasformato in periodo', 'success');
+}
+
+function convertToEvent() {
+    if (!editingEventId) return;
+    const allEvents = getEvents();
+    const event = allEvents.find(function (e) { return String(e.id) === String(editingEventId); });
+    if (!event) return;
+    if (!event.isPeriod) { showToast('È già un evento', 'info'); return; }
+    pushUndo();
+    event.isPeriod = false;
+    setEvents(allEvents);
+    saveState();
+    closeModal();
+    renderEvents();
+    showToast('Periodo trasformato in evento', 'success');
 }
 
 function deleteEvent(eventId) {

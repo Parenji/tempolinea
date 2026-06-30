@@ -187,14 +187,18 @@ function setupEventListeners() {
                 el.removeAttribute('filter');
                 el.classList.remove('highlighted', 'persistent-highlight');
             });
-            document.querySelectorAll('.link-connector.highlighted').forEach(function (el) {
-                if (el.classList.contains('link-glow')) { el.setAttribute('opacity', '0.3'); el.setAttribute('stroke-width', '9'); }
-                else { el.setAttribute('opacity', '0.8'); el.setAttribute('stroke-width', '3.5'); }
-                el.classList.remove('highlighted');
-            });
+            var highlightedLinks = document.querySelectorAll('.link-connector.highlighted');
+            if (highlightedLinks.length > 0) {
+                highlightedLinks.forEach(function (el) {
+                    if (el.classList.contains('link-glow')) { el.setAttribute('opacity', '0.3'); el.setAttribute('stroke-width', '9'); }
+                    else { el.setAttribute('opacity', '0.8'); el.setAttribute('stroke-width', '3.5'); }
+                    el.classList.remove('highlighted');
+                });
+                didCloseSomething = true;
+            }
             hideLineTooltip();
         }
-        if (!e.target.closest('.event-card') && !e.target.closest('.note-card') && !e.target.closest('#imageLightbox') && expandedEventId !== null) {
+        if (!e.target.closest('.modal-overlay') && !e.target.closest('.event-card') && !e.target.closest('.note-card') && !e.target.closest('#imageLightbox') && expandedEventId !== null) {
             collapseAndFocus(expandedEventId);
             didCloseSomething = true;
         }

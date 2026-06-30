@@ -79,7 +79,7 @@ function switchFormTab(type) {
         const el = document.getElementById(inputId);
         if (el) {
             el.required = cfg.inputs[inputId].required;
-            if (cfg.inputs[inputId].focus) el.focus();
+            if (cfg.inputs[inputId].focus) { el.focus(); el.select(); }
         }
     });
     // Set title label & placeholder
@@ -93,6 +93,12 @@ function switchFormTab(type) {
     // Set modal title
     const modalTitle = document.getElementById('eventModalTitle');
     if (modalTitle) modalTitle.textContent = cfg.title;
+    // Hide convert-to-period container (only shown when editing event with endYear)
+    var convertContainer = document.getElementById('convertToPeriodContainer');
+    if (convertContainer) convertContainer.style.display = 'none';
+    // Hide convert-to-event container (only shown when editing a period)
+    var convertEventContainer = document.getElementById('convertToEventContainer');
+    if (convertEventContainer) convertEventContainer.style.display = 'none';
 }
 
 var lastFocusedElement = null;
@@ -108,6 +114,7 @@ function openModal(opts) {
     document.getElementById('eventForm').reset();
     selectedCategoryId = null;
     editingEventId = null;
+    expandedEventId = null;
     selectedLinkedEvents = [];
     var type = opts.type || 'event';
     currentFormType = type;
@@ -117,8 +124,7 @@ function openModal(opts) {
     populateLinkedEvents();
     document.getElementById('modalTabs').style.display = 'flex';
     if (document.getElementById('eventImageUrl')) document.getElementById('eventImageUrl').value = '';
-    switchFormTab(type);
-    // Pre-fill year if provided
+    // Pre-fill year if provided (must happen before switchFormTab so select() covers the value)
     if (opts.year !== undefined && opts.year !== null) {
         if (type === 'note') {
             document.getElementById('noteYear').value = opts.year;
@@ -128,12 +134,7 @@ function openModal(opts) {
             document.getElementById('startYear').value = opts.year;
         }
     }
-    // Move focus to first focusable element in modal
-    var firstInput;
-    if (type === 'note') firstInput = document.getElementById('noteYear');
-    else if (type === 'period') firstInput = document.getElementById('periodStartYear');
-    else firstInput = document.getElementById('startYear');
-    if (firstInput) setTimeout(function () { firstInput.focus(); firstInput.select(); }, 100);
+    switchFormTab(type);
 }
 
 function closeModal() {

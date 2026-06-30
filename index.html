@@ -229,6 +229,11 @@
                         </div>
                     </div>
                 </div>
+                <!-- Convert to period button (only visible when editing an event with end date) -->
+                <div id="convertToPeriodContainer" style="display:none; margin-bottom: 0.75rem; text-align: center;">
+                    <button type="button" class="btn-convert-period" onclick="convertToPeriod()">🔄 Trasforma in Periodo</button>
+                    <small style="display:block; color:var(--text-secondary); font-size:0.6875rem; margin-top:0.25rem;">Converte l'evento in un periodo con barra colorata sulla timeline.</small>
+                </div>
                 <!-- Period-specific fields -->
                 <div id="periodFields" style="display:none;">
                     <div class="form-row">
@@ -261,6 +266,11 @@
                             <input type="number" id="periodEndDay" min="1" max="31" placeholder="1-31">
                         </div>
                     </div>
+                </div>
+                <!-- Convert to event button (only visible when editing a period) -->
+                <div id="convertToEventContainer" style="display:none; margin-bottom: 0.75rem; text-align: center;">
+                    <button type="button" class="btn-convert-period" onclick="convertToEvent()">🔄 Trasforma in Evento</button>
+                    <small style="display:block; color:var(--text-secondary); font-size:0.6875rem; margin-top:0.25rem;">Converte il periodo in un evento puntuale con card sulla timeline.</small>
                 </div>
                 <!-- Note-specific fields -->
                 <div id="noteFields" style="display:none;">
