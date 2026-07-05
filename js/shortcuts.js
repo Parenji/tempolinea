@@ -16,6 +16,17 @@ function setupKeyboardShortcuts() {
         const ctrl = e.ctrlKey || e.metaKey;
         const shift = e.shiftKey;
 
+        // Enter cycles through searchResults (works with both search text and category pills)
+        if (e.key === 'Enter' && searchResults.length > 0) {
+            e.preventDefault();
+            currentSearchIndex = (currentSearchIndex + 1) % searchResults.length;
+            document.getElementById('searchCounter').textContent = (currentSearchIndex + 1) + '/' + searchResults.length;
+            updateSearchNavButtons();
+            applySearchGlow(searchResults[currentSearchIndex]);
+            scrollToYear(searchResults[currentSearchIndex].startYear);
+            return;
+        }
+
         if (e.key === 'Escape') {
             e.preventDefault();
             // Close quick create first if visible

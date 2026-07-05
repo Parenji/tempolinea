@@ -125,23 +125,35 @@ function cardButtonsHtml(eventId) {
         '</div>';
 }
 
-function cardContentHtml(event, color, yearText) {
+function categoryPillsHtml(eventCategories) {
+    if (!eventCategories || eventCategories.length === 0) return '';
+    var html = '<div class="event-categories">';
+    eventCategories.forEach(function(cat) {
+        html += '<span class="pill" style="border-left:3px solid ' + escapeHtml(cat.color) + '" onclick="event.stopPropagation();filterByCategory(\'' + escapeHtml(cat.id) + '\')" tabindex="0" role="radio" aria-label="Filtra categoria ' + escapeHtml(cat.name) + '">' + escapeHtml(cat.name) + '</span>';
+    });
+    html += '</div>';
+    return html;
+}
+
+function cardContentHtml(event, color, yearText, eventCategories) {
     var html = '';
     if (event.imageUrl) html += IMG_ICON_SVG;
     html += '<div class="event-date" style="color:' + color + '">' + yearText + '</div>';
     html += '<div class="event-name">' + escapeHtml(event.title) + '</div>';
     html += cardImageHtml(event);
     if (event.description) html += '<div class="event-description">' + formatDescription(event.description) + '</div>';
+    if (eventCategories && eventCategories.length > 0) html += categoryPillsHtml(eventCategories);
     html += cardButtonsHtml(event.id);
     return html;
 }
 
-function noteContentHtml(event) {
+function noteContentHtml(event, eventCategories) {
     var html = '';
     if (event.imageUrl) html += IMG_ICON_SVG;
     if (event.title) html += '<div class="note-title">' + escapeHtml(event.title) + '</div>';
     html += cardImageHtml(event);
     if (event.description) html += '<div class="note-desc">' + formatDescription(event.description) + '</div>';
+    if (eventCategories && eventCategories.length > 0) html += categoryPillsHtml(eventCategories);
     html += '<div class="note-btns">' +
         '<button class="note-btn note-edit-btn" onclick="event.stopPropagation(); editEvent(\'' + event.id + '\')" aria-label="Modifica nota">Modifica</button>' +
         '<button class="note-btn note-delete-btn" onclick="event.stopPropagation(); deleteEvent(\'' + event.id + '\')" aria-label="Elimina nota">Elimina</button>' +
@@ -149,13 +161,14 @@ function noteContentHtml(event) {
     return html;
 }
 
-function periodDetailHtml(event, color, yearText) {
+function periodDetailHtml(event, color, yearText, eventCategories) {
     var html = '';
     if (event.imageUrl) html += IMG_ICON_SVG;
     html += '<div class="detail-date" style="color:' + color + '">' + yearText + '</div>';
     html += '<div class="detail-title">' + escapeHtml(event.title) + '</div>';
     html += cardImageHtml(event);
     if (event.description) html += '<div class="detail-desc">' + formatDescription(event.description) + '</div>';
+    if (eventCategories && eventCategories.length > 0) html += categoryPillsHtml(eventCategories);
     html += '<div class="detail-btns">' +
         '<button class="detail-btn" onclick="event.stopPropagation(); editEvent(\'' + event.id + '\')">Modifica</button>' +
         '<button class="detail-btn danger" onclick="event.stopPropagation(); deleteEvent(\'' + event.id + '\')">Elimina</button>' +
@@ -172,8 +185,8 @@ function renderEvents() {
     const categories = getCategories();
     container.innerHTML = '';
     document.querySelectorAll('.period-detail-card').forEach(function (el) { el.remove(); });
-    const filteredEvents = getEvents().slice();
-    if (filteredEvents.length === 0) {
+    var rawEvents = getEvents().slice();
+    if (rawEvents.length === 0) {
         emptyState.style.display = 'block';
         emptyState.querySelector('h3').textContent = 'Timeline Vuota';
         emptyState.querySelector('p').textContent = 'Premi il pulsante in basso a destra per aggiungere il tuo primo evento, oppure...';
@@ -182,95 +195,39 @@ function renderEvents() {
         return;
     }
     emptyState.style.display = 'none';
-    filteredEvents.sort(function (a, b) { return a.startYear - b.startYear; });
 
-    const categorySides = {};
-    filteredEvents.forEach(function (event) {
-        if (event.categoryId && !categorySides[event.categoryId]) {
-            const category = categories.find(function (c) { return c.id === event.categoryId; });
-            let side;
-            if (category && category.preferredSide === 'left') side = 'left';
-            else if (category && category.preferredSide === 'right') side = 'right';
-            else side = (Object.keys(categorySides).length % 2 === 0) ? 'left' : 'right';
-            categorySides[event.categoryId] = side;
-        }
-    });
-
-    const eventPositions = {};
-    const eventSides = {};
-    const basePositions = {};
-    const isMobileLayout = window.innerWidth <= 768;
-    const minSpacing = isMobileLayout ? 80 : 75;
-
-    filteredEvents.forEach(function (event, index) {
-        const category = categories.find(function (c) { return c.id === event.categoryId; });
-        const defaultSide = category ? categorySides[event.categoryId] : (index % 2 === 0 ? 'left' : 'right');
-        const yearPos = yearToPixelsCached(event.startYear, event.startMonth, event.startDay);
-        basePositions[event.id] = yearPos;
-        let adjustedPosition = yearPos;
-        let offset = 0;
-        let currentSide = defaultSide;
-        for (let i = 0; i < index; i++) {
-            const prevEvent = filteredEvents[i];
-            const prevPosition = eventPositions[prevEvent.id];
-            const prevSide = eventSides[prevEvent.id];
-            if (prevSide === currentSide && (prevPosition + minSpacing) > yearPos) {
-                const sameCategory = event.categoryId && prevEvent.categoryId && String(event.categoryId) === String(prevEvent.categoryId);
-                if (sameCategory) {
-                    offset = Math.max(offset, prevPosition + minSpacing - yearPos);
-                } else {
-                    const otherSide = (currentSide === 'left') ? 'right' : 'left';
-                    let canSwitch = true;
-                    for (let j = 0; j < index; j++) {
-                        const checkEvent = filteredEvents[j];
-                        if (eventSides[checkEvent.id] === otherSide && (eventPositions[checkEvent.id] + minSpacing) > yearPos) {
-                            canSwitch = false;
-                            break;
-                        }
-                    }
-                    if (canSwitch) { currentSide = otherSide; }
-                    else { offset = Math.max(offset, prevPosition + minSpacing - yearPos); }
-                }
-            }
-        }
-        adjustedPosition = yearPos + offset;
-        eventPositions[event.id] = adjustedPosition;
-        eventSides[event.id] = currentSide;
-    });
-
-    // Separate non-notes for node-offsets and period-lane computation
-    const regularEvents = [];
-    filteredEvents.forEach(function (event) {
-        if (event.type !== 'note') { regularEvents.push(event); }
-    });
-
-    // Compute node offsets for events sharing the same year
-    const nodeOffsets = {};
-    const posGroups = {};
-    regularEvents.forEach(function (event) {
-        if (event.isPeriod) return;
-        const pos = Math.round(basePositions[event.id]);
-        if (!posGroups[pos]) posGroups[pos] = [];
-        posGroups[pos].push(event.id);
-    });
-    Object.keys(posGroups).forEach(function (pos) {
-        const ids = posGroups[pos];
-        if (ids.length === 1) { nodeOffsets[ids[0]] = 0; return; }
-        const maxSpread = Math.min(12, (ids.length - 1) * 4);
-        ids.forEach(function (id, i) {
-            nodeOffsets[id] = -maxSpread + (maxSpread * 2 * i) / (ids.length - 1 || 1);
-        });
-    });
-
-    // Compute period lanes
-    const periodLanes = assignPeriodLanes(regularEvents);
+    // Use layout engine for all positioning calculations
+    var layout = computeFullLayout(getEvents(), categories, {});
+    var filteredEvents = layout.sortedEvents;
+    var categorySides = layout.categorySides;
+    var eventPositions = layout.eventPositions;
+    var eventSides = layout.eventSides;
+    var basePositions = layout.basePositions;
+    var regularEvents = layout.regularEvents;
+    var nodeOffsets = layout.nodeOffsets;
+    var periodLanes = layout.periodLanes;
 
     // Render all items in chronological DOM order (notes, events, periods interleaved)
     filteredEvents.forEach(function (event) {
-        const category = categories.find(function (c) { return c.id === event.categoryId; });
+        // Primary category for color/layout
+        var primaryCatId = (event.categoryIds && event.categoryIds.length > 0) ? event.categoryIds[0] : null;
+        if (!primaryCatId && event.categoryId) primaryCatId = String(event.categoryId);
+        const category = categories.find(function (c) { return c.id === primaryCatId; });
+        var secondaryCategory = null;
+        if (event.categoryIds && event.categoryIds.length > 1) {
+            secondaryCategory = categories.find(function (c) { return c.id === event.categoryIds[1]; });
+        }
         const side = eventSides[event.id];
         const color = category ? category.color : '#7c3aed';
         const position = eventPositions[event.id];
+
+        // Build event categories array for pills in cards
+        var eventCategories = [];
+        if (event.categoryIds && event.categoryIds.length > 0) {
+            eventCategories = event.categoryIds.map(function(cid) {
+                return categories.find(function(c) { return c.id === cid; });
+            }).filter(Boolean);
+        }
 
         if (event.type === 'note') {
             const note = document.createElement('div');
@@ -282,7 +239,7 @@ function renderEvents() {
             note.setAttribute('aria-label', 'Nota: ' + (event.title || 'senza titolo'));
             note.setAttribute('aria-expanded', expandedEventId === event.id ? 'true' : 'false');
             if (expandedEventId === event.id) { note.classList.add('expanded'); }
-            note.innerHTML = noteContentHtml(event);
+            note.innerHTML = noteContentHtml(event, eventCategories);
             var noteId = event.id;
             note.addEventListener('click', function (e) { e.stopPropagation(); toggleExpand(noteId); });
             note.addEventListener('keydown', function (e) {
@@ -311,6 +268,12 @@ function renderEvents() {
             strip.style.top = startPos + 'px';
             strip.style.height = stripHeight + 'px';
             strip.style.setProperty('--strip-color', color);
+            // Bicolor for 2 categories on period
+            if (secondaryCategory && secondaryCategory.color) {
+                strip.style.setProperty('--bicolor-a', color);
+                strip.style.setProperty('--bicolor-b', secondaryCategory.color);
+                strip.classList.add('two-categories');
+            }
             strip.dataset.eventId = event.id;
             strip.setAttribute('tabindex', '0');
             strip.setAttribute('role', 'article');
@@ -334,24 +297,52 @@ function renderEvents() {
             detailCard.className = 'period-detail-card';
             detailCard.id = 'detail-' + event.id;
             const yearText = formatYear(event.startYear, event.startMonth, event.startDay) + ' - ' + formatYear(event.endYear, event.endMonth, event.endDay);
-            detailCard.innerHTML = periodDetailHtml(event, color, yearText);
+            detailCard.innerHTML = periodDetailHtml(event, color, yearText, eventCategories);
             document.body.appendChild(detailCard);
             var stripEvtId = event.id;
+            // Shared cleanup function for closing the period detail card
+            function closePeriodDetail(strip, detailCard, node) {
+                strip.classList.remove('active');
+                strip.setAttribute('aria-expanded', 'false');
+                detailCard.classList.remove('visible');
+                if (node) { node.classList.remove('expanded-node', 'period-highlighted'); }
+            }
             const periodClickHandler = function (e) {
                 e.stopPropagation();
                 const wasActive = strip.classList.contains('active');
                 document.querySelectorAll('.period-strip.active').forEach(function (el) {
-                    if (el !== strip) { el.classList.remove('active'); el.setAttribute('aria-expanded', 'false'); const otherCard = document.getElementById('detail-' + el.dataset.eventId); if (otherCard) otherCard.classList.remove('visible'); const nodes = document.querySelectorAll('.event-node.period-highlighted'); nodes.forEach(function (n) { n.classList.remove('expanded-node', 'period-highlighted'); }); }
+                    if (el !== strip) { const otherCard = document.getElementById('detail-' + el.dataset.eventId); const otherNode = document.querySelector('.event-node[data-event-id="' + el.dataset.eventId + '"]'); closePeriodDetail(el, otherCard, otherNode); const nodes = document.querySelectorAll('.event-node.period-highlighted'); nodes.forEach(function (n) { n.classList.remove('expanded-node', 'period-highlighted'); }); }
                 });
-                if (wasActive) { strip.classList.remove('active'); strip.setAttribute('aria-expanded', 'false'); detailCard.classList.remove('visible'); var node = document.querySelector('.event-node[data-event-id="' + stripEvtId + '"]'); if (node) { node.classList.remove('expanded-node', 'period-highlighted'); } }
+                if (wasActive) {
+                    var node = document.querySelector('.event-node[data-event-id="' + stripEvtId + '"]');
+                    closePeriodDetail(strip, detailCard, node);
+                    // Remove scroll listener if it exists
+                    if (strip._scrollCloseHandler) {
+                        document.getElementById('timelineRuler').removeEventListener('scroll', strip._scrollCloseHandler);
+                        strip._scrollCloseHandler = null;
+                    }
+                }
                 else {
                     strip.classList.add('active'); strip.setAttribute('aria-expanded', 'true'); detailCard.classList.add('visible');
                     var node = document.querySelector('.event-node[data-event-id="' + stripEvtId + '"]');
                     if (node) { node.classList.add('expanded-node', 'period-highlighted'); }
+                    // On mobile, close detail card when user scrolls the timeline
+                    if (window.innerWidth <= 768) {
+                        var ruler = document.getElementById('timelineRuler');
+                        var scrollHandler = function () {
+                            closePeriodDetail(strip, detailCard, document.querySelector('.event-node[data-event-id="' + stripEvtId + '"]'));
+                            ruler.removeEventListener('scroll', scrollHandler);
+                            strip._scrollCloseHandler = null;
+                        };
+                        strip._scrollCloseHandler = scrollHandler;
+                        ruler.addEventListener('scroll', scrollHandler, { passive: true });
+                    }
                 }
                 // Position vertically at click point, horizontally adjacent to strip
                 var clickY = (e && e.clientY) ? e.clientY : null;
-                updateDetailCardPosition(strip, detailCard, side, clickY);
+                updateDetailCardPosition(strip, detailCard, lane, clickY);
+                // Re-position after images load (which may grow the card height)
+                repositionAfterImagesLoad(detailCard, strip, lane);
             };
             strip.addEventListener('click', periodClickHandler);
             strip.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); periodClickHandler(e); } });
@@ -360,7 +351,8 @@ function renderEvents() {
                 if (window.innerWidth <= 768) return;
                 clearTimeout(hoverTimeout);
                 detailCard.classList.add('visible');
-                updateDetailCardPosition(strip, detailCard, side, null);
+                updateDetailCardPosition(strip, detailCard, lane, null);
+                repositionAfterImagesLoad(detailCard, strip, lane);
             });
             strip.addEventListener('mouseleave', function () {
                 if (window.innerWidth <= 768) return;
@@ -378,7 +370,12 @@ function renderEvents() {
             const node2 = document.createElement('div');
             node2.className = 'event-node' + (expandedEventId === event.id ? ' expanded-node' : '');
             node2.style.top = (basePositions[event.id] - 5) + 'px';
-            node2.style.background = color;
+            // Bicolor node for 2 categories
+            if (secondaryCategory && secondaryCategory.color) {
+                node2.style.background = 'linear-gradient(to right, ' + color + ' 50%, ' + secondaryCategory.color + ' 50%)';
+            } else {
+                node2.style.background = color;
+            }
             node2.style.marginLeft = offset2 + 'px';
             node2.dataset.eventId = event.id;
             container.appendChild(node2);
@@ -386,9 +383,17 @@ function renderEvents() {
             const card = document.createElement('div');
             card.className = 'event-card ' + side + '-side';
             card.style.top = (position - 15) + 'px';
-            card.style.borderColor = color;
+            // Bicolor border for 2 categories
+            if (secondaryCategory && secondaryCategory.color) {
+                card.style.border = 'none';
+                card.style.setProperty('--bicolor-a', color);
+                card.style.setProperty('--bicolor-b', secondaryCategory.color);
+                card.classList.add('bicolor-border');
+            } else {
+                card.style.borderColor = color;
+            }
             card.dataset.eventId = event.id;
-            card.dataset.categoryId = event.categoryId || '';
+            card.dataset.categoryId = primaryCatId || '';
             card.setAttribute('tabindex', '0');
             card.setAttribute('role', 'article');
             card.setAttribute('aria-label', 'Evento: ' + (event.title || 'senza titolo'));
@@ -396,7 +401,7 @@ function renderEvents() {
             var yearText = formatYear(event.startYear, event.startMonth, event.startDay);
             if (event.endYear) { yearText += ' - ' + formatYear(event.endYear, event.endMonth, event.endDay); }
             if (expandedEventId === event.id) { card.classList.add('expanded'); }
-            card.innerHTML = cardContentHtml(event, color, yearText);
+            card.innerHTML = cardContentHtml(event, color, yearText, eventCategories);
             card.addEventListener('click', function () { toggleExpand(evtId2); });
             card.addEventListener('keydown', function (e) {
                 if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleExpand(evtId2); }
@@ -411,7 +416,7 @@ function renderEvents() {
     if (activeCategoryFilters.length > 0 && filteredEvents.length > 0) {
         const firstMatching = filteredEvents.find(function (e) {
             if (e.type === 'note') return false;
-            return activeCategoryFilters.indexOf(String(e.categoryId)) !== -1;
+            return e.categoryIds && e.categoryIds.some(function (cid) { return activeCategoryFilters.indexOf(String(cid)) !== -1; });
         });
         if (firstMatching) { scrollToYear(firstMatching.startYear); }
     }
@@ -554,6 +559,66 @@ function ensureCardVisible(card, ruler) {
     }
 }
 
+// Re-position the detail card after CSS transitions and image loads complete.
+// Two sources of delayed size changes:
+//   1) CSS transition on .event-image (max-height 0→300px over 0.5s)
+//   2) Actual <img> loading (async network request)
+// We listen for both transitionend AND img load/error, then re-position once.
+function repositionAfterImagesLoad(detailCard, strip, lane) {
+    var eventImages = detailCard.querySelectorAll('.event-image');
+    var imgEls = detailCard.querySelectorAll('img');
+    if (eventImages.length === 0 && imgEls.length === 0) return;
+
+    var pending = 0;
+    var alreadyRan = false;
+    var reposition = function () {
+        if (alreadyRan) return;
+        pending--;
+        if (pending <= 0) {
+            alreadyRan = true;
+            updateDetailCardPosition(strip, detailCard, lane, null);
+        }
+    };
+
+    // 1) Listen for CSS transition end on each .event-image container
+    for (var i = 0; i < eventImages.length; i++) {
+        var container = eventImages[i];
+        // If the transition is already finished (or the container has non-zero height already), skip
+        var style = getComputedStyle(container);
+        if (style.maxHeight !== '0px' && style.maxHeight !== '0') continue;
+        pending++;
+        container.addEventListener('transitionend', function handler(e) {
+            if (e.propertyName === 'max-height') {
+                container.removeEventListener('transitionend', handler);
+                reposition();
+            }
+        });
+    }
+
+    // 2) Listen for actual image load/error
+    for (var j = 0; j < imgEls.length; j++) {
+        var img = imgEls[j];
+        if (img.complete) continue;
+        pending++;
+        var onDone = function () { reposition(); };
+        img.addEventListener('load', onDone, { once: true });
+        img.addEventListener('error', onDone, { once: true });
+    }
+
+    // If nothing is pending (all transitions done and images cached), re-position immediately
+    if (pending === 0) {
+        updateDetailCardPosition(strip, detailCard, lane, null);
+    } else {
+        // Safety timeout: if for any reason the events don't fire, reposition after 800ms
+        setTimeout(function () {
+            if (!alreadyRan) {
+                alreadyRan = true;
+                updateDetailCardPosition(strip, detailCard, lane, null);
+            }
+        }, 800);
+    }
+}
+
 function updateDetailCardPosition(strip, detailCard, side, clickY) {
     const toolbar = document.querySelector('.toolbar');
     const toolbarBottom = toolbar ? toolbar.getBoundingClientRect().bottom : 0;
@@ -571,7 +636,7 @@ function updateDetailCardPosition(strip, detailCard, side, clickY) {
     const sr = strip.getBoundingClientRect();
     const centerX = window.innerWidth / 2;
 
-    // ── STEP 1: Vertical center on click or strip center, clamp to viewport ──
+    // ── STEP 1: Position top-edge, clamp to viewport ──
     let cardCenterY;
     if (clickY !== null && clickY !== undefined) {
         cardCenterY = clickY;
@@ -581,15 +646,17 @@ function updateDetailCardPosition(strip, detailCard, side, clickY) {
     const minTop = toolbarBottom + margin;
     const maxBottom = window.innerHeight - margin;
     const halfH = cardHeight / 2;
-    if (cardCenterY - halfH < minTop) cardCenterY = minTop + halfH;
-    if (cardCenterY + halfH > maxBottom) cardCenterY = maxBottom - halfH;
+    // Prefer card centered on the target, but use top-edge positioning so
+    // that late-loading images (which grow the card) expand downward,
+    // never into the toolbar.
+    let cardTop = cardCenterY - halfH;
+    if (cardTop < minTop) cardTop = minTop;
+    if (cardTop + cardHeight > maxBottom) cardTop = maxBottom - cardHeight;
+    if (cardTop < minTop) cardTop = minTop;
 
     // ── STEP 2: Horizontal — symmetric algorithm for left and right ──
     let cardLeft;
-    if (isMobile) {
-        // Mobile: center card horizontally in the viewport
-        cardLeft = (window.innerWidth - cardWidth) / 2;
-    } else if (side === 'left') {
+    if (side === 'left') {
         // Strip is on the left side → card goes to the right of the strip,
         // ideally between strip and timeline center
         const spaceRight = centerX - sr.right - margin * 2;
@@ -623,43 +690,8 @@ function updateDetailCardPosition(strip, detailCard, side, clickY) {
     }
 
     detailCard.style.left = cardLeft + 'px';
-    detailCard.style.top = cardCenterY + 'px';
-    detailCard.style.transform = 'translateY(-50%)';
-}
-
-function assignPeriodLanes(regularEvents) {
-    const lanes = {};
-    const laneOrder = ['left', 'right'];
-    const laneRanges = {};
-    const periods = regularEvents.filter(function (e) { return e.isPeriod && e.endYear; });
-    periods.sort(function (a, b) {
-        const aStart = yearToPixelsCached(a.startYear, a.startMonth, a.startDay);
-        const bStart = yearToPixelsCached(b.startYear, b.startMonth, b.startDay);
-        return aStart - bStart;
-    });
-    periods.forEach(function (event) {
-        const startPos = yearToPixelsCached(event.startYear, event.startMonth, event.startDay);
-        const endPos = yearToPixelsCached(event.endYear, event.endMonth, event.endDay);
-        const minY = Math.min(startPos, endPos);
-        const maxY = Math.max(startPos, endPos);
-        let assignedLane = null;
-        for (let li = 0; li < laneOrder.length; li++) {
-            const candidate = laneOrder[li];
-            const ranges = laneRanges[candidate];
-            if (!ranges || ranges.length === 0) { assignedLane = candidate; break; }
-            let overlaps = false;
-            for (let ri = 0; ri < ranges.length; ri++) {
-                const r = ranges[ri];
-                if (minY < r.maxY + 5 && maxY > r.minY - 5) { overlaps = true; break; }
-            }
-            if (!overlaps) { assignedLane = candidate; break; }
-        }
-        if (!assignedLane) { assignedLane = 'left'; }
-        if (!laneRanges[assignedLane]) laneRanges[assignedLane] = [];
-        laneRanges[assignedLane].push({ minY: minY, maxY: maxY });
-        lanes[event.id] = assignedLane;
-    });
-    return lanes;
+    detailCard.style.top = cardTop + 'px';
+    detailCard.style.transform = 'none';
 }
 
 function fullRender() {
@@ -667,7 +699,7 @@ function fullRender() {
     renderRuler();
     renderPills();
     renderEvents();
-    renderCategorySelect();
+    renderCategorySelects();
     updateEmptyState();
 }
 
@@ -698,15 +730,22 @@ function highlightCategoryConnector(categoryId, showTooltip) {
 
 function unhighlightCategoryConnector(categoryId) {
     if (!categoryId) return;
-    highlightedCategoryId = null;
     const svg = document.getElementById('linksSvg');
+    var hasPersistent = false;
     svg.querySelectorAll('.category-connector[data-category-id="' + categoryId + '"]').forEach(function (p) {
+        if (p.classList.contains('persistent-highlight')) {
+            hasPersistent = true;
+            return;
+        }
         p.setAttribute('opacity', '0.2');
         p.setAttribute('stroke-width', '3');
         p.removeAttribute('filter');
         p.classList.remove('highlighted');
     });
-    hideLineTooltip();
+    if (!hasPersistent) {
+        highlightedCategoryId = null;
+        hideLineTooltip();
+    }
 }
 
 function getTimelineCenterX() {
@@ -722,7 +761,7 @@ function drawCategoryConnectors(sortedEvents, categorySides, eventSides, eventPo
     const slotWidth = mobileLayout ? 20 : 35;
     const categoryRanges = {};
     Object.keys(categorySides).forEach(function (categoryId) {
-        const catEvents = sortedEvents.filter(function (e) { return String(e.categoryId) === String(categoryId) && !e.isPeriod; });
+        const catEvents = sortedEvents.filter(function (e) { return e.categoryIds && e.categoryIds.indexOf(String(categoryId)) !== -1 && !e.isPeriod; });
         if (catEvents.length < 2) return;
         const ys = catEvents.map(function (e) { return eventPositions[e.id] || 0; });
         categoryRanges[categoryId] = { minY: Math.min.apply(null, ys), maxY: Math.max.apply(null, ys) };
@@ -745,7 +784,7 @@ function drawCategoryConnectors(sortedEvents, categorySides, eventSides, eventPo
         });
     });
     Object.keys(categorySides).forEach(function (categoryId) {
-        const catEvents = sortedEvents.filter(function (e) { return String(e.categoryId) === String(categoryId) && !e.isPeriod; });
+        const catEvents = sortedEvents.filter(function (e) { return e.categoryIds && e.categoryIds.indexOf(String(categoryId)) !== -1 && !e.isPeriod; });
         if (catEvents.length < 2) return;
         const category = categories.find(function (c) { return String(c.id) === String(categoryId); });
         if (!category) return;
@@ -844,8 +883,12 @@ function drawLinkedEventLines(sortedEvents, eventPositions, eventSides, categori
             const linkedEventId = link.eventId;
             const linkedEvent = sortedEvents.find(function (e) { return String(e.id) === String(linkedEventId); });
             if (!linkedEvent || linkedEvent.isPeriod) return;
-            const categoryA = categories.find(function (c) { return c.id === event.categoryId; });
-            const categoryB = categories.find(function (c) { return c.id === linkedEvent.categoryId; });
+            var catAId = (event.categoryIds && event.categoryIds.length > 0) ? event.categoryIds[0] : null;
+            if (!catAId && event.categoryId) catAId = String(event.categoryId);
+            var catBId = (linkedEvent.categoryIds && linkedEvent.categoryIds.length > 0) ? linkedEvent.categoryIds[0] : null;
+            if (!catBId && linkedEvent.categoryId) catBId = String(linkedEvent.categoryId);
+            const categoryA = categories.find(function (c) { return c.id === catAId; });
+            const categoryB = categories.find(function (c) { return c.id === catBId; });
             const dateA = new Date(event.startYear, event.startMonth || 0, event.startDay || 1);
             const dateB = new Date(linkedEvent.startYear, linkedEvent.startMonth || 0, linkedEvent.startDay || 1);
             const linkedIsEarlier = dateB < dateA;

@@ -98,6 +98,7 @@ function setZoom(value) {
     const currentScrollY = ruler.scrollTop + window.innerHeight / 2;
     const currentYear = estimateYearFromScroll(currentScrollY);
     pixelsPerYear = parseInt(value);
+    saveZoom(pixelsPerYear);
     const label = document.getElementById('zoomLabel');
     label.textContent = pixelsPerYear + 'px';
     if (pixelsPerYear === DEFAULT_PIXELS_PER_YEAR) {

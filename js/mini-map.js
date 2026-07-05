@@ -142,7 +142,9 @@ function updateMiniMap() {
         const scaleX = width / drawRange;
         events.forEach(function (event) {
             const x = (yearToPixelsCached(event.startYear, event.startMonth, event.startDay) - drawMinPx) * scaleX;
-            const category = categories.find(function (c) { return c.id === event.categoryId; });
+            var primCatId = (event.categoryIds && event.categoryIds.length > 0) ? event.categoryIds[0] : null;
+            if (!primCatId && event.categoryId) primCatId = String(event.categoryId);
+            const category = categories.find(function (c) { return c.id === primCatId; });
             const color = category ? category.color : '#7c3aed';
             if (event.isPeriod && event.endYear) {
                 const endX = (yearToPixelsCached(event.endYear, event.endMonth, event.endDay) - drawMinPx) * scaleX;
@@ -163,7 +165,9 @@ function updateMiniMap() {
         const scaleY = height / drawRange;
         events.forEach(function (event) {
             const y = (yearToPixelsCached(event.startYear, event.startMonth, event.startDay) - drawMinPx) * scaleY;
-            const category = categories.find(function (c) { return c.id === event.categoryId; });
+            var primCatId2 = (event.categoryIds && event.categoryIds.length > 0) ? event.categoryIds[0] : null;
+            if (!primCatId2 && event.categoryId) primCatId2 = String(event.categoryId);
+            const category = categories.find(function (c) { return c.id === primCatId2; });
             const color = category ? category.color : '#7c3aed';
             if (event.isPeriod && event.endYear) {
                 const endY = (yearToPixelsCached(event.endYear, event.endMonth, event.endDay) - drawMinPx) * scaleY;

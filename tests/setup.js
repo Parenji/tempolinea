@@ -25,6 +25,19 @@ const dom = new JSDOM(html, {
   pretendToBeVisual: true,
 });
 
+// Polyfill: JSDOM non implementa Element.scrollTo()
+if (typeof dom.window.Element.prototype.scrollTo === 'undefined') {
+  dom.window.Element.prototype.scrollTo = function(x, y) {
+    if (typeof x === 'object') {
+      this.scrollLeft = x.left || 0;
+      this.scrollTop = x.top || 0;
+    } else {
+      this.scrollLeft = x;
+      this.scrollTop = y;
+    }
+  };
+}
+
 // Esponi window/document globali
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
@@ -55,6 +68,7 @@ const scriptFiles = [
   'js/categories.js',
   'js/events.js',
   'js/mini-map.js',
+  'js/layout.js',
   'js/render.js',
   'js/search.js',
   'js/modals.js',

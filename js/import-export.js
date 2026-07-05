@@ -5,7 +5,7 @@ function exportData() {
     const timeline = getCurrentTimeline();
     if (!timeline) return;
     const data = JSON.stringify({ timeline: timeline, exportDate: new Date().toISOString() }, null, 2);
-    const suggestedName = 'timeline_' + timeline.name.replace(/[^a-zA-Z0-9]/g, '_') + '_' + new Date().toISOString().split('T')[0] + '.json';
+    const suggestedName = 'timeline_' + timeline.name.replace(/[^a-zA-Z0-9]/g, '_') + '_' + new Date().toLocaleDateString('sv-SE') + '.json';
     if (window.showSaveFilePicker) {
         window.showSaveFilePicker({ suggestedName: suggestedName, types: [{ description: 'File JSON', accept: { 'application/json': ['.json'] } }] })
             .then(function (handle) { return handle.createWritable().then(function (writable) { return writable.write(data).then(function () { return writable.close(); }); }); })

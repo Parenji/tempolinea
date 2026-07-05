@@ -41,17 +41,17 @@ function saveEvent() {
         const pEndMonth = document.getElementById('periodEndMonth').value ? parseInt(document.getElementById('periodEndMonth').value) : null;
         const pEndDay = document.getElementById('periodEndDay').value ? parseInt(document.getElementById('periodEndDay').value) : null;
         if (isNaN(pStartYear) || isNaN(pEndYear) || !title) { showToast('Inserisci anno inizio, anno fine e nome', 'error'); return; }
-        if (!selectedCategoryId) { showToast('Seleziona una categoria', 'error'); return; }
         const maxOverlap = getMaxSimultaneousPeriodsInRange(pStartYear, pEndYear, editingEventId);
         if (maxOverlap >= 2) { showToast('Limite raggiunto: in qualche punto di questo intervallo ci sarebbero troppi periodi simultanei', 'error'); return; }
+        var catIds = getSelectedCategoryIds();
         if (editingEventId) {
             const idx = allEvents.findIndex(function (e) { return e.id === editingEventId; });
             if (idx !== -1) {
-                allEvents[idx] = { id: editingEventId, type: 'event', startYear: pStartYear, startMonth: pStartMonth, startDay: pStartDay, endYear: pEndYear, endMonth: pEndMonth, endDay: pEndDay, title: title, description: description, imageUrl: imageUrl, categoryId: selectedCategoryId, isPeriod: true };
+                allEvents[idx] = { id: editingEventId, type: 'event', startYear: pStartYear, startMonth: pStartMonth, startDay: pStartDay, endYear: pEndYear, endMonth: pEndMonth, endDay: pEndDay, title: title, description: description, imageUrl: imageUrl, categoryIds: catIds, isPeriod: true };
             }
             showToast('Periodo modificato', 'success');
         } else {
-            allEvents.push({ id: generateId(), type: 'event', startYear: pStartYear, startMonth: pStartMonth, startDay: pStartDay, endYear: pEndYear, endMonth: pEndMonth, endDay: pEndDay, title: title, description: description, imageUrl: imageUrl, categoryId: selectedCategoryId, isPeriod: true });
+            allEvents.push({ id: generateId(), type: 'event', startYear: pStartYear, startMonth: pStartMonth, startDay: pStartDay, endYear: pEndYear, endMonth: pEndMonth, endDay: pEndDay, title: title, description: description, imageUrl: imageUrl, categoryIds: catIds, isPeriod: true });
             showToast('Periodo creato', 'success');
         }
         setEvents(allEvents);
@@ -71,15 +71,15 @@ function saveEvent() {
     const endDay = document.getElementById('endDay').value ? parseInt(document.getElementById('endDay').value) : null;
     const linkedEvents = selectedLinkedEvents.slice();
     if (isNaN(startYear) || !title) { showToast('Inserisci almeno l\'anno e il nome', 'error'); return; }
-    if (!selectedCategoryId) { showToast('Seleziona una categoria', 'error'); return; }
+    var catIds = getSelectedCategoryIds();
     if (editingEventId) {
         const index = allEvents.findIndex(function (e) { return e.id === editingEventId; });
         if (index !== -1) {
-            allEvents[index] = { id: editingEventId, type: 'event', startYear: startYear, startMonth: startMonth, startDay: startDay, endYear: endYear, endMonth: endMonth, endDay: endDay, title: title, description: description, imageUrl: imageUrl, categoryId: selectedCategoryId, linkedEvents: linkedEvents, isPeriod: false };
+            allEvents[index] = { id: editingEventId, type: 'event', startYear: startYear, startMonth: startMonth, startDay: startDay, endYear: endYear, endMonth: endMonth, endDay: endDay, title: title, description: description, imageUrl: imageUrl, categoryIds: catIds, linkedEvents: linkedEvents, isPeriod: false };
         }
         showToast('Evento modificato', 'success');
     } else {
-        allEvents.push({ id: generateId(), type: 'event', startYear: startYear, startMonth: startMonth, startDay: startDay, endYear: endYear, endMonth: endMonth, endDay: endDay, title: title, description: description, imageUrl: imageUrl, categoryId: selectedCategoryId, linkedEvents: linkedEvents, isPeriod: false });
+        allEvents.push({ id: generateId(), type: 'event', startYear: startYear, startMonth: startMonth, startDay: startDay, endYear: endYear, endMonth: endMonth, endDay: endDay, title: title, description: description, imageUrl: imageUrl, categoryIds: catIds, linkedEvents: linkedEvents, isPeriod: false });
         showToast('Evento creato', 'success');
     }
     setEvents(allEvents);
@@ -106,7 +106,6 @@ function editEvent(eventId) {
         switchFormTab('note');
     } else if (event.isPeriod) {
         currentFormType = 'period';
-        selectedCategoryId = event.categoryId;
         document.getElementById('periodStartYear').value = event.startYear;
         document.getElementById('periodStartMonth').value = event.startMonth || '';
         document.getElementById('periodStartDay').value = event.startDay || '';
@@ -116,7 +115,19 @@ function editEvent(eventId) {
         document.getElementById('eventTitle').value = event.title;
         document.getElementById('eventDescription').value = event.description || '';
         if (document.getElementById('eventImageUrl')) document.getElementById('eventImageUrl').value = imageUrl;
-        renderCategorySelect();
+        renderCategorySelects();
+        // Restore category selections
+        if (event.categoryIds && event.categoryIds.length > 0) {
+            selectedCategoryId = event.categoryIds[0];
+            document.getElementById('categorySelect').value = event.categoryIds[0];
+        } else {
+            selectedCategoryId = null;
+            document.getElementById('categorySelect').value = '';
+        }
+        updateSecondCategorySelect(selectedCategoryId);
+        if (event.categoryIds && event.categoryIds.length > 1) {
+            document.getElementById('categorySelect2').value = event.categoryIds[1];
+        }
         selectedLinkedEvents = [];
         renderLinkedEventsList();
         document.getElementById('eventModalTitle').textContent = 'Modifica Periodo';
@@ -128,7 +139,6 @@ function editEvent(eventId) {
         }
     } else {
         currentFormType = 'event';
-        selectedCategoryId = event.categoryId;
         document.getElementById('startYear').value = event.startYear;
         document.getElementById('startMonth').value = event.startMonth || '';
         document.getElementById('startDay').value = event.startDay || '';
@@ -138,7 +148,19 @@ function editEvent(eventId) {
         document.getElementById('eventTitle').value = event.title;
         document.getElementById('eventDescription').value = event.description || '';
         if (document.getElementById('eventImageUrl')) document.getElementById('eventImageUrl').value = imageUrl;
-        renderCategorySelect();
+        renderCategorySelects();
+        // Restore category selections
+        if (event.categoryIds && event.categoryIds.length > 0) {
+            selectedCategoryId = event.categoryIds[0];
+            document.getElementById('categorySelect').value = event.categoryIds[0];
+        } else {
+            selectedCategoryId = null;
+            document.getElementById('categorySelect').value = '';
+        }
+        updateSecondCategorySelect(selectedCategoryId);
+        if (event.categoryIds && event.categoryIds.length > 1) {
+            document.getElementById('categorySelect2').value = event.categoryIds[1];
+        }
         document.getElementById('eventSearchInput').value = '';
         selectedLinkedEvents = (event.linkedEvents && Array.isArray(event.linkedEvents)) ? event.linkedEvents.slice() : [];
         renderLinkedEventsList();
@@ -193,6 +215,22 @@ function deleteEvent(eventId) {
     if (expandedEventId === eventId) expandedEventId = null;
     renderEvents();
     showToast('Evento eliminato', 'info');
+}
+
+// ================================================================
+//  CATEGORY HELPERS
+// ================================================================
+function getSelectedCategoryIds() {
+    var ids = [];
+    var sel1 = document.getElementById('categorySelect');
+    if (sel1 && sel1.value) {
+        ids.push(sel1.value);
+    }
+    var sel2 = document.getElementById('categorySelect2');
+    if (sel2 && sel2.value) {
+        ids.push(sel2.value);
+    }
+    return ids;
 }
 
 // ================================================================

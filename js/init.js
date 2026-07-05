@@ -93,14 +93,13 @@ function setupEventListeners() {
                     var lastOut = (lastCardBottom < scrollTop || lastTop > scrollBottom);
                     if (firstOut && lastOut) {
                         // Both first and last event cards are completely outside the visible area
-                        unhighlightCategoryConnector(highlightedCategoryId);
-                        document.querySelectorAll('.category-connector.persistent-highlight').forEach(function (el) {
-                            el.classList.remove('persistent-highlight');
-                            el.setAttribute('opacity', '0.2');
-                            el.setAttribute('stroke-width', '3');
-                            el.removeAttribute('filter');
-                            el.classList.remove('highlighted');
-                        });
+                        // Do not dismiss if the connector was intentionally pinned (persistent-highlight)
+                        // or if there is an expanded card for this category
+                        var hasPersistent = document.querySelector('.category-connector.persistent-highlight[data-category-id="' + highlightedCategoryId + '"]');
+                        var anyExpanded = document.querySelector('.event-card.expanded[data-category-id="' + highlightedCategoryId + '"], .note-card.expanded[data-category-id="' + highlightedCategoryId + '"]');
+                        if (!hasPersistent && !anyExpanded) {
+                            unhighlightCategoryConnector(highlightedCategoryId);
+                        }
                     }
                 }
             }
@@ -364,6 +363,14 @@ function createBoundaryButtons() {
 
 function init() {
     loadState();
+    // Ripristina zoom salvato
+    document.getElementById('zoomSlider').value = pixelsPerYear;
+    document.getElementById('zoomLabel').textContent = pixelsPerYear + 'px';
+    if (pixelsPerYear === DEFAULT_PIXELS_PER_YEAR) {
+        document.getElementById('zoomLabel').style.color = 'var(--accent)';
+    } else {
+        document.getElementById('zoomLabel').style.color = '';
+    }
     document.getElementById('searchInput').value = '';
     selectedColor = AVAILABLE_COLORS[0];
     setupColorPicker();

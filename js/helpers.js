@@ -191,7 +191,19 @@ function updateEmptyState() {
 // ================================================================
 function sanitizeImportedEvent(evt) {
     evt.id = String(evt.id || generateId());
-    if (evt.categoryId !== null && evt.categoryId !== undefined) evt.categoryId = String(evt.categoryId);
+    // Migrate old categoryId to categoryIds array
+    if (evt.categoryIds === undefined) {
+        if (evt.categoryId !== undefined && evt.categoryId !== null && evt.categoryId !== '') {
+            evt.categoryIds = [String(evt.categoryId)];
+        } else {
+            evt.categoryIds = [];
+        }
+        delete evt.categoryId;
+    } else if (!Array.isArray(evt.categoryIds)) {
+        evt.categoryIds = [];
+    } else {
+        evt.categoryIds = evt.categoryIds.map(function (id) { return String(id); });
+    }
     if (evt.linkedEventId !== null && evt.linkedEventId !== undefined) {
         evt.linkedEvents = [{ eventId: String(evt.linkedEventId), side: 'auto' }];
         delete evt.linkedEventId;
@@ -207,6 +219,18 @@ function sanitizeImportedEvent(evt) {
 
 function sanitizeImportedEvents(events) {
     return (events || []).map(sanitizeImportedEvent);
+}
+
+function getCategoryFirstEventYear(categoryId) {
+    var catEvents = getEvents().filter(function (e) {
+        return e.categoryIds && e.categoryIds.indexOf(String(categoryId)) !== -1;
+    });
+    if (catEvents.length === 0) return Infinity;
+    var firstYear = Infinity;
+    catEvents.forEach(function (e) {
+        if (e.startYear < firstYear) firstYear = e.startYear;
+    });
+    return firstYear;
 }
 
 function sanitizeImportedCategory(cat) {

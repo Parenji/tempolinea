@@ -118,7 +118,9 @@ function openModal(opts) {
     selectedLinkedEvents = [];
     var type = opts.type || 'event';
     currentFormType = type;
-    renderCategorySelect();
+    renderCategorySelects();
+    // Hide second category group initially
+    updateSecondCategorySelect(null);
     document.getElementById('eventSearchInput').value = '';
     renderLinkedEventsList();
     populateLinkedEvents();

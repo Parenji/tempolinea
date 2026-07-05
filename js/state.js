@@ -2,6 +2,7 @@
 //  STATE & PERSISTENCE
 // ================================================================
 const STORAGE_KEY = 'timeline_app_v3';
+const ZOOM_STORAGE_KEY = 'timeline_zoom_v1';
 const MIN_YEAR = -10000;
 const MAX_YEAR = 2100;
 const SEGMENTS = [
@@ -15,7 +16,7 @@ const SEGMENTS = [
 const DEFAULT_PIXELS_PER_YEAR = 20;
 const MAX_UNDO_STACK = 30;
 
-let pixelsPerYear = 20;
+let pixelsPerYear = loadZoom();
 let state = { timelines: {}, currentTimelineId: null };
 
 // Undo/Redo stacks (RAM only, not localStorage)
@@ -78,6 +79,17 @@ function migrateState() {
         }
         if (tl.events) {
             tl.events = sanitizeImportedEvents(tl.events);
+            // Migrate old categoryId (string|null) to categoryIds (array)
+            tl.events.forEach(function (event) {
+                if (event.categoryIds === undefined) {
+                    if (event.categoryId !== undefined && event.categoryId !== null && event.categoryId !== '') {
+                        event.categoryIds = [String(event.categoryId)];
+                    } else {
+                        event.categoryIds = [];
+                    }
+                    delete event.categoryId;
+                }
+            });
         }
     });
 }
@@ -98,6 +110,19 @@ function getEvents() {
 function getCategories() {
     const timeline = getCurrentTimeline();
     return timeline ? timeline.categories : [];
+}
+
+function saveZoom(value) {
+    localStorage.setItem(ZOOM_STORAGE_KEY, value);
+}
+
+function loadZoom() {
+    const stored = localStorage.getItem(ZOOM_STORAGE_KEY);
+    if (stored) {
+        const val = parseInt(stored);
+        if (!isNaN(val) && val >= 5 && val <= 80) return val;
+    }
+    return DEFAULT_PIXELS_PER_YEAR;
 }
 
 function setEvents(events) {

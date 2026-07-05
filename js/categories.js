@@ -8,10 +8,21 @@ const AVAILABLE_COLORS = [
     '#ffffff', '#d4d4d4', '#a3a3a3', '#737373'
 ];
 
+function sortCategoriesByFirstEvent(categories) {
+    return categories.slice().sort(function (a, b) {
+        var firstA = getCategoryFirstEventYear(a.id);
+        var firstB = getCategoryFirstEventYear(b.id);
+        if (firstA === Infinity && firstB === Infinity) return 0;
+        if (firstA === Infinity) return 1;
+        if (firstB === Infinity) return -1;
+        return firstA - firstB;
+    });
+}
+
 function renderCategorySelect() {
     const select = document.getElementById('categorySelect');
     select.innerHTML = '<option value="">Seleziona categoria...</option>';
-    getCategories().forEach(function (category) {
+    sortCategoriesByFirstEvent(getCategories()).forEach(function (category) {
         const option = document.createElement('option');
         option.value = category.id;
         option.textContent = category.name;
@@ -22,14 +33,69 @@ function renderCategorySelect() {
     }
 }
 
+function renderCategorySelects() {
+    const select1 = document.getElementById('categorySelect');
+    if (!select1) { renderCategorySelect(); return; }
+    const categories = sortCategoriesByFirstEvent(getCategories());
+    select1.innerHTML = '<option value="">Seleziona categoria...</option>';
+    categories.forEach(function (category) {
+        const option = document.createElement('option');
+        option.value = category.id;
+        option.textContent = category.name;
+        select1.appendChild(option);
+    });
+    if (selectedCategoryId) { select1.value = selectedCategoryId; }
+    const select2 = document.getElementById('categorySelect2');
+    if (select2) {
+        updateSecondCategorySelect(select1.value || null);
+    }
+}
+
 let mergeColor = '#ef4444';
 let splitCategoryId = null;
 let selectionMode = false;
 
 function countEventsForCategory(categoryId) {
     return getEvents().filter(function (e) {
-        return String(e.categoryId) === String(categoryId);
+        return e.categoryIds && e.categoryIds.indexOf(String(categoryId)) !== -1;
     }).length;
+}
+
+function updateSecondCategorySelect(primaryValue) {
+    var group = document.getElementById('secondCategoryGroup');
+    var select2 = document.getElementById('categorySelect2');
+    if (!group || !select2) return;
+    
+    if (primaryValue) {
+        // Show the second category group
+        group.style.display = 'block';
+        group.style.maxHeight = '100px';
+        group.style.opacity = '1';
+        group.style.marginTop = '0';
+        
+        // Populate with categories excluding the primary one
+        select2.innerHTML = '<option value="">Nessuna</option>';
+        sortCategoriesByFirstEvent(getCategories()).forEach(function (category) {
+            if (String(category.id) !== String(primaryValue)) {
+                var option = document.createElement('option');
+                option.value = category.id;
+                option.textContent = category.name;
+                select2.appendChild(option);
+            }
+        });
+    } else {
+        // Hide the second category group
+        group.style.display = 'none';
+        group.style.maxHeight = '0';
+        group.style.opacity = '0';
+        select2.value = '';
+    }
+}
+
+function onPrimaryCategoryChange() {
+    var primaryValue = document.getElementById('categorySelect').value;
+    selectedCategoryId = primaryValue || null;
+    updateSecondCategorySelect(primaryValue);
 }
 
 function renderCategoryList() {
@@ -37,10 +103,13 @@ function renderCategoryList() {
     if (!list) return;
     list.innerHTML = '';
     var query = (document.getElementById('categorySearchInput')?.value || '').toLowerCase().trim();
-    var categories = getCategories();
+    var categories = sortCategoriesByFirstEvent(getCategories());
     var filtered = query ? categories.filter(function (c) { return c.name.toLowerCase().indexOf(query) !== -1; }) : categories;
     var sideLabels = { auto: 'Auto', left: '← Sinistra', right: 'Destra →' };
     filtered.forEach(function (category) {
+        var wrapper = document.createElement('div');
+        wrapper.style.cssText = 'margin-bottom:0.4rem;';
+
         var item = document.createElement('div');
         item.className = 'category-item';
         item.style.borderLeft = '4px solid ' + category.color;
@@ -61,11 +130,23 @@ function renderCategoryList() {
         var side = category.preferredSide || 'auto';
         var sideLabel = sideLabels[side] || 'Auto';
         var eventCount = countEventsForCategory(category.id);
+        var eventsPanelId = 'categoryEvents_' + category.id;
 
-        var span = document.createElement('span');
-        span.innerHTML = '<strong>' + escapeHtml(category.name) + '</strong>' +
-            ' <small style="color:var(--text-secondary)">(' + eventCount + ' eventi, ' + sideLabel + ')</small>' +
-            (connectorsOn ? '' : ' <small style="color:var(--text-secondary)">(senza linee)</small>');
+        // Main row with checkbox + name button + actions
+        var mainRow = document.createElement('div');
+        mainRow.className = 'category-item-main';
+
+        // Category name as clickable button (accordion trigger)
+        var nameBtn = document.createElement('button');
+        nameBtn.className = 'category-name-btn';
+        nameBtn.setAttribute('aria-expanded', 'false');
+        nameBtn.setAttribute('aria-controls', eventsPanelId);
+        nameBtn.type = 'button';
+        nameBtn.innerHTML = '<strong>' + escapeHtml(category.name) + '</strong>' +
+            ' <small style="color:var(--text-secondary);font-weight:400;">(' + eventCount + ' eventi, ' + sideLabel + ')</small>' +
+            (connectorsOn ? '' : ' <small style="color:var(--text-secondary);font-weight:400;">(senza linee)</small>');
+        nameBtn.title = 'Mostra/nascondi eventi di ' + category.name;
+        nameBtn.onclick = function () { toggleCategoryEvents(category.id); };
 
         var actions = document.createElement('div');
         actions.style.cssText = 'display:flex;gap:0.15rem;align-items:center;flex-shrink:0;';
@@ -92,12 +173,94 @@ function renderCategoryList() {
         actions.appendChild(editBtn);
         actions.appendChild(deleteBtn);
 
+        mainRow.appendChild(nameBtn);
         item.appendChild(checkbox);
-        item.appendChild(span);
+        item.appendChild(mainRow);
         item.appendChild(actions);
-        list.appendChild(item);
+
+        // Events panel (accordion content)
+        var eventsPanel = document.createElement('div');
+        eventsPanel.className = 'category-events-panel';
+        eventsPanel.id = eventsPanelId;
+        eventsPanel.setAttribute('role', 'region');
+        eventsPanel.setAttribute('aria-label', 'Eventi di ' + category.name);
+        // Populate events lazily on first open
+        eventsPanel.dataset.loaded = 'false';
+
+        wrapper.appendChild(item);
+        wrapper.appendChild(eventsPanel);
+        list.appendChild(wrapper);
     });
     updateSelectionButtons();
+}
+
+function toggleCategoryEvents(categoryId) {
+    var panel = document.getElementById('categoryEvents_' + categoryId);
+    var btn = document.querySelector('[aria-controls="categoryEvents_' + categoryId + '"]');
+    if (!panel || !btn) return;
+
+    var isOpen = panel.classList.contains('open');
+    if (isOpen) {
+        panel.classList.remove('open');
+        btn.setAttribute('aria-expanded', 'false');
+    } else {
+        // Lazy-load events content on first open
+        if (panel.dataset.loaded === 'false') {
+            populateCategoryEventsPanel(categoryId, panel);
+            panel.dataset.loaded = 'true';
+        }
+        panel.classList.add('open');
+        btn.setAttribute('aria-expanded', 'true');
+    }
+}
+
+function populateCategoryEventsPanel(categoryId, panel) {
+    panel.innerHTML = '';
+    var catEvents = getEvents().filter(function (e) {
+        return e.categoryIds && e.categoryIds.indexOf(String(categoryId)) !== -1;
+    });
+
+    // Sort by date (ascending)
+    catEvents.sort(function (a, b) {
+        if (a.startYear !== b.startYear) return a.startYear - b.startYear;
+        if ((a.startMonth || 0) !== (b.startMonth || 0)) return (a.startMonth || 0) - (b.startMonth || 0);
+        return (a.startDay || 0) - (b.startDay || 0);
+    });
+
+    // Get category color for date styling
+    var cat = getCategories().find(function (c) { return String(c.id) === String(categoryId); });
+    var catColor = cat ? cat.color : 'var(--accent)';
+
+    if (catEvents.length === 0) {
+        panel.innerHTML = '<div class="category-events-empty">Nessun evento in questa categoria.</div>';
+        return;
+    }
+
+    catEvents.forEach(function (event) {
+        var row = document.createElement('div');
+        row.className = 'category-event-item';
+
+        var dateEl = document.createElement('span');
+        dateEl.className = 'category-event-date';
+        dateEl.style.color = catColor;
+        var startStr = event.startYear !== undefined && event.startYear !== null ? formatYear(event.startYear, event.startMonth, event.startDay) : '—';
+        var endStr = event.endYear !== undefined && event.endYear !== null ? formatYear(event.endYear, event.endMonth, event.endDay) : '';
+        dateEl.textContent = startStr;
+        if (endStr) dateEl.textContent += ' → ' + endStr;
+
+        var nameEl = document.createElement('span');
+        nameEl.className = 'category-event-name';
+        nameEl.textContent = event.title;
+
+        var descEl = document.createElement('span');
+        descEl.className = 'category-event-desc';
+        descEl.textContent = event.description || '';
+
+        row.appendChild(dateEl);
+        row.appendChild(nameEl);
+        row.appendChild(descEl);
+        panel.appendChild(row);
+    });
 }
 
 // ================================================================
@@ -165,18 +328,17 @@ function deleteSelectedCategories() {
 
     var evs = getEvents();
     evs.forEach(function (event) {
-        if (selectedIds.indexOf(String(event.categoryId)) !== -1) {
-            event.categoryId = null;
-        }
+        if (!event.categoryIds) event.categoryIds = [];
+        event.categoryIds = event.categoryIds.filter(function (cid) {
+            return selectedIds.indexOf(String(cid)) === -1;
+        });
     });
     setEvents(evs);
 
     saveState();
     exitSelectionMode();
-    renderCategorySelect();
-    renderCategoryList();
-    renderPills();
-    renderEvents();
+    fullRender();
+    renderCategorySelects();
     showToast(selectedIds.length + ' categorie eliminate', 'info');
 }
 
@@ -260,19 +422,27 @@ function executeMerge() {
 
     var evs = getEvents();
     evs.forEach(function (event) {
-        if (selectedIds.indexOf(String(event.categoryId)) !== -1) {
-            event.categoryId = newId;
-        }
+        if (!event.categoryIds) event.categoryIds = [];
+        // Replace any merged category ids with the new one
+        event.categoryIds = event.categoryIds.map(function (cid) {
+            if (selectedIds.indexOf(String(cid)) !== -1) return newId;
+            return cid;
+        });
+        // Deduplicate
+        var seen = {};
+        event.categoryIds = event.categoryIds.filter(function (cid) {
+            if (seen[String(cid)]) return false;
+            seen[String(cid)] = true;
+            return true;
+        });
     });
     setEvents(evs);
 
     saveState();
     hideMergeForm();
     exitSelectionMode();
-    renderCategorySelect();
-    renderCategoryList();
-    renderPills();
-    renderEvents();
+    fullRender();
+    renderCategorySelects();
     showToast('Categorie unite in ' + escapeHtml(name), 'success');
 }
 
@@ -292,13 +462,20 @@ function renderSplitSection() {
 
     var catId = editingCategoryId || splitCategoryId;
     var evs = getEvents().filter(function (e) {
-        return String(e.categoryId) === String(catId);
+        return e.categoryIds && e.categoryIds.indexOf(String(catId)) !== -1;
     });
 
     if (evs.length === 0) {
         container.innerHTML = '<p class="category-empty-msg" style="padding:0.5rem 0;">Nessun evento in questa categoria.</p>';
         return;
     }
+
+    // Sort events by date (ascending)
+    evs.sort(function (a, b) {
+        if (a.startYear !== b.startYear) return a.startYear - b.startYear;
+        if ((a.startMonth || 0) !== (b.startMonth || 0)) return (a.startMonth || 0) - (b.startMonth || 0);
+        return (a.startDay || 0) - (b.startDay || 0);
+    });
 
     var cats = getCategories();
 
@@ -407,7 +584,7 @@ function applySplitChanges() {
     var cats = getCategories();
     var evs = getEvents();
     var splitEvents = evs.filter(function (e) {
-        return String(e.categoryId) === String(catId);
+        return e.categoryIds && e.categoryIds.indexOf(String(catId)) !== -1;
     });
 
     var hasChanges = false;
@@ -433,7 +610,12 @@ function applySplitChanges() {
         }
 
         if (String(targetId) !== String(catId)) {
-            event.categoryId = targetId;
+            // Replace the old category id with the new target in categoryIds array
+            if (!event.categoryIds) event.categoryIds = [];
+            event.categoryIds = event.categoryIds.map(function (cid) {
+                if (String(cid) === String(catId)) return targetId;
+                return cid;
+            });
             hasChanges = true;
         }
     });
@@ -461,6 +643,10 @@ function editCategory(categoryId) {
     const cats = getCategories();
     const cat = cats.find(function (c) { return String(c.id) === String(categoryId); });
     if (!cat) return;
+
+    // Open form first (resets to create mode), then override for edit mode
+    openCategoryForm();
+
     editingCategoryId = categoryId;
     splitCategoryId = categoryId;
     document.getElementById('categoryName').value = cat.name;
@@ -480,8 +666,6 @@ function editCategory(categoryId) {
     }
     var splitContainer = document.getElementById('categorySplitContainer');
     if (splitContainer) splitContainer.classList.remove('open');
-
-    openCategoryForm();
 }
 
 function deleteCategory(categoryId) {
@@ -490,11 +674,14 @@ function deleteCategory(categoryId) {
     setCategories(cats);
     const evs = getEvents();
     evs.forEach(function (event) {
-        if (String(event.categoryId) === String(categoryId)) { event.categoryId = null; }
+        if (!event.categoryIds) event.categoryIds = [];
+        event.categoryIds = event.categoryIds.filter(function (cid) {
+            return String(cid) !== String(categoryId);
+        });
     });
     setEvents(evs);
     saveState();
-    renderCategorySelect();
+    renderCategorySelects();
     renderCategoryList();
     renderPills();
     renderEvents();
@@ -520,7 +707,7 @@ function saveCategory() {
 
         // If all events were moved away, remove the category
         var remainingEvents = getEvents().filter(function (e) {
-            return String(e.categoryId) === String(editingCategoryId);
+            return e.categoryIds && e.categoryIds.indexOf(String(editingCategoryId)) !== -1;
         });
         if (remainingEvents.length === 0) {
             var idx = cats.findIndex(function (c) { return String(c.id) === String(editingCategoryId); });
@@ -543,7 +730,7 @@ function saveCategory() {
 
     setCategories(cats);
     saveState();
-    renderCategorySelect();
+    renderCategorySelects();
     renderCategoryList();
     renderPills();
     renderEvents();
@@ -571,14 +758,12 @@ function setupColorPicker() {
     container.appendChild(sep);
     const row = document.createElement('div');
     row.className = 'custom-color-row';
-    const preview = document.createElement('button');
-    preview.type = 'button';
+    const preview = document.createElement('span');
     preview.className = 'custom-color-preview';
     preview.id = 'customColorPreview';
     preview.style.background = selectedColor;
-    preview.setAttribute('aria-label', 'Colore personalizzato');
+    preview.setAttribute('aria-hidden', 'true');
     preview.innerHTML = '<span class="custom-color-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2L15 8h-6l3-6z"/><circle cx="12" cy="16" r="3"/><line x1="12" y1="19" x2="12" y2="22"/></svg></span>';
-    preview.onclick = function () { document.getElementById('customColorInput').click(); };
     const input = document.createElement('input');
     input.type = 'color';
     input.id = 'customColorInput';
@@ -591,7 +776,6 @@ function setupColorPicker() {
     label.style.fontSize = '0.75rem';
     label.style.color = 'var(--text-secondary)';
     label.style.cursor = 'pointer';
-    label.onclick = function () { document.getElementById('customColorInput').click(); };
     row.appendChild(preview);
     row.appendChild(input);
     row.appendChild(label);
@@ -662,21 +846,22 @@ function openCategoryForm() {
     section.classList.add('open');
     if (header) header.style.display = 'none';
 
+    // Always reset to create mode — editCategory() will override after calling this
+    editingCategoryId = null;
+    splitCategoryId = null;
+
     // Hide split toggle for new categories
     var splitToggle = document.getElementById('categorySplitToggle');
-    if (!editingCategoryId && splitToggle) {
-        splitToggle.style.display = 'none';
-    }
+    if (splitToggle) splitToggle.style.display = 'none';
     var splitContainer = document.getElementById('categorySplitContainer');
     if (splitContainer) splitContainer.classList.remove('open');
 
-    if (!editingCategoryId) {
-        document.getElementById('categoryForm').reset();
-        document.getElementById('categoryNameLabel').textContent = 'Nuova Categoria';
-        document.getElementById('categorySaveBtn').textContent = 'Salva';
-        selectedColor = AVAILABLE_COLORS[0];
-        updateColorPicker();
-    }
+    document.getElementById('categoryForm').reset();
+    document.getElementById('categoryNameLabel').textContent = 'Nuova Categoria';
+    document.getElementById('categorySaveBtn').textContent = 'Salva';
+    selectedColor = AVAILABLE_COLORS[0];
+    updateColorPicker();
+
     const modal = document.getElementById('categoryModal').querySelector('.modal');
     if (modal) modal.scrollTop = 0;
     setTimeout(function () { document.getElementById('categoryName').focus(); }, 350);
