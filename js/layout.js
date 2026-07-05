@@ -49,11 +49,22 @@ function assignEventPositionsSides(sortedEvents, categories, categorySides, minS
         const defaultSide = category ? categorySides[primaryCatId] : (index % 2 === 0 ? 'left' : 'right');
         const yearPos = yearToPixelsCached(event.startYear, event.startMonth, event.startDay);
         basePositions[event.id] = yearPos;
+        
+        // Period events are lateral strips — they don't need vertical offset
+        // and shouldn't reserve space in the event column
+        if (event.isPeriod) {
+            eventPositions[event.id] = yearPos;
+            eventSides[event.id] = defaultSide;
+            return;
+        }
+        
         let adjustedPosition = yearPos;
         let offset = 0;
         let currentSide = defaultSide;
         for (let i = 0; i < index; i++) {
             const prevEvent = sortedEvents[i];
+            // Period events are lateral strips — skip them in conflict resolution
+            if (prevEvent.isPeriod) continue;
             const prevPosition = eventPositions[prevEvent.id];
             const prevSide = eventSides[prevEvent.id];
             if (prevSide === currentSide && (prevPosition + minSpacing) > yearPos) {
