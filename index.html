@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="icon" type="image/svg+xml" href="images/image.svg">
     <link rel="apple-touch-icon" href="images/image.svg">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#3b82f6">
 </head>
 
 <body>
@@ -66,28 +68,10 @@
                     <span id="searchCounter">0/0</span>
                     <button class="search-nav-btn" id="searchNextBtn" onclick="searchNext()">▶</button>
                 </span>
+                <button class="btn mob-toggle" onclick="toggleMobileMenu()" title="Menu" style="display:none">☰</button>
             </span>
 
             <div class="tools-group">
-                <span class="zoom-group">
-                    <button class="btn-icon" onclick="zoomOut()" title="Zoom indietro (-)">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                            stroke-linecap="round">
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                    </button>
-                    <input type="range" class="zoom-slider" id="zoomSlider" min="3" max="80" value="20" step="1"
-                        oninput="setZoom(this.value)">
-                    <button class="btn-icon" onclick="zoomIn()" title="Zoom avanti (+)">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                            stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                    </button>
-                    <span class="zoom-label" id="zoomLabel">20px</span>
-                </span>
-
                 <span class="toolbar-divider"></span>
                 <button class="btn-icon" onclick="undo()" title="Annulla (Ctrl+Z)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -138,13 +122,86 @@
                     </svg>
                     Svuota
                 </button>
+                <span class="toolbar-divider"></span>
+                <button class="btn-icon" onclick="openSettingsModal()" title="Impostazioni">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    Impostazioni
+                </button>
 
             </div>
-
-            <button class="btn mob-toggle" onclick="toggleMobileMenu()" title="Menu" style="display:none">☰</button>
         </div>
 
         <div class="pill-row" id="pillRow"></div>
+
+        <!-- Mobile Drawer (hamburger menu) -->
+        <div class="mobile-drawer-overlay" id="mobileDrawerOverlay" onclick="toggleMobileMenu()"></div>
+        <div class="mobile-drawer" id="mobileDrawer">
+            <div class="mobile-drawer-handle"></div>
+            <div class="mobile-drawer-header">
+                <span class="mobile-drawer-title">Menu</span>
+                <button class="mobile-drawer-close" onclick="toggleMobileMenu()">✕</button>
+            </div>
+            <div class="mobile-drawer-content">
+                <div class="mobile-drawer-section">
+                    <div class="mobile-drawer-section-title">Timeline attuale</div>
+                    <select class="tl-select mobile-tl-select" id="mobileTimelineSelect" onchange="switchTimeline(this.value)"></select>
+                </div>
+                <div class="mobile-drawer-section">
+                    <div class="mobile-drawer-section-title">Timeline</div>
+                    <div class="mobile-drawer-actions">
+                        <button class="mobile-drawer-btn primary" onclick="addTimeline(); toggleMobileMenu();">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            Nuova Timeline
+                        </button>
+                        <button class="mobile-drawer-btn" onclick="renameTimeline(); toggleMobileMenu();">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path></svg>
+                            Rinomina
+                        </button>
+                        <button class="mobile-drawer-btn danger" onclick="deleteTimeline(); toggleMobileMenu();">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            Elimina Timeline
+                        </button>
+                    </div>
+                </div>
+                <div class="mobile-drawer-section">
+                    <div class="mobile-drawer-section-title">Azioni</div>
+                    <div class="mobile-drawer-actions">
+                        <button class="mobile-drawer-btn" onclick="undo(); toggleMobileMenu();">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                            Annulla
+                        </button>
+                        <button class="mobile-drawer-btn" onclick="redo(); toggleMobileMenu();">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"></path></svg>
+                            Ripeti
+                        </button>
+                        <button class="mobile-drawer-btn" onclick="exportData(); toggleMobileMenu();">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            Esporta
+                        </button>
+                        <button class="mobile-drawer-btn" onclick="document.getElementById('importInput').click(); toggleMobileMenu();">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                            Importa
+                        </button>
+                        <button class="mobile-drawer-btn danger" onclick="confirmDeleteAll(); toggleMobileMenu();">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                            Svuota
+                        </button>
+                    </div>
+                </div>
+                <div class="mobile-drawer-section">
+                    <div class="mobile-drawer-section-title">App</div>
+                    <div class="mobile-drawer-actions">
+                        <button class="mobile-drawer-btn" onclick="toggleMobileMenu(); openSettingsModal();">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                            Impostazioni
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </header>
 
     <main class="timeline-ruler" id="timelineRuler">
@@ -172,7 +229,22 @@
         <div id="emptyArrow" style="font-size:1.5rem;opacity:0.5;margin-top:0.5rem;">&#x2198;</div>
     </div>
 
-    <div class="year-indicator" id="yearIndicator"></div>
+    <!-- Zoom pill (bottom-left, vertical, same visibility & style as year indicator) -->
+    <div class="zoom-pill" id="zoomPill">
+        <button class="zoom-pill-btn zoom-pill-top" onclick="zoomIn()" title="Zoom avanti (+)" aria-label="Zoom avanti">+</button>
+        <span class="zoom-label" id="zoomLabel">20px</span>
+        <button class="zoom-pill-btn zoom-pill-bottom" onclick="zoomOut()" title="Zoom indietro (-)" aria-label="Zoom indietro">−</button>
+    </div>
+
+    <div class="year-indicator" id="yearIndicator">
+        <svg class="year-indicator-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+        <span class="year-indicator-text"></span>
+    </div>
 
     <button class="fab-secondary" onclick="openCategoryModal()" title="Gestisci categorie" aria-label="Gestisci categorie">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -473,6 +545,46 @@
     </div>
 
     <!-- Shortcuts Hint (created dynamically) -->
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal">
+            <h2>Impostazioni</h2>
+            <div class="settings-group">
+                <label class="settings-toggle">
+                    <span class="settings-toggle-label">Mostra barra categorie</span>
+                    <input type="checkbox" id="settingShowPills" checked onchange="saveSettings()">
+                    <span class="settings-toggle-slider"></span>
+                </label>
+                <small style="color:var(--text-secondary);font-size:0.6875rem;display:block;margin-top:-0.25rem;">Mostra o nascondi la barra delle categorie nella toolbar.</small>
+            </div>
+            <div class="settings-group settings-group-collapsible" style="margin-top:1rem;">
+                <div class="settings-group-header settings-accordion-toggle" onclick="toggleSegmentsAccordion()" role="button" tabindex="0" aria-expanded="true" id="segmentsAccordionToggle">
+                    <span class="settings-accordion-arrow" id="segmentsAccordionArrow">▼</span>
+                    <label class="settings-group-title">Gestione Segmenti Temporali</label>
+                    <span class="settings-segments-count" id="segmentsCountBadge"></span>
+                    <button type="button" class="btn-segment-reset" onclick="event.stopPropagation(); resetSegmentsToDefaultUI()" title="Ripristina i segmenti predefiniti">Ripristina default</button>
+                </div>
+                <div class="settings-accordion-body" id="segmentsAccordionBody">
+                    <small style="color:var(--text-secondary);font-size:0.6875rem;display:block;margin-bottom:0.5rem">Definisci come lo spazio verticale della timeline è distribuito tra i vari periodi storici. Maggiore è la spaziatura, più spazio avrà quel periodo.</small>
+                    <div class="segments-table" id="segmentsTable">
+                        <div class="segments-header">
+                            <span class="seg-col-start">Inizio</span>
+                            <span class="seg-col-end">Fine</span>
+                            <span class="seg-col-density">Spaziatura</span>
+                            <span class="seg-col-step">Passo righello</span>
+                        </div>
+                        <div class="segments-body" id="segmentsBody"></div>
+                    </div>
+                    <button type="button" class="btn-segment-add" onclick="addSegmentUI()" style="margin-top:0.5rem;">+ Aggiungi segmento</button>
+                </div>
+            </div>
+            <div class="modal-buttons" style="margin-top:1.25rem;">
+                <button type="button" class="btn-cancel" onclick="closeSettingsModal()">Annulla</button>
+                <button type="button" class="btn" style="background:var(--accent);color:#fff;border:none;flex:1;" onclick="saveSettings()">Salva</button>
+            </div>
+        </div>
+    </div>
+
     <div class="shortcuts-hint" id="shortcutsHint" role="dialog" aria-label="Scorciatoie da tastiera" aria-modal="true">
         <button class="shortcuts-hint-close"
             onclick="document.getElementById('shortcutsHint').classList.remove('open')" aria-label="Chiudi">×</button>
@@ -492,6 +604,19 @@
 
     <!-- JS Modules -->
     <!-- Image Lightbox -->
+    <!-- PWA Service Worker registration -->
+    <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js').then(function(reg) {
+          console.log('SW registered:', reg.scope);
+        }).catch(function(err) {
+          console.log('SW registration failed:', err);
+        });
+      });
+    }
+    </script>
+
     <div class="image-lightbox" id="imageLightbox" onclick="closeImageLightbox()">
         <img id="imageLightboxImg" src="" alt="" onclick="event.stopPropagation()">
     </div>

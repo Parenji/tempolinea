@@ -17,7 +17,7 @@ let isCursorInViewport = true;
 //  SHOW / HIDE
 // ================================================================
 function showQuickCreate(year) {
-    quickCreateYear = Math.max(MIN_YEAR, Math.min(MAX_YEAR, year));
+    quickCreateYear = Math.max(getMinYear(), Math.min(getMaxYear(), year));
     quickCreateVisible = true;
 
     // Reset fade state
@@ -200,7 +200,7 @@ function onDragMove(e) {
     // Convert mouse position to year
     const relativeY = mouseY - rulerRect.top + ruler.scrollTop;
     var year = estimateYearFromScroll(relativeY);
-    year = Math.max(MIN_YEAR, Math.min(MAX_YEAR, year));
+    year = Math.max(getMinYear(), Math.min(getMaxYear(), year));
 
     if (year !== quickCreateYear) {
         quickCreateYear = year;
@@ -219,7 +219,7 @@ function startEdgeScroll(speed) {
         const centerY = window.innerHeight / 2;
         const relativeY = centerY - rulerRect.top + ruler.scrollTop;
         var year = estimateYearFromScroll(relativeY);
-        year = Math.max(MIN_YEAR, Math.min(MAX_YEAR, year));
+        year = Math.max(getMinYear(), Math.min(getMaxYear(), year));
         if (year !== quickCreateYear && quickCreateVisible) {
             quickCreateYear = year;
             updateCursorPosition();

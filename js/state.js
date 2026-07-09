@@ -3,9 +3,10 @@
 // ================================================================
 const STORAGE_KEY = 'timeline_app_v3';
 const ZOOM_STORAGE_KEY = 'timeline_zoom_v1';
-const MIN_YEAR = -10000;
-const MAX_YEAR = 2100;
-const SEGMENTS = [
+const SEGMENTS_STORAGE_KEY = 'timeline_segments_v1';
+const DEFAULT_PIXELS_PER_YEAR = 20;
+
+const DEFAULT_SEGMENTS = [
     { start: -10000, end: -1500, density: 0.5, rulerStep: 100, rulerLabel: 'century' },
     { start: -1500, end: -800, density: 3, rulerStep: 10, rulerLabel: 'decade' },
     { start: -800, end: 1000, density: 10, rulerStep: 1, rulerLabel: 'year' },
@@ -13,7 +14,45 @@ const SEGMENTS = [
     { start: 1700, end: 1900, density: 40, rulerStep: 1, rulerLabel: 'year' },
     { start: 1900, end: 2100, density: 60, rulerStep: 1, rulerLabel: 'year' }
 ];
-const DEFAULT_PIXELS_PER_YEAR = 20;
+
+let _segmentsCache = null;
+
+function getSegments() {
+    if (_segmentsCache) return _segmentsCache;
+    const stored = localStorage.getItem(SEGMENTS_STORAGE_KEY);
+    if (stored) {
+        try {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].start !== undefined) {
+                _segmentsCache = parsed;
+                return _segmentsCache;
+            }
+        } catch (e) { /* ignore */ }
+    }
+    _segmentsCache = DEFAULT_SEGMENTS.map(function(s) { return Object.assign({}, s); });
+    return _segmentsCache;
+}
+
+function saveSegments(segments) {
+    localStorage.setItem(SEGMENTS_STORAGE_KEY, JSON.stringify(segments));
+    _segmentsCache = segments;
+}
+
+function resetSegmentsToDefault() {
+    localStorage.removeItem(SEGMENTS_STORAGE_KEY);
+    _segmentsCache = null;
+    clearYearCache();
+}
+
+function getMinYear() {
+    var segs = getSegments();
+    return segs[0].start;
+}
+
+function getMaxYear() {
+    var segs = getSegments();
+    return segs[segs.length - 1].end;
+}
 const MAX_UNDO_STACK = 30;
 
 let pixelsPerYear = loadZoom();

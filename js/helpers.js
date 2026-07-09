@@ -60,10 +60,11 @@ function formatYear(year, month, day) {
 }
 
 function yearToPixels(year, month, day) {
+    const segments = getSegments();
     const zoomFactor = pixelsPerYear / DEFAULT_PIXELS_PER_YEAR;
     let position = 180;
-    for (let s = 0; s < SEGMENTS.length; s++) {
-        const seg = SEGMENTS[s];
+    for (let s = 0; s < segments.length; s++) {
+        const seg = segments[s];
         if (year >= seg.end) {
             position += (seg.end - seg.start) * seg.density * zoomFactor;
         } else if (year >= seg.start) {
@@ -72,13 +73,13 @@ function yearToPixels(year, month, day) {
     }
     if (month) {
         let localDensity = 0;
-        for (let s = 0; s < SEGMENTS.length; s++) {
-            if (year >= SEGMENTS[s].start && year < SEGMENTS[s].end) {
-                localDensity = SEGMENTS[s].density * zoomFactor;
+        for (let s = 0; s < segments.length; s++) {
+            if (year >= segments[s].start && year < segments[s].end) {
+                localDensity = segments[s].density * zoomFactor;
                 break;
             }
         }
-        if (localDensity === 0) localDensity = SEGMENTS[SEGMENTS.length - 1].density * zoomFactor;
+        if (localDensity === 0) localDensity = segments[segments.length - 1].density * zoomFactor;
         position += (month - 1) * (localDensity / 12);
         if (day) {
             position += (day - 1) * (localDensity / 365);
@@ -109,8 +110,8 @@ function clearYearCache() {
 }
 
 function estimateYearFromScroll(scrollY) {
-    let lo = MIN_YEAR;
-    let hi = MAX_YEAR;
+    let lo = getMinYear();
+    let hi = getMaxYear();
     while (lo < hi) {
         const mid = Math.ceil((lo + hi) / 2);
         const pos = yearToPixels(mid);
@@ -144,7 +145,7 @@ function scrollToLatestEvent() {
 function getEventYearRange() {
     const events = getEvents();
     if (events.length === 0) {
-        return { minYear: MIN_YEAR, maxYear: MAX_YEAR };
+        return { minYear: getMinYear(), maxYear: getMaxYear() };
     }
     let minY = Infinity;
     let maxY = -Infinity;
@@ -157,8 +158,8 @@ function getEventYearRange() {
         }
     });
     const BUFFER = 100;
-    minY = Math.max(MIN_YEAR, minY - BUFFER);
-    maxY = Math.min(MAX_YEAR, maxY + BUFFER);
+    minY = Math.max(getMinYear(), minY - BUFFER);
+    maxY = Math.min(getMaxYear(), maxY + BUFFER);
     return { minYear: minY, maxYear: maxY };
 }
 

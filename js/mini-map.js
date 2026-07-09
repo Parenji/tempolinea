@@ -10,6 +10,9 @@ function positionMiniMap() {
     if (!container) return;
     const toolbar = document.querySelector('.toolbar');
     const toolbarBottom = toolbar ? toolbar.getBoundingClientRect().bottom : 85;
+    const style = getComputedStyle(document.documentElement);
+    const miniMapWidth = style.getPropertyValue('--mini-map-width').trim();
+    const rulerPaddingRight = style.getPropertyValue('--ruler-padding-right').trim();
     if (isMobile()) {
         container.style.top = (toolbarBottom) + 'px';
         container.style.left = '0';
@@ -27,12 +30,12 @@ function positionMiniMap() {
         container.style.right = '0';
         container.style.bottom = '0';
         container.style.left = 'auto';
-        container.style.width = '35px';
+        container.style.width = miniMapWidth;
         container.style.height = 'auto';
         // Adjust timeline ruler padding for desktop mini-map
         const ruler = document.getElementById('timelineRuler');
         if (ruler) {
-            ruler.style.paddingRight = '37px';
+            ruler.style.paddingRight = rulerPaddingRight;
         }
     }
 }
@@ -60,7 +63,7 @@ function initMiniMap() {
         if (isMobile() && !container.classList.contains('visible')) return;
         const rect = canvas.getBoundingClientRect();
         const ruler = document.getElementById('timelineRuler');
-        const totalHeight = yearToPixelsCached(MAX_YEAR);
+        const totalHeight = yearToPixelsCached(getMaxYear());
         const events = getEvents();
         var drawMinPx, drawMaxPx, drawRange;
         if (scrollRestricted && events.length > 0) {
@@ -121,7 +124,7 @@ function updateMiniMap() {
     miniMapCanvas.height = height;
     miniMapCtx.clearRect(0, 0, width, height);
 
-    const totalHeight = yearToPixelsCached(MAX_YEAR);
+    const totalHeight = yearToPixelsCached(getMaxYear());
     const events = getEvents();
     const categories = getCategories();
 
@@ -193,7 +196,7 @@ function updateMiniMapViewport() {
     const viewport = document.getElementById('miniMapViewport');
     if (!container || !viewport) return;
     const ruler = document.getElementById('timelineRuler');
-    const totalHeight = yearToPixelsCached(MAX_YEAR);
+    const totalHeight = yearToPixelsCached(getMaxYear());
     const scrollTop = ruler.scrollTop;
     const viewportWinHeight = window.innerHeight;
     const events = getEvents();

@@ -4,8 +4,9 @@
 function renderRuler() {
     const container = document.getElementById('rulerMarks');
     container.innerHTML = '';
-    for (let s = 0; s < SEGMENTS.length; s++) {
-        const seg = SEGMENTS[s];
+    const segments = getSegments();
+    for (let s = 0; s < segments.length; s++) {
+        const seg = segments[s];
         const step = seg.rulerStep;
         const labelType = seg.rulerLabel;
         for (let year = seg.start; year < seg.end; year += step) {

@@ -106,23 +106,53 @@ function setupEventListeners() {
         }
     }
 
-    // Year indicator
+    // Year indicator + zoom pill
     const ruler = document.getElementById('timelineRuler');
     const yearIndicator = document.getElementById('yearIndicator');
+    const zoomPill = document.getElementById('zoomPill');
     let scrollTimer;
     let yearIndicatorLocked = false;
+    let hoverActive = false;
+
+    function clearAutoHide() {
+        hoverActive = true;
+        clearTimeout(scrollTimer);
+        yearIndicator.classList.add('visible');
+        if (zoomPill) zoomPill.classList.add('visible');
+    }
+    function restartAutoHide() {
+        hoverActive = false;
+        if (!yearIndicatorLocked) {
+            scrollTimer = setTimeout(function () {
+                yearIndicator.classList.remove('visible');
+                if (zoomPill) zoomPill.classList.remove('visible');
+            }, 1500);
+        }
+    }
+    yearIndicator.addEventListener('mouseenter', clearAutoHide);
+    yearIndicator.addEventListener('mouseleave', restartAutoHide);
+    if (zoomPill) {
+        zoomPill.addEventListener('mouseenter', clearAutoHide);
+        zoomPill.addEventListener('mouseleave', restartAutoHide);
+    }
+
     function updateYearIndicator() {
         const scrollY = ruler.scrollTop + window.innerHeight / 2;
         const currentYear = estimateYearFromScroll(scrollY);
         yearIndicator.dataset.year = currentYear;
         if (!yearIndicatorLocked) {
-            yearIndicator.innerHTML = formatYear(currentYear);
+            var textEl = yearIndicator.querySelector('.year-indicator-text');
+            if (textEl) textEl.textContent = formatYear(currentYear);
         }
         yearIndicator.classList.add('visible');
+        if (zoomPill) zoomPill.classList.add('visible');
         clearTimeout(scrollTimer);
-        scrollTimer = setTimeout(function () {
-            if (!yearIndicatorLocked) { yearIndicator.classList.remove('visible'); }
-        }, 1500);
+        if (!hoverActive) {
+            scrollTimer = setTimeout(function () {
+                if (!yearIndicatorLocked) { yearIndicator.classList.remove('visible'); }
+                if (zoomPill && !yearIndicatorLocked) { zoomPill.classList.remove('visible'); }
+            }, 1500);
+        }
     }
     ruler.addEventListener('scroll', function () {
         updateYearIndicator();
@@ -135,36 +165,47 @@ function setupEventListeners() {
         e.stopPropagation();
         yearIndicatorLocked = true;
         clearTimeout(scrollTimer);
+        if (zoomPill) zoomPill.classList.add('visible');
         const currentYear = parseInt(yearIndicator.dataset.year) || 0;
-        yearIndicator.innerHTML = '<input type="number" value="' + currentYear + '" id="yearIndicatorInput" autofocus>';
-        const input = document.getElementById('yearIndicatorInput');
+        var textEl = yearIndicator.querySelector('.year-indicator-text');
+        if (textEl) textEl.style.display = 'none';
+        var input = document.createElement('input');
+        input.type = 'number';
+        input.value = currentYear;
+        input.id = 'yearIndicatorInput';
+        yearIndicator.appendChild(input);
         input.focus();
         input.select();
         function confirmYear() {
             const val = parseInt(input.value);
+            if (input.parentNode) input.parentNode.removeChild(input);
+            if (textEl) textEl.style.display = '';
             if (!isNaN(val)) {
                 scrollToYear(val);
                 yearIndicator.dataset.year = val;
-                yearIndicator.innerHTML = formatYear(val);
+                if (textEl) textEl.textContent = formatYear(val);
             } else {
-                yearIndicator.innerHTML = formatYear(currentYear);
+                if (textEl) textEl.textContent = formatYear(currentYear);
             }
             yearIndicatorLocked = false;
             clearTimeout(scrollTimer);
-            scrollTimer = setTimeout(function () { yearIndicator.classList.remove('visible'); }, 1500);
+            scrollTimer = setTimeout(function () { yearIndicator.classList.remove('visible'); if (zoomPill) zoomPill.classList.remove('visible'); }, 1500);
         }
         input.addEventListener('keydown', function (ev) {
             if (ev.key === 'Enter') { ev.preventDefault(); confirmYear(); }
             else if (ev.key === 'Escape') {
-                yearIndicator.innerHTML = formatYear(currentYear);
+                if (input.parentNode) input.parentNode.removeChild(input);
+                if (textEl) textEl.style.display = '';
+                if (textEl) textEl.textContent = formatYear(currentYear);
                 yearIndicatorLocked = false;
                 clearTimeout(scrollTimer);
-                scrollTimer = setTimeout(function () { yearIndicator.classList.remove('visible'); }, 1500);
+                scrollTimer = setTimeout(function () { yearIndicator.classList.remove('visible'); if (zoomPill) zoomPill.classList.remove('visible'); }, 1500);
             }
         });
         input.addEventListener('blur', function () { setTimeout(function () { if (yearIndicatorLocked) { confirmYear(); } }, 100); });
     });
     yearIndicator.classList.add('visible');
+    if (zoomPill) zoomPill.classList.add('visible');
 
     // Global click handler
     document.addEventListener('click', function (e) {
@@ -214,7 +255,7 @@ function setupEventListeners() {
                     var rulerRect = ruler.getBoundingClientRect();
                     var relativeY = e.clientY - rulerRect.top + ruler.scrollTop;
                     var year = estimateYearFromScroll(relativeY);
-                    year = Math.max(MIN_YEAR, Math.min(MAX_YEAR, year));
+                    year = Math.max(getMinYear(), Math.min(getMaxYear(), year));
                     if (!isQuickCreateVisible()) {
                         showQuickCreate(year);
                     } else if (!e.target.closest('#quickCreateBalloon') && !e.target.closest('#quickCreateCursor')) {
@@ -304,7 +345,10 @@ function unlockScroll() {
             }
         }
         lockToggle.style.top = (toolbarBottom + 8) + 'px';
-        lockToggle.style.right = '16px';
+        var style = getComputedStyle(document.documentElement);
+        var miniMapWidth = style.getPropertyValue('--mini-map-width').trim();
+        var miniMapMargin = style.getPropertyValue('--mini-map-margin').trim();
+        lockToggle.style.right = 'calc(' + miniMapWidth + ' + ' + miniMapMargin + ' + 4px)';
         lockToggle.classList.add('unlocked');
     }
     updateBoundaryButtons();
@@ -364,12 +408,14 @@ function createBoundaryButtons() {
 function init() {
     loadState();
     // Ripristina zoom salvato
-    document.getElementById('zoomSlider').value = pixelsPerYear;
-    document.getElementById('zoomLabel').textContent = pixelsPerYear + 'px';
-    if (pixelsPerYear === DEFAULT_PIXELS_PER_YEAR) {
-        document.getElementById('zoomLabel').style.color = 'var(--accent)';
-    } else {
-        document.getElementById('zoomLabel').style.color = '';
+    var zoomLabel = document.getElementById('zoomLabel');
+    if (zoomLabel) {
+        zoomLabel.textContent = pixelsPerYear + 'px';
+        if (pixelsPerYear === DEFAULT_PIXELS_PER_YEAR) {
+            zoomLabel.style.color = 'var(--accent)';
+        } else {
+            zoomLabel.style.color = '';
+        }
     }
     document.getElementById('searchInput').value = '';
     selectedColor = AVAILABLE_COLORS[0];
@@ -379,6 +425,7 @@ function init() {
     setupQuickCreateListeners();
     createBoundaryButtons();
     initMiniMap();
+    loadSettings();
     fullRender();
     scrollToLatestEvent();
     // Re-position mini-map after full render (pills are now visible)

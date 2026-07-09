@@ -2,16 +2,19 @@
 //  TIMELINE MANAGEMENT
 // ================================================================
 function renderTimelineSelect() {
-    const select = document.getElementById('timelineSelect');
-    select.innerHTML = '';
-    const timelineList = Object.values(state.timelines);
-    timelineList.sort(function (a, b) { return a.name.localeCompare(b.name); });
-    timelineList.forEach(function (timeline) {
-        const option = document.createElement('option');
-        option.value = timeline.id;
-        option.textContent = timeline.name;
-        if (timeline.id === state.currentTimelineId) { option.selected = true; }
-        select.appendChild(option);
+    var selectors = [document.getElementById('timelineSelect'), document.getElementById('mobileTimelineSelect')];
+    selectors.forEach(function (select) {
+        if (!select) return;
+        select.innerHTML = '';
+        var timelineList = Object.values(state.timelines);
+        timelineList.sort(function (a, b) { return a.name.localeCompare(b.name); });
+        timelineList.forEach(function (timeline) {
+            var option = document.createElement('option');
+            option.value = timeline.id;
+            option.textContent = timeline.name;
+            if (timeline.id === state.currentTimelineId) { option.selected = true; }
+            select.appendChild(option);
+        });
     });
 }
 
@@ -100,13 +103,14 @@ function setZoom(value) {
     pixelsPerYear = parseInt(value);
     saveZoom(pixelsPerYear);
     const label = document.getElementById('zoomLabel');
-    label.textContent = pixelsPerYear + 'px';
-    if (pixelsPerYear === DEFAULT_PIXELS_PER_YEAR) {
-        label.style.color = 'var(--accent)';
-    } else {
-        label.style.color = '';
+    if (label) {
+        label.textContent = pixelsPerYear + 'px';
+        if (pixelsPerYear === DEFAULT_PIXELS_PER_YEAR) {
+            label.style.color = 'var(--accent)';
+        } else {
+            label.style.color = '';
+        }
     }
-    document.getElementById('zoomSlider').value = pixelsPerYear;
     clearYearCache();
     fullRender();
     requestAnimationFrame(function () {
@@ -116,15 +120,13 @@ function setZoom(value) {
 }
 
 function zoomIn() {
-    const slider = document.getElementById('zoomSlider');
-    let value = parseInt(slider.value) + 5;
+    var value = pixelsPerYear + 5;
     if (value > 80) value = 80;
     setZoom(value);
 }
 
 function zoomOut() {
-    const slider = document.getElementById('zoomSlider');
-    let value = parseInt(slider.value) - 5;
+    var value = pixelsPerYear - 5;
     if (value < 5) value = 5;
     setZoom(value);
 }
