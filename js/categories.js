@@ -21,7 +21,7 @@ function sortCategoriesByFirstEvent(categories) {
 
 function renderCategorySelect() {
     const select = document.getElementById('categorySelect');
-    select.innerHTML = '<option value="">Seleziona categoria...</option>';
+    select.innerHTML = '<option value="">' + t('select_category') + '</option>';
     sortCategoriesByFirstEvent(getCategories()).forEach(function (category) {
         const option = document.createElement('option');
         option.value = category.id;
@@ -37,7 +37,7 @@ function renderCategorySelects() {
     const select1 = document.getElementById('categorySelect');
     if (!select1) { renderCategorySelect(); return; }
     const categories = sortCategoriesByFirstEvent(getCategories());
-    select1.innerHTML = '<option value="">Seleziona categoria...</option>';
+    select1.innerHTML = '<option value="">' + t('select_category') + '</option>';
     categories.forEach(function (category) {
         const option = document.createElement('option');
         option.value = category.id;
@@ -67,14 +67,12 @@ function updateSecondCategorySelect(primaryValue) {
     if (!group || !select2) return;
     
     if (primaryValue) {
-        // Show the second category group
         group.style.display = 'block';
         group.style.maxHeight = '100px';
         group.style.opacity = '1';
         group.style.marginTop = '0';
         
-        // Populate with categories excluding the primary one
-        select2.innerHTML = '<option value="">Nessuna</option>';
+        select2.innerHTML = '<option value="">' + t('none') + '</option>';
         sortCategoriesByFirstEvent(getCategories()).forEach(function (category) {
             if (String(category.id) !== String(primaryValue)) {
                 var option = document.createElement('option');
@@ -84,7 +82,6 @@ function updateSecondCategorySelect(primaryValue) {
             }
         });
     } else {
-        // Hide the second category group
         group.style.display = 'none';
         group.style.maxHeight = '0';
         group.style.opacity = '0';
@@ -105,7 +102,7 @@ function renderCategoryList() {
     var query = (document.getElementById('categorySearchInput')?.value || '').toLowerCase().trim();
     var categories = sortCategoriesByFirstEvent(getCategories());
     var filtered = query ? categories.filter(function (c) { return c.name.toLowerCase().indexOf(query) !== -1; }) : categories;
-    var sideLabels = { auto: 'Auto', left: '← Sinistra', right: 'Destra →' };
+    var sideLabels = { auto: t('auto'), left: '← ' + t('side_left_short'), right: t('side_right_short') + ' →' };
     filtered.forEach(function (category) {
         var wrapper = document.createElement('div');
         wrapper.style.cssText = 'margin-bottom:0.4rem;';
@@ -114,11 +111,10 @@ function renderCategoryList() {
         item.className = 'category-item';
         item.style.borderLeft = '4px solid ' + category.color;
 
-        // Checkbox (visible only in selection mode)
         var checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.className = 'category-merge-checkbox';
-        checkbox.setAttribute('aria-label', 'Seleziona ' + category.name);
+        checkbox.setAttribute('aria-label', t('select_category_aria', { name: category.name }));
         checkbox.dataset.categoryId = category.id;
         checkbox.onchange = updateSelectionButtons;
         if (!selectionMode) {
@@ -126,26 +122,24 @@ function renderCategoryList() {
         }
 
         var connectorsOn = category.showConnectors !== false;
-        var connectorsLabel = connectorsOn ? '&#x2014;&#x25C6;' : '&#x2014;&#x2716;';
+        var connectorsLabel = connectorsOn ? '—◆' : '—✖';
         var side = category.preferredSide || 'auto';
-        var sideLabel = sideLabels[side] || 'Auto';
+        var sideLabel = sideLabels[side] || t('auto');
         var eventCount = countEventsForCategory(category.id);
         var eventsPanelId = 'categoryEvents_' + category.id;
 
-        // Main row with checkbox + name button + actions
         var mainRow = document.createElement('div');
         mainRow.className = 'category-item-main';
 
-        // Category name as clickable button (accordion trigger)
         var nameBtn = document.createElement('button');
         nameBtn.className = 'category-name-btn';
         nameBtn.setAttribute('aria-expanded', 'false');
         nameBtn.setAttribute('aria-controls', eventsPanelId);
         nameBtn.type = 'button';
         nameBtn.innerHTML = '<strong>' + escapeHtml(category.name) + '</strong>' +
-            ' <small style="color:var(--text-secondary);font-weight:400;">(' + eventCount + ' eventi, ' + sideLabel + ')</small>' +
-            (connectorsOn ? '' : ' <small style="color:var(--text-secondary);font-weight:400;">(senza linee)</small>');
-        nameBtn.title = 'Mostra/nascondi eventi di ' + category.name;
+            ' <small style="color:var(--text-secondary);font-weight:400;">(' + eventCount + ' ' + t('category_events_count') + ', ' + sideLabel + ')</small>' +
+            (connectorsOn ? '' : ' <small style="color:var(--text-secondary);font-weight:400;">' + t('category_without_lines') + '</small>');
+        nameBtn.title = t('category_show_hide_events') + ' ' + category.name;
         nameBtn.onclick = function () { toggleCategoryEvents(category.id); };
 
         var actions = document.createElement('div');
@@ -153,19 +147,19 @@ function renderCategoryList() {
 
         var connBtn = document.createElement('button');
         connBtn.className = 'category-action-btn';
-        connBtn.title = connectorsOn ? 'Disattiva linee' : 'Attiva linee';
+        connBtn.title = connectorsOn ? t('category_connectors_on') : t('category_connectors_off');
         connBtn.innerHTML = connectorsLabel;
         connBtn.onclick = function () { toggleCategoryConnectors(category.id); };
 
         var editBtn = document.createElement('button');
         editBtn.className = 'category-action-btn';
-        editBtn.title = 'Modifica';
+        editBtn.title = t('category_edit_tooltip');
         editBtn.innerHTML = '&#x270E;';
         editBtn.onclick = function () { editCategory(category.id); };
 
         var deleteBtn = document.createElement('button');
         deleteBtn.className = 'category-action-btn delete';
-        deleteBtn.title = 'Elimina';
+        deleteBtn.title = t('category_delete_tooltip');
         deleteBtn.innerHTML = '&#x00D7;';
         deleteBtn.onclick = function () { deleteCategory(category.id); };
 
@@ -178,13 +172,11 @@ function renderCategoryList() {
         item.appendChild(mainRow);
         item.appendChild(actions);
 
-        // Events panel (accordion content)
         var eventsPanel = document.createElement('div');
         eventsPanel.className = 'category-events-panel';
         eventsPanel.id = eventsPanelId;
         eventsPanel.setAttribute('role', 'region');
-        eventsPanel.setAttribute('aria-label', 'Eventi di ' + category.name);
-        // Populate events lazily on first open
+        eventsPanel.setAttribute('aria-label', t('event_aria', { title: category.name }));
         eventsPanel.dataset.loaded = 'false';
 
         wrapper.appendChild(item);
@@ -204,7 +196,6 @@ function toggleCategoryEvents(categoryId) {
         panel.classList.remove('open');
         btn.setAttribute('aria-expanded', 'false');
     } else {
-        // Lazy-load events content on first open
         if (panel.dataset.loaded === 'false') {
             populateCategoryEventsPanel(categoryId, panel);
             panel.dataset.loaded = 'true';
@@ -220,19 +211,17 @@ function populateCategoryEventsPanel(categoryId, panel) {
         return e.categoryIds && e.categoryIds.indexOf(String(categoryId)) !== -1;
     });
 
-    // Sort by date (ascending)
     catEvents.sort(function (a, b) {
         if (a.startYear !== b.startYear) return a.startYear - b.startYear;
         if ((a.startMonth || 0) !== (b.startMonth || 0)) return (a.startMonth || 0) - (b.startMonth || 0);
         return (a.startDay || 0) - (b.startDay || 0);
     });
 
-    // Get category color for date styling
     var cat = getCategories().find(function (c) { return String(c.id) === String(categoryId); });
     var catColor = cat ? cat.color : 'var(--accent)';
 
     if (catEvents.length === 0) {
-        panel.innerHTML = '<div class="category-events-empty">Nessun evento in questa categoria.</div>';
+        panel.innerHTML = '<div class="category-events-empty">' + t('category_no_events') + '</div>';
         return;
     }
 
@@ -294,10 +283,10 @@ function updateSelectionButtons() {
     if (mergeBtn) {
         if (count >= 2) {
             mergeBtn.disabled = false;
-            mergeBtn.textContent = 'Unisci (' + count + ')';
+            mergeBtn.textContent = t('category_merge_btn') + ' (' + count + ')';
         } else {
             mergeBtn.disabled = true;
-            mergeBtn.textContent = 'Unisci';
+            mergeBtn.textContent = t('category_merge_btn');
         }
     }
 
@@ -305,10 +294,10 @@ function updateSelectionButtons() {
     if (deleteBtn) {
         if (count >= 1) {
             deleteBtn.disabled = false;
-            deleteBtn.textContent = 'Elimina (' + count + ')';
+            deleteBtn.textContent = t('category_delete_selection') + ' (' + count + ')';
         } else {
             deleteBtn.disabled = true;
-            deleteBtn.textContent = 'Elimina';
+            deleteBtn.textContent = t('category_delete_selection');
         }
     }
 }
@@ -319,7 +308,7 @@ function deleteSelectedCategories() {
     checkboxes.forEach(function (cb) { selectedIds.push(cb.dataset.categoryId); });
     if (selectedIds.length === 0) return;
 
-    if (!confirm('Eliminare ' + selectedIds.length + ' categorie selezionate? Gli eventi associati perderanno la categoria.')) return;
+    if (!confirm(t('toast_confirm_delete_categories', { n: selectedIds.length }))) return;
 
     var cats = getCategories().filter(function (c) {
         return selectedIds.indexOf(String(c.id)) === -1;
@@ -339,7 +328,7 @@ function deleteSelectedCategories() {
     exitSelectionMode();
     fullRender();
     renderCategorySelects();
-    showToast(selectedIds.length + ' categorie eliminate', 'info');
+    showToast(t('toast_categories_deleted', { n: selectedIds.length }), 'info');
 }
 
 // ================================================================
@@ -373,7 +362,7 @@ function setupMergeColorPicker() {
         btn.type = 'button';
         btn.className = 'color-option' + (color === mergeColor ? ' selected' : '');
         btn.style.background = color;
-        btn.setAttribute('aria-label', 'Colore ' + color);
+        btn.setAttribute('aria-label', t('color_aria', { color: color }));
         if (color === '#ffffff') { btn.style.border = '2px solid #555'; }
         btn.onclick = function () { selectMergeColor(color); };
         container.appendChild(btn);
@@ -404,7 +393,7 @@ function executeMerge() {
     if (selectedIds.length < 2) return;
 
     var name = document.getElementById('mergeCategoryName').value.trim();
-    if (!name) { showToast('Inserisci il nome della nuova categoria', 'error'); return; }
+    if (!name) { showToast(t('toast_merge_name_required'), 'error'); return; }
 
     var preferredSide = document.getElementById('mergeCategorySide').value;
     var newId = generateId();
@@ -423,12 +412,10 @@ function executeMerge() {
     var evs = getEvents();
     evs.forEach(function (event) {
         if (!event.categoryIds) event.categoryIds = [];
-        // Replace any merged category ids with the new one
         event.categoryIds = event.categoryIds.map(function (cid) {
             if (selectedIds.indexOf(String(cid)) !== -1) return newId;
             return cid;
         });
-        // Deduplicate
         var seen = {};
         event.categoryIds = event.categoryIds.filter(function (cid) {
             if (seen[String(cid)]) return false;
@@ -443,7 +430,7 @@ function executeMerge() {
     exitSelectionMode();
     fullRender();
     renderCategorySelects();
-    showToast('Categorie unite in ' + escapeHtml(name), 'success');
+    showToast(t('toast_categories_merged', { name: escapeHtml(name) }), 'success');
 }
 
 // ================================================================
@@ -466,11 +453,10 @@ function renderSplitSection() {
     });
 
     if (evs.length === 0) {
-        container.innerHTML = '<p class="category-empty-msg" style="padding:0.5rem 0;">Nessun evento in questa categoria.</p>';
+        container.innerHTML = '<p class="category-empty-msg" style="padding:0.5rem 0;">' + t('category_no_events') + '</p>';
         return;
     }
 
-    // Sort events by date (ascending)
     evs.sort(function (a, b) {
         if (a.startYear !== b.startYear) return a.startYear - b.startYear;
         if ((a.startMonth || 0) !== (b.startMonth || 0)) return (a.startMonth || 0) - (b.startMonth || 0);
@@ -504,7 +490,7 @@ function renderSplitSection() {
         });
         var newOpt = document.createElement('option');
         newOpt.value = '__new__';
-        newOpt.textContent = '➕ Crea nuova categoria...';
+        newOpt.textContent = t('split_new_category');
         select.appendChild(newOpt);
         select.onchange = function () { onSplitSelectChange(index, this.value); };
 
@@ -515,7 +501,7 @@ function renderSplitSection() {
         newFields.className = 'split-new-category-fields';
         newFields.id = 'splitNewFields_' + index;
         newFields.style.display = 'none';
-        newFields.innerHTML = '<input type="text" class="split-new-name" id="splitNewName_' + index + '" placeholder="Nome nuova categoria">' +
+        newFields.innerHTML = '<input type="text" class="split-new-name" id="splitNewName_' + index + '" placeholder="' + t('split_new_name') + '">' +
             '<div class="split-new-colors" id="splitNewColors_' + index + '"></div>';
         row.appendChild(newFields);
 
@@ -536,7 +522,7 @@ function setupSplitColorPicker(splitIndex) {
         btn.type = 'button';
         btn.className = 'color-option' + (color === AVAILABLE_COLORS[0] ? ' selected' : '');
         btn.style.background = color;
-        btn.setAttribute('aria-label', 'Colore ' + color);
+        btn.setAttribute('aria-label', t('color_aria', { color: color }));
         if (color === '#ffffff') { btn.style.border = '2px solid #555'; }
         btn.onclick = function () { selectSplitColor(splitIndex, color, btn); };
         container.appendChild(btn);
@@ -610,7 +596,6 @@ function applySplitChanges() {
         }
 
         if (String(targetId) !== String(catId)) {
-            // Replace the old category id with the new target in categoryIds array
             if (!event.categoryIds) event.categoryIds = [];
             event.categoryIds = event.categoryIds.map(function (cid) {
                 if (String(cid) === String(catId)) return targetId;
@@ -633,10 +618,19 @@ function toggleCategoryConnectors(categoryId) {
     if (cat) {
         cat.showConnectors = cat.showConnectors === false ? true : false;
         setCategories(cats);
-        saveState();
         renderCategoryList();
         renderEvents();
     }
+}
+
+var _originalCategoriesSnapshot = null;
+var _originalEventsSnapshot = null;
+
+function saveCategoryChanges() {
+    _originalCategoriesSnapshot = null;
+    _originalEventsSnapshot = null;
+    saveState();
+    closeCategoryModal();
 }
 
 function editCategory(categoryId) {
@@ -644,7 +638,6 @@ function editCategory(categoryId) {
     const cat = cats.find(function (c) { return String(c.id) === String(categoryId); });
     if (!cat) return;
 
-    // Open form first (resets to create mode), then override for edit mode
     openCategoryForm();
 
     editingCategoryId = categoryId;
@@ -653,15 +646,14 @@ function editCategory(categoryId) {
     selectedColor = cat.color;
     updateColorPicker();
     document.getElementById('categorySide').value = cat.preferredSide || 'auto';
-    document.getElementById('categoryNameLabel').textContent = 'Modifica Categoria';
-    document.getElementById('categorySaveBtn').textContent = 'Aggiorna';
+    document.getElementById('categoryNameLabel').textContent = t('edit_category_label');
+    document.getElementById('categorySaveBtn').textContent = t('save');
 
-    // Show the split toggle
     var splitToggle = document.getElementById('categorySplitToggle');
     if (splitToggle) {
         splitToggle.style.display = '';
         var eventCount = countEventsForCategory(categoryId);
-        splitToggle.textContent = 'Dividi eventi (' + eventCount + ') ►';
+        splitToggle.textContent = t('category_split_toggle') + ' (' + eventCount + ') ►';
         splitToggle.classList.remove('open');
     }
     var splitContainer = document.getElementById('categorySplitContainer');
@@ -669,7 +661,7 @@ function editCategory(categoryId) {
 }
 
 function deleteCategory(categoryId) {
-    if (!confirm('Eliminare questa categoria? Gli eventi associati perderanno la categoria.')) return;
+    if (!confirm(t('toast_confirm_delete_category'))) return;
     const cats = getCategories().filter(function (c) { return String(c.id) !== String(categoryId); });
     setCategories(cats);
     const evs = getEvents();
@@ -685,16 +677,15 @@ function deleteCategory(categoryId) {
     renderCategoryList();
     renderPills();
     renderEvents();
-    showToast('Categoria eliminata', 'info');
+    showToast(t('toast_category_deleted'), 'info');
 }
 
 function saveCategory() {
     const name = document.getElementById('categoryName').value.trim();
-    if (!name) { showToast('Inserisci il nome della categoria', 'error'); return; }
+    if (!name) { showToast(t('toast_category_name_required'), 'error'); return; }
     const preferredSide = document.getElementById('categorySide').value;
     const cats = getCategories();
 
-    // Apply split changes first (may create new categories, move events)
     var splitApplied = applySplitChanges();
 
     if (editingCategoryId) {
@@ -705,7 +696,6 @@ function saveCategory() {
             cat.preferredSide = preferredSide;
         }
 
-        // If all events were moved away, remove the category
         var remainingEvents = getEvents().filter(function (e) {
             return e.categoryIds && e.categoryIds.indexOf(String(editingCategoryId)) !== -1;
         });
@@ -713,7 +703,7 @@ function saveCategory() {
             var idx = cats.findIndex(function (c) { return String(c.id) === String(editingCategoryId); });
             if (idx !== -1) cats.splice(idx, 1);
         }
-        showToast('Categoria modificata', 'success');
+        showToast(t('toast_category_updated'), 'success');
     } else {
         const newCategory = {
             id: generateId(),
@@ -725,10 +715,13 @@ function saveCategory() {
         cats.push(newCategory);
         selectedCategoryId = newCategory.id;
         document.getElementById('categorySelect').value = newCategory.id;
-        showToast('Categoria creata', 'success');
+        showToast(t('toast_category_created'), 'success');
     }
 
     setCategories(cats);
+    // Clear snapshot so closeCategoryModal doesn't roll back our changes
+    _originalCategoriesSnapshot = null;
+    _originalEventsSnapshot = null;
     saveState();
     renderCategorySelects();
     renderCategoryList();
@@ -748,7 +741,7 @@ function setupColorPicker() {
         btn.type = 'button';
         btn.className = 'color-option' + (color === selectedColor ? ' selected' : '');
         btn.style.background = color;
-        btn.setAttribute('aria-label', 'Colore ' + color);
+        btn.setAttribute('aria-label', t('color_aria', { color: color }));
         if (color === '#ffffff') { btn.style.border = '2px solid #555'; }
         btn.onclick = function () { selectColor(color); };
         container.appendChild(btn);
@@ -769,10 +762,10 @@ function setupColorPicker() {
     input.id = 'customColorInput';
     input.className = 'custom-color-input';
     input.value = selectedColor;
-    input.setAttribute('aria-label', 'Selettore colore personalizzato');
+    input.setAttribute('aria-label', t('custom_color_aria'));
     input.oninput = function () { selectColor(this.value); };
     const label = document.createElement('span');
-    label.textContent = 'Colore personalizzato';
+    label.textContent = t('custom_color');
     label.style.fontSize = '0.75rem';
     label.style.color = 'var(--text-secondary)';
     label.style.cursor = 'pointer';
@@ -809,17 +802,22 @@ function updateColorPicker() {
     if (input) input.value = selectedColor;
 }
 
+var categoryModalOrigin = null; // 'fab' | 'edit_timeline' | null
+
 function openCategoryModal(openForm) {
+    // Save a deep copy of current state to support "cancel" rollback
+    _originalCategoriesSnapshot = getCategories().map(function(c) { return Object.assign({}, c); });
+    _originalEventsSnapshot = getEvents().map(function(e) { return Object.assign({}, e); });
     editingCategoryId = null;
     splitCategoryId = null;
     selectionMode = false;
-    document.getElementById('categoryModalTitle').textContent = 'Gestione Categorie';
+    document.getElementById('categoryModalTitle').textContent = t('category_modal_title');
     document.getElementById('categoryModal').classList.add('open');
     var modal = document.getElementById('categoryModal').querySelector('.modal');
     if (modal) modal.scrollTop = 0;
     document.getElementById('categoryForm').reset();
-    document.getElementById('categoryNameLabel').textContent = 'Nuova Categoria';
-    document.getElementById('categorySaveBtn').textContent = 'Salva';
+    document.getElementById('categoryNameLabel').textContent = t('new_category_label');
+    document.getElementById('categorySaveBtn').textContent = t('save');
     selectedColor = AVAILABLE_COLORS[0];
     updateColorPicker();
     closeCategoryForm();
@@ -832,12 +830,26 @@ function openCategoryModal(openForm) {
 }
 
 function closeCategoryModal() {
+    var wasFromEditTimeline = categoryModalOrigin === 'edit_timeline';
+    categoryModalOrigin = null;
+    // If user cancels (snapshot still present, not cleared by saveCategoryChanges), rollback
+    if (_originalCategoriesSnapshot !== null && _originalEventsSnapshot !== null) {
+        setCategories(_originalCategoriesSnapshot);
+        setEvents(_originalEventsSnapshot);
+        fullRender();
+        renderCategorySelects();
+    }
+    _originalCategoriesSnapshot = null;
+    _originalEventsSnapshot = null;
     document.getElementById('categoryModal').classList.remove('open');
     editingCategoryId = null;
     splitCategoryId = null;
     selectionMode = false;
     closeCategoryForm();
     hideMergeForm();
+    if (wasFromEditTimeline) {
+        editTimeline();
+    }
 }
 
 function openCategoryForm() {
@@ -846,19 +858,17 @@ function openCategoryForm() {
     section.classList.add('open');
     if (header) header.style.display = 'none';
 
-    // Always reset to create mode — editCategory() will override after calling this
     editingCategoryId = null;
     splitCategoryId = null;
 
-    // Hide split toggle for new categories
     var splitToggle = document.getElementById('categorySplitToggle');
     if (splitToggle) splitToggle.style.display = 'none';
     var splitContainer = document.getElementById('categorySplitContainer');
     if (splitContainer) splitContainer.classList.remove('open');
 
     document.getElementById('categoryForm').reset();
-    document.getElementById('categoryNameLabel').textContent = 'Nuova Categoria';
-    document.getElementById('categorySaveBtn').textContent = 'Salva';
+    document.getElementById('categoryNameLabel').textContent = t('new_category_label');
+    document.getElementById('categorySaveBtn').textContent = t('save');
     selectedColor = AVAILABLE_COLORS[0];
     updateColorPicker();
 
@@ -879,6 +889,6 @@ function closeCategoryForm() {
     var splitToggle = document.getElementById('categorySplitToggle');
     if (splitToggle) splitToggle.classList.remove('open');
     document.getElementById('categoryForm').reset();
-    document.getElementById('categoryNameLabel').textContent = 'Nuova Categoria';
-    document.getElementById('categorySaveBtn').textContent = 'Salva';
+    document.getElementById('categoryNameLabel').textContent = t('new_category_label');
+    document.getElementById('categorySaveBtn').textContent = t('save');
 }

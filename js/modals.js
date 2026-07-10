@@ -4,7 +4,8 @@
 // Form tab configuration — declarative, single source of truth
 const FORM_TABS = {
     note: {
-        title: 'Nuovo Appunto',
+        titleKey: 'new_note_title',
+        editTitleKey: 'edit_note_title',
         fields: {
             eventFields: 'none',
             periodFields: 'none',
@@ -19,10 +20,11 @@ const FORM_TABS = {
             periodEndYear: { required: false },
             noteYear: { required: true, focus: true }
         },
-        label: { text: 'Titolo', placeholder: 'es. Appunto sulla battaglia...', required: false }
+        label: { textKey: 'title_label', placeholder: 'es. Appunto sulla battaglia...', required: false }
     },
     period: {
-        title: 'Nuovo Periodo',
+        titleKey: 'new_period_title',
+        editTitleKey: 'edit_period_title',
         fields: {
             eventFields: 'none',
             periodFields: 'block',
@@ -37,10 +39,11 @@ const FORM_TABS = {
             periodEndYear: { required: true },
             noteYear: { required: false }
         },
-        label: { text: 'Nome *', placeholder: 'es. Impero Romano', required: true }
+        label: { textKey: 'title_label', placeholder: 'es. Impero Romano', required: true }
     },
     event: {
-        title: 'Nuovo Evento',
+        titleKey: 'new_event_title',
+        editTitleKey: 'edit_event_title',
         fields: {
             eventFields: 'block',
             periodFields: 'none',
@@ -55,7 +58,7 @@ const FORM_TABS = {
             periodEndYear: { required: false },
             noteYear: { required: false }
         },
-        label: { text: 'Nome *', placeholder: 'es. Caduta dell\'Impero Romano', required: true }
+        label: { textKey: 'title_label', placeholder: 'es. Caduta dell\'Impero Romano', required: true }
     }
 };
 
@@ -85,14 +88,14 @@ function switchFormTab(type) {
     // Set title label & placeholder
     const titleLabel = document.getElementById('eventTitleLabel');
     const title = document.getElementById('eventTitle');
-    if (titleLabel) titleLabel.textContent = cfg.label.text;
+    if (titleLabel) titleLabel.textContent = t(cfg.label.textKey) + (cfg.label.required ? ' ' + t('required') : '');
     if (title) {
         title.placeholder = cfg.label.placeholder;
         title.required = cfg.label.required;
     }
-    // Set modal title
+    // Set modal title (only if not editing)
     const modalTitle = document.getElementById('eventModalTitle');
-    if (modalTitle) modalTitle.textContent = cfg.title;
+    if (modalTitle && !editingEventId) modalTitle.textContent = t(cfg.titleKey);
     // Hide convert-to-period container (only shown when editing event with endYear)
     var convertContainer = document.getElementById('convertToPeriodContainer');
     if (convertContainer) convertContainer.style.display = 'none';
@@ -157,7 +160,7 @@ function closeModal() {
 function confirmDeleteAll() {
     const timeline = getCurrentTimeline();
     if (!timeline || (timeline.events.length === 0 && timeline.categories.length === 0)) {
-        showToast('Non ci sono dati da cancellare', 'info');
+        showToast(t('toast_no_data_to_delete'), 'info');
         return;
     }
     document.getElementById('deleteConfirmModal').classList.add('open');
@@ -169,27 +172,27 @@ function closeDeleteModal() {
 
 function deleteWithoutExport() {
     closeDeleteModal();
-    if (!confirm('Cancellare TUTTI i dati della timeline corrente?')) return;
+    if (!confirm(t('toast_confirm_delete_all'))) return;
     pushUndo();
     const timeline = getCurrentTimeline();
     if (timeline) { timeline.events = []; timeline.categories = []; }
     saveState();
     expandedEventId = null;
     fullRender();
-    showToast('Dati cancellati', 'info');
+    showToast(t('toast_deleted'), 'info');
 }
 
 function exportAndDelete() {
     closeDeleteModal();
     exportData();
-    if (!confirm('Dati esportati. Cancellare TUTTI i dati?')) return;
+    if (!confirm(t('toast_confirm_delete_all_after_export'))) return;
     pushUndo();
     const timeline = getCurrentTimeline();
     if (timeline) { timeline.events = []; timeline.categories = []; }
     saveState();
     expandedEventId = null;
     fullRender();
-    showToast('Dati esportati e cancellati', 'info');
+    showToast(t('toast_exported_and_deleted'), 'info');
 }
 
 function toggleMobileMenu() {
@@ -216,7 +219,11 @@ function openSettingsModal() {
         var showPills = localStorage.getItem('timeline_showPills');
         checkbox.checked = showPills !== 'false'; // default true
     }
-    renderSegmentsList();
+    // Set language select
+    var langSelect = document.getElementById('settingLanguage');
+    if (langSelect) {
+        langSelect.value = getCurrentLanguage();
+    }
     modal.classList.add('open');
     modal.addEventListener('click', function handler(e) {
         if (e.target === modal) { closeSettingsModal(); modal.removeEventListener('click', handler); }
@@ -228,22 +235,13 @@ function closeSettingsModal() {
     if (modal) modal.classList.remove('open');
 }
 
-function saveSettings() {
+function savePillSetting() {
     var checkbox = document.getElementById('settingShowPills');
     if (checkbox) {
         var showPills = checkbox.checked;
         localStorage.setItem('timeline_showPills', showPills);
         applyPillVisibility();
     }
-    // Save segments
-    var segments = readSegmentsFromUI();
-    if (segments) {
-        saveSegments(segments);
-        clearYearCache();
-        fullRender();
-        showToast('Impostazioni salvate', 'success');
-    }
-    closeSettingsModal();
 }
 
 function loadSettings() {
@@ -271,79 +269,57 @@ function applyPillVisibility() {
 // ================================================================
 //  SEGMENTS EDITOR (Settings Modal)
 // ================================================================
-// Density options: [value, label]
+// Density options: [value, label_key] — use t() for labels
 var DENSITY_OPTIONS = [
-    [0.25, 'Minima (0.25×)'],
-    [0.5, 'Molto bassa (0.5×)'],
-    [1, 'Bassa (1×)'],
-    [3, 'Medio-bassa (3×)'],
-    [5, 'Normale (5×)'],
-    [10, 'Media (10×)'],
-    [20, 'Medio-alta (20×)'],
-    [40, 'Alta (40×)'],
-    [60, 'Molto alta (60×)'],
-    [100, 'Massima (100×)'],
-    [-1, 'Personalizzata...']
+    [0.25, 'density_min'],
+    [0.5, 'density_very_low'],
+    [1, 'density_low'],
+    [3, 'density_med_low'],
+    [5, 'density_normal'],
+    [10, 'density_medium'],
+    [20, 'density_med_high'],
+    [40, 'density_high'],
+    [60, 'density_very_high'],
+    [100, 'density_max'],
+    [-1, 'density_custom']
 ];
 
 var RULER_STEP_OPTIONS = [
-    [1, 'Anno (1)'],
-    [10, 'Decennio (10)'],
-    [100, 'Secolo (100)']
+    [1, 'ruler_step_year'],
+    [10, 'ruler_step_decade'],
+    [100, 'ruler_step_century']
 ];
 
 function renderSegmentsList() {
     var body = document.getElementById('segmentsBody');
     if (!body) return;
     var segments = getSegments();
+    // Initialize editing buffer from saved segments
+    window._editingSegments = segments.map(function(s) { return Object.assign({}, s); });
     updateSegmentsCountBadge(segments.length);
-    var html = '';
-    for (var i = 0; i < segments.length; i++) {
-        var seg = segments[i];
-        var isLast = (i === segments.length - 1);
-        var isFirst = (i === 0);
-        var startReadonly = !isFirst ? ' readonly class="readonly-start"' : '';
-        var densitySelect = buildDensitySelect(seg.density, i);
-        var stepSelect = buildStepSelect(seg.rulerStep, seg.rulerLabel, i);
-        var delDisabled = segments.length <= 1 ? ' disabled' : '';
-        html += '<div class="segment-row" data-index="' + i + '">';
-        html += '<span class="seg-col-start"><input type="number" id="seg_start_' + i + '" value="' + seg.start + '"' + (isFirst ? ' onchange="onSegmentStartChange(' + i + ')"' : ' readonly') + ' class="' + (isFirst ? '' : 'readonly-start') + '" aria-label="Inizio segmento ' + (i + 1) + '"></span>';
-        html += '<span class="seg-col-end"><input type="number" id="seg_end_' + i + '" value="' + seg.end + '" onchange="onSegmentEndChange(' + i + ')" aria-label="Fine segmento ' + (i + 1) + '"></span>';
-        html += '<span class="seg-col-density">' + densitySelect + '</span>';
-        html += '<span class="seg-col-step">' + stepSelect + '</span>';
-        html += '<span class="seg-col-remove"><button class="seg-remove-btn" onclick="removeSegmentUI(' + i + ')"' + delDisabled + '>🗑 Rimuovi</button></span>';
-        html += '</div>';
-        // Hidden custom density input
-        html += '<div class="segment-row custom-density-row" id="seg_custom_' + i + '" style="display:none;">';
-        html += '<span class="seg-col-start"></span>';
-        html += '<span class="seg-col-end"></span>';
-        html += '<span class="seg-col-density" style="grid-column:3 / 5;"><input type="number" id="seg_density_custom_' + i + '" value="' + seg.density + '" step="0.1" min="0.05" placeholder="Densità personalizzata" aria-label="Densità personalizzata segmento ' + (i + 1) + '" style="text-align:left;width:100%;"></span>';
-        html += '<span class="seg-col-remove"></span>';
-        html += '</div>';
-    }
-    body.innerHTML = html;
+    renderSegmentsFromArray(window._editingSegments);
 }
 
 function buildDensitySelect(currentDensity, index) {
     var found = DENSITY_OPTIONS.some(function(opt) { return opt[0] === currentDensity; });
-    var html = '<select id="seg_density_' + index + '" onchange="onDensityChange(' + index + ')" aria-label="Spaziatura segmento ' + (index + 1) + '">';
+    var html = '<select id="seg_density_' + index + '" onchange="onDensityChange(' + index + ')" aria-label="' + t('segment_density_aria', { n: index + 1 }) + '">';
     for (var i = 0; i < DENSITY_OPTIONS.length; i++) {
         var opt = DENSITY_OPTIONS[i];
         var selected = '';
         if (opt[0] === currentDensity) selected = ' selected';
         else if (opt[0] === -1 && !found && i === DENSITY_OPTIONS.length - 1) selected = ' selected';
-        html += '<option value="' + opt[0] + '"' + selected + '>' + opt[1] + '</option>';
+        html += '<option value="' + opt[0] + '"' + selected + '>' + t(opt[1]) + '</option>';
     }
     html += '</select>';
     return html;
 }
 
 function buildStepSelect(currentStep, currentLabel, index) {
-    var html = '<select id="seg_step_' + index + '" onchange="onStepChange(' + index + ')" aria-label="Passo righello segmento ' + (index + 1) + '">';
+    var html = '<select id="seg_step_' + index + '" onchange="onStepChange(' + index + ')" aria-label="Segments step">';
     for (var i = 0; i < RULER_STEP_OPTIONS.length; i++) {
         var opt = RULER_STEP_OPTIONS[i];
         var selected = (opt[0] === currentStep) ? ' selected' : '';
-        html += '<option value="' + opt[0] + '"' + selected + '>' + opt[1] + '</option>';
+        html += '<option value="' + opt[0] + '"' + selected + '>' + t(opt[1]) + '</option>';
     }
     html += '</select>';
     return html;
@@ -365,52 +341,164 @@ function onStepChange(index) {
 }
 
 function onSegmentEndChange(index) {
-    var endInput = document.getElementById('seg_end_' + index);
-    var nextStartInput = document.getElementById('seg_start_' + (index + 1));
-    if (endInput && nextStartInput) {
-        nextStartInput.value = endInput.value;
+    syncSegmentsFromDOM();
+    var segs = window._editingSegments;
+    if (!segs) return;
+    var seg = segs[index];
+    if (!seg) return;
+    // For editable-start segments: only auto-sort when BOTH start and end are valid
+    if (seg.__editableStart) {
+        if (seg.start === '' || seg.end === '' || isNaN(seg.start) || isNaN(seg.end)) {
+            window._editingSegments = segs;
+            return;
+        }
+        if (seg.end <= seg.start) seg.end = seg.start + 100;
+        segs = sortAndChainSegments(segs);
+        window._editingSegments = segs;
+        renderSegmentsFromArray(segs);
+        return;
     }
-    // Also update start of the first segment if index is the last one and there's only one segment
-    var segments = getSegments();
-    if (index === 0 && segments.length === 1) {
-        // The only segment: start is already editable, nothing extra needed
-    }
+    if (isNaN(seg.start) || isNaN(seg.end)) return;
+    if (seg.end <= seg.start) seg.end = seg.start + 100;
+    if (index + 1 < segs.length) segs[index + 1].start = seg.end;
+    window._editingSegments = segs;
+    renderSegmentsFromArray(segs);
 }
 
 function onSegmentStartChange(index) {
-    if (index === 0) return; // only first segment has editable start
-    // If the user manually changes the start of a non-first segment,
-    // update the end of the previous segment
-    var startInput = document.getElementById('seg_start_' + index);
-    var prevEndInput = document.getElementById('seg_end_' + (index - 1));
-    if (startInput && prevEndInput) {
-        prevEndInput.value = startInput.value;
+    syncSegmentsFromDOM();
+    var segs = window._editingSegments;
+    if (!segs) return;
+    var seg = segs[index];
+    if (!seg) return;
+    if (seg.__editableStart) {
+        if (seg.start === '' || seg.end === '' || isNaN(seg.start) || isNaN(seg.end)) {
+            window._editingSegments = segs;
+            return;
+        }
+        if (seg.end <= seg.start) seg.end = seg.start + 100;
+        segs = sortAndChainSegments(segs);
+        window._editingSegments = segs;
+        renderSegmentsFromArray(segs);
+        return;
+    }
+    if (seg.start === '' || isNaN(seg.start)) return;
+    if (index === 0) {
+        if (seg.end !== '' && !isNaN(seg.end) && seg.end <= seg.start) seg.end = seg.start + 100;
+    } else {
+        segs[index - 1].end = seg.start;
+    }
+    window._editingSegments = segs;
+    renderSegmentsFromArray(segs);
+}
+
+function sortAndChainSegments(segments) {
+    var newSeg = null;
+    for (var k = 0; k < segments.length; k++) {
+        if (segments[k].__editableStart) { newSeg = segments[k]; break; }
+    }
+    var sorted = segments.slice();
+    sorted.sort(function(a, b) { return a.start - b.start; });
+    var newIdx = -1;
+    for (var n = 0; n < sorted.length; n++) {
+        if (sorted[n] === newSeg) { newIdx = n; break; }
+    }
+    if (newIdx >= 0) {
+        if (newIdx > 0) {
+            sorted[newIdx - 1].end = newSeg.start;
+            if (sorted[newIdx - 1].end <= sorted[newIdx - 1].start) {
+                sorted[newIdx - 1].end = sorted[newIdx - 1].start + 100;
+            }
+        }
+        if (newIdx + 1 < sorted.length) {
+            sorted[newIdx + 1].start = newSeg.end;
+            if (isNaN(sorted[newIdx + 1].end) || sorted[newIdx + 1].end <= sorted[newIdx + 1].start) {
+                sorted[newIdx + 1].end = sorted[newIdx + 1].start + 100;
+            }
+        }
+        for (var i = 1; i < newIdx; i++) {
+            sorted[i].start = sorted[i - 1].end;
+            if (isNaN(sorted[i].end) || sorted[i].end <= sorted[i].start) {
+                sorted[i].end = sorted[i].start + 100;
+            }
+        }
+        for (var j = newIdx + 2; j < sorted.length; j++) {
+            sorted[j].start = sorted[j - 1].end;
+            if (isNaN(sorted[j].end) || sorted[j].end <= sorted[j].start) {
+                sorted[j].end = sorted[j].start + 100;
+            }
+        }
+    }
+    for (var m = 0; m < sorted.length; m++) {
+        sorted[m].__editableStart = false;
+    }
+    return sorted;
+}
+
+function syncSegmentsFromDOM() {
+    var segs = window._editingSegments;
+    if (!segs) return;
+    for (var i = 0; i < segs.length; i++) {
+        var startEl = document.getElementById('seg_start_' + i);
+        var endEl = document.getElementById('seg_end_' + i);
+        var densitySel = document.getElementById('seg_density_' + i);
+        var stepSel = document.getElementById('seg_step_' + i);
+        if (startEl) {
+            var sVal = startEl.value.trim();
+            if (sVal === '') { segs[i].start = ''; }
+            else { var sNum = parseInt(sVal); if (!isNaN(sNum)) segs[i].start = sNum; }
+        }
+        if (endEl) {
+            var eVal = endEl.value.trim();
+            if (eVal === '') { segs[i].end = ''; }
+            else { var eNum = parseInt(eVal); if (!isNaN(eNum)) segs[i].end = eNum; }
+        }
+        if (densitySel) {
+            var dVal = parseFloat(densitySel.value);
+            if (densitySel.value === '-1') {
+                var customEl = document.getElementById('seg_density_custom_' + i);
+                if (customEl) dVal = parseFloat(customEl.value) || segs[i].density;
+            }
+            if (!isNaN(dVal) && dVal > 0) segs[i].density = dVal;
+        }
+        if (stepSel) {
+            var stVal = parseInt(stepSel.value);
+            if (!isNaN(stVal)) {
+                segs[i].rulerStep = stVal;
+                segs[i].rulerLabel = stVal === 100 ? 'century' : (stVal === 10 ? 'decade' : 'year');
+            }
+        }
     }
 }
 
 function addSegmentUI() {
-    var segments = getSegments();
-    var lastSeg = segments[segments.length - 1];
-    var newStart = lastSeg.end;
-    var newEnd = lastSeg.end + 100;
-    var newSeg = { start: newStart, end: newEnd, density: lastSeg.density, rulerStep: lastSeg.rulerStep, rulerLabel: lastSeg.rulerLabel };
-    segments.push(newSeg);
-    // Update the current segments list (not saved yet — user must click Save)
-    // We store segments in a temporary variable so the UI can work without saving
-    window._editingSegments = segments;
-    renderSegmentsFromArray(segments);
+    var segs = window._editingSegments ? window._editingSegments.slice() : getSegments().map(function(s) { return Object.assign({}, s); });
+    var lastSeg = segs[segs.length - 1];
+    var newSeg = { start: '', end: '', density: lastSeg.density, rulerStep: lastSeg.rulerStep, rulerLabel: lastSeg.rulerLabel, __editableStart: true };
+    segs.push(newSeg);
+    window._editingSegments = segs;
+    renderSegmentsFromArray(segs);
+    requestAnimationFrame(function() {
+        var table = document.getElementById('segmentsTable');
+        if (table) { table.scrollTop = table.scrollHeight; }
+    });
 }
 
 function removeSegmentUI(index) {
-    var segments = window._editingSegments ? window._editingSegments.slice() : getSegments().slice();
-    if (segments.length <= 1) return;
-    segments.splice(index, 1);
-    // Re-chain: update start of the segment that now follows the removed one
-    if (index > 0 && index < segments.length) {
-        segments[index].start = segments[index - 1].end;
+    var segs = window._editingSegments ? window._editingSegments.slice() : getSegments().map(function(s) { return Object.assign({}, s); });
+    if (segs.length <= 1) return;
+    segs.splice(index, 1);
+    for (var i = 1; i < segs.length; i++) {
+        if (segs[i].__editableStart && segs[i].start === segs[i - 1].end) {
+            segs[i].__editableStart = false;
+        }
+        segs[i].start = segs[i - 1].end;
+        if (segs[i].end <= segs[i].start) {
+            segs[i].end = segs[i].start + 100;
+        }
     }
-    window._editingSegments = segments;
-    renderSegmentsFromArray(segments);
+    window._editingSegments = segs;
+    renderSegmentsFromArray(segs);
 }
 
 function renderSegmentsFromArray(segments) {
@@ -421,21 +509,21 @@ function renderSegmentsFromArray(segments) {
     for (var i = 0; i < segments.length; i++) {
         var seg = segments[i];
         var isFirst = (i === 0);
+        var startEditable = isFirst || seg.__editableStart === true;
         var densitySelect = buildDensitySelect(seg.density, i);
         var stepSelect = buildStepSelect(seg.rulerStep, seg.rulerLabel, i);
         var delDisabled = segments.length <= 1 ? ' disabled' : '';
         html += '<div class="segment-row" data-index="' + i + '">';
-        html += '<span class="seg-col-start"><input type="number" id="seg_start_' + i + '" value="' + seg.start + '"' + (isFirst ? ' onchange="onSegmentStartChange(' + i + ')"' : ' readonly') + ' class="' + (isFirst ? '' : 'readonly-start') + '" aria-label="Inizio segmento ' + (i + 1) + '"></span>';
-        html += '<span class="seg-col-end"><input type="number" id="seg_end_' + i + '" value="' + seg.end + '" onchange="onSegmentEndChange(' + i + ')" aria-label="Fine segmento ' + (i + 1) + '"></span>';
+        html += '<span class="seg-col-start"><input type="number" id="seg_start_' + i + '" value="' + seg.start + '"' + (startEditable ? ' onchange="onSegmentStartChange(' + i + ')"' : ' readonly') + ' class="' + (startEditable ? '' : 'readonly-start') + '" aria-label="' + t('segment_start_aria', { n: i + 1 }) + '"></span>';
+        html += '<span class="seg-col-end"><input type="number" id="seg_end_' + i + '" value="' + seg.end + '" onchange="onSegmentEndChange(' + i + ')" aria-label="' + t('segment_end_aria', { n: i + 1 }) + '"></span>';
         html += '<span class="seg-col-density">' + densitySelect + '</span>';
         html += '<span class="seg-col-step">' + stepSelect + '</span>';
-        html += '<span class="seg-col-remove"><button class="seg-remove-btn" onclick="removeSegmentUI(' + i + ')"' + delDisabled + '>🗑 Rimuovi</button></span>';
+        html += '<span class="seg-col-remove"><button class="seg-remove-btn" onclick="removeSegmentUI(' + i + ')"' + delDisabled + '>' + t('segment_remove') + '</button></span>';
         html += '</div>';
-        // Hidden custom density input
         html += '<div class="segment-row custom-density-row" id="seg_custom_' + i + '" style="display:none;">';
         html += '<span class="seg-col-start"></span>';
         html += '<span class="seg-col-end"></span>';
-        html += '<span class="seg-col-density" style="grid-column:3 / 5;"><input type="number" id="seg_density_custom_' + i + '" value="' + seg.density + '" step="0.1" min="0.05" placeholder="Densità personalizzata" aria-label="Densità personalizzata segmento ' + (i + 1) + '" style="text-align:left;width:100%;"></span>';
+        html += '<span class="seg-col-density" style="grid-column:3 / 5;"><input type="number" id="seg_density_custom_' + i + '" value="' + seg.density + '" step="0.1" min="0.05" placeholder="Custom density" aria-label="' + t('custom_density_aria', { n: i + 1 }) + '" style="text-align:left;width:100%;"></span>';
         html += '<span class="seg-col-remove"></span>';
         html += '</div>';
     }
@@ -446,6 +534,8 @@ function readSegmentsFromUI() {
     var body = document.getElementById('segmentsBody');
     if (!body) return null;
     var rows = body.querySelectorAll('.segment-row[data-index]');
+    // If segments were never rendered (user didn't open the section), return current segments unchanged
+    if (rows.length === 0) return getSegments().map(function(s) { return Object.assign({}, s); });
     var segments = [];
     for (var i = 0; i < rows.length; i++) {
         var idx = rows[i].dataset.index;
@@ -457,11 +547,11 @@ function readSegmentsFromUI() {
         var start = parseInt(startEl.value);
         var end = parseInt(endEl.value);
         if (isNaN(start) || isNaN(end)) {
-            showToast('I valori di inizio e fine devono essere numeri validi.', 'error');
+            showToast(t('toast_segments_invalid_values'), 'error');
             return null;
         }
         if (end <= start) {
-            showToast('La fine del segmento deve essere maggiore dell\'inizio (segmento ' + (parseInt(idx) + 1) + ').', 'error');
+            showToast(t('toast_segment_end_gt_start', { n: parseInt(idx) + 1 }), 'error');
             return null;
         }
         var density = parseFloat(densitySel.value);
@@ -470,7 +560,7 @@ function readSegmentsFromUI() {
             if (customEl) {
                 density = parseFloat(customEl.value);
                 if (isNaN(density) || density <= 0) {
-                    showToast('La densità personalizzata del segmento ' + (parseInt(idx) + 1) + ' deve essere un numero positivo.', 'error');
+                    showToast(t('toast_density_positive', { n: parseInt(idx) + 1 }), 'error');
                     return null;
                 }
             }
@@ -481,10 +571,9 @@ function readSegmentsFromUI() {
         else if (step === 10) label = 'decade';
         segments.push({ start: start, end: end, density: density, rulerStep: step, rulerLabel: label });
     }
-    // Validate contiguity
     for (var j = 1; j < segments.length; j++) {
         if (segments[j].start !== segments[j - 1].end) {
-            showToast('I segmenti devono essere contigui: la fine del segmento ' + j + ' deve coincidere con l\'inizio del segmento ' + (j + 1) + '.', 'error');
+            showToast(t('toast_segments_contiguous', { n1: j, n2: j + 1 }), 'error');
             return null;
         }
     }
@@ -494,30 +583,53 @@ function readSegmentsFromUI() {
 function updateSegmentsCountBadge(count) {
     var badge = document.getElementById('segmentsCountBadge');
     if (badge) {
-        badge.textContent = count + ' segment' + (count !== 1 ? 'i' : 'o');
+        badge.textContent = count + ' ' + (count !== 1 ? t('segments_count_plural') : t('segments_count_singular'));
     }
 }
 
-function toggleSegmentsAccordion() {
-    var body = document.getElementById('segmentsAccordionBody');
-    var arrow = document.getElementById('segmentsAccordionArrow');
-    var toggle = document.getElementById('segmentsAccordionToggle');
-    if (!body || !arrow || !toggle) return;
-    var isOpen = body.style.display !== 'none';
-    if (isOpen) {
-        body.style.display = 'none';
-        arrow.textContent = '▶';
-        toggle.setAttribute('aria-expanded', 'false');
-    } else {
-        body.style.display = '';
-        arrow.textContent = '▼';
-        toggle.setAttribute('aria-expanded', 'true');
+function openSegmentsModal() {
+    var timeline = getCurrentTimeline();
+    if (!timeline) return;
+    window._editingSegments = timeline.segments.map(function(s) { return Object.assign({}, s); });
+    renderSegmentsFromArray(window._editingSegments);
+    document.getElementById('segmentsModal').classList.add('open');
+}
+
+function closeSegmentsModal(save) {
+    if (save !== false) {
+        var segments = readSegmentsFromUI();
+        if (segments) {
+            var timeline = getCurrentTimeline();
+            if (timeline) {
+                timeline.segments = segments;
+                saveState();
+                clearYearCache();
+                fullRender();
+            }
+        }
     }
+    document.getElementById('segmentsModal').classList.remove('open');
+}
+
+function openCategoryModalFromEdit() {
+    closeTimelineModal();
+    categoryModalOrigin = 'edit_timeline';
+    openCategoryModal();
 }
 
 function resetSegmentsToDefaultUI() {
     resetSegmentsToDefault();
     window._editingSegments = null;
     renderSegmentsList();
-    showToast('Segmenti ripristinati ai valori predefiniti. Clicca Salva per confermare.', 'info');
+    showToast(t('toast_segments_reset'), 'info');
+}
+
+function resetToSingleSegmentUI() {
+    var currentSegs = getSegments();
+    var startYear = currentSegs[0].start;
+    var endYear = currentSegs[currentSegs.length - 1].end;
+    var singleSeg = { start: startYear, end: endYear, density: 10, rulerStep: 1, rulerLabel: 'year' };
+    window._editingSegments = [singleSeg];
+    renderSegmentsFromArray([singleSeg]);
+    showToast(t('toast_segments_reset'), 'info');
 }

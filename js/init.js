@@ -10,6 +10,7 @@ function setupEventListeners() {
     document.getElementById('deleteConfirmModal').addEventListener('click', function (e) { if (e.target === this) closeDeleteModal(); });
     document.getElementById('timelineModal').addEventListener('click', function (e) { if (e.target === this) closeTimelineModal(); });
     document.getElementById('importChoiceModal').addEventListener('click', function (e) { if (e.target === this) closeImportChoiceModal(); });
+    document.getElementById('segmentsModal').addEventListener('click', function (e) { if (e.target === this) closeSegmentsModal(); });
 
     let resizeTimer;
     window.addEventListener('resize', function () {
@@ -58,13 +59,10 @@ function setupEventListeners() {
             var stripTop = parseFloat(strip.style.top);
             var stripHeight = parseFloat(strip.style.height);
             var stripBottom = stripTop + stripHeight;
-            // Card is positioned via left/top CSS, the strip is in the ruler
             if (stripBottom < scrollTop || stripTop > scrollBottom) {
-                // Strip is completely outside the visible area
                 strip.classList.remove('active');
                 strip.setAttribute('aria-expanded', 'false');
                 card.classList.remove('visible');
-                // Remove period-highlighted nodes
                 document.querySelectorAll('.event-node.period-highlighted').forEach(function (n) {
                     n.classList.remove('expanded-node', 'period-highlighted');
                 });
@@ -92,9 +90,6 @@ function setupEventListeners() {
                     var firstOut = (firstCardBottom < scrollTop || firstTop > scrollBottom);
                     var lastOut = (lastCardBottom < scrollTop || lastTop > scrollBottom);
                     if (firstOut && lastOut) {
-                        // Both first and last event cards are completely outside the visible area
-                        // Do not dismiss if the connector was intentionally pinned (persistent-highlight)
-                        // or if there is an expanded card for this category
                         var hasPersistent = document.querySelector('.category-connector.persistent-highlight[data-category-id="' + highlightedCategoryId + '"]');
                         var anyExpanded = document.querySelector('.event-card.expanded[data-category-id="' + highlightedCategoryId + '"], .note-card.expanded[data-category-id="' + highlightedCategoryId + '"]');
                         if (!hasPersistent && !anyExpanded) {
@@ -209,7 +204,6 @@ function setupEventListeners() {
 
     // Global click handler
     document.addEventListener('click', function (e) {
-        // First: handle closing expanded cards / period details
         var didCloseSomething = false;
 
         if (!e.target.closest('.period-strip') && !e.target.closest('.period-detail-card')) {
@@ -243,11 +237,8 @@ function setupEventListeners() {
             didCloseSomething = true;
         }
 
-        // Quick Create: show on empty timeline space click (but not if we just closed something or just ended a drag)
         if (!dragJustEnded && !didCloseSomething && !e.target.closest('.event-card') && !e.target.closest('.note-card') && !e.target.closest('.period-strip') && !e.target.closest('.period-detail-card') && !e.target.closest('.event-node') && !e.target.closest('.category-connector') && !e.target.closest('.link-connector') && !e.target.closest('.pill') && !e.target.closest('#pillRow') && !e.target.closest('#fabBtn') && !e.target.closest('.fab-secondary') && !e.target.closest('.modal-overlay') && !e.target.closest('#quickCreateBalloon') && !e.target.closest('#quickCreateCursor') && !e.target.closest('#yearIndicator') && !e.target.closest('.toolbar') && !e.target.closest('.mini-map') && !e.target.closest('.shortcuts-hint') && !e.target.closest('.image-lightbox') && !e.target.closest('#importInput') && !e.target.closest('.toast-container')) {
-            // Only trigger if we're clicking inside the timeline ruler area
             if (e.target.closest('#timelineRuler') || e.target === document.getElementById('timelineRuler')) {
-                // If search input has text, clear search instead of showing quick-create
                 if (document.getElementById('searchInput').value.trim()) {
                     clearSearch();
                 } else {
@@ -259,13 +250,11 @@ function setupEventListeners() {
                     if (!isQuickCreateVisible()) {
                         showQuickCreate(year);
                     } else if (!e.target.closest('#quickCreateBalloon') && !e.target.closest('#quickCreateCursor')) {
-                        // Clicking elsewhere while quick create is visible → hide
                         hideQuickCreate();
                     }
                 }
             }
         } else if (!dragJustEnded && isQuickCreateVisible() && !e.target.closest('#quickCreateBalloon') && !e.target.closest('#quickCreateHandle')) {
-            // Clicking on an existing card/period/pill while quick create is visible → hide
             hideQuickCreate();
         }
     });
@@ -298,7 +287,6 @@ function updateBoundaryButtons() {
     var ruler = document.getElementById('timelineRuler');
     if (!ruler) return;
 
-    // Dynamic top position: right below toolbar (+ minimap on mobile)
     var toolbar = document.querySelector('.toolbar');
     var toolbarBottom = toolbar ? toolbar.getBoundingClientRect().bottom : 85;
     if (isMobile()) {
@@ -319,13 +307,13 @@ function updateBoundaryButtons() {
     var nearBottom = ruler.scrollTop >= effectiveMax - bottomMargin;
     if (nearTop) {
         topBtn.classList.add('visible');
-        topBtn.querySelector('.boundary-label').textContent = 'Scopri anni precedenti (← ' + formatYear(range.minYear) + ')';
+        topBtn.querySelector('.boundary-label').textContent = t('boundary_prev_years', { year: formatYear(range.minYear) });
     } else {
         topBtn.classList.remove('visible');
     }
     if (nearBottom) {
         bottomBtn.classList.add('visible');
-        bottomBtn.querySelector('.boundary-label').textContent = 'Scopri anni successivi (' + formatYear(range.maxYear) + ' →)';
+        bottomBtn.querySelector('.boundary-label').textContent = t('boundary_next_years', { year: formatYear(range.maxYear) });
     } else {
         bottomBtn.classList.remove('visible');
     }
@@ -335,7 +323,6 @@ function unlockScroll() {
     scrollRestricted = false;
     var lockToggle = document.getElementById('lockToggle');
     if (lockToggle) {
-        // Position on timeline, right below toolbar
         var toolbar = document.querySelector('.toolbar');
         var toolbarBottom = toolbar ? toolbar.getBoundingClientRect().bottom : 85;
         if (isMobile()) {
@@ -370,8 +357,8 @@ function createBoundaryButtons() {
     topBtn.id = 'boundaryTopBtn';
     topBtn.className = 'boundary-btn boundary-top';
     topBtn.innerHTML = '<span class="boundary-arrow">▲</span><span class="boundary-label"></span>';
-    topBtn.setAttribute('aria-label', 'Sblocca scroll verso anni precedenti');
-    topBtn.title = 'Clicca per esplorare gli anni senza eventi';
+    topBtn.setAttribute('aria-label', t('boundary_unlock_top_aria'));
+    topBtn.title = t('boundary_unlock_title');
     topBtn.addEventListener('click', function (e) {
         e.stopPropagation();
         unlockScroll();
@@ -383,8 +370,8 @@ function createBoundaryButtons() {
     bottomBtn.id = 'boundaryBottomBtn';
     bottomBtn.className = 'boundary-btn boundary-bottom';
     bottomBtn.innerHTML = '<span class="boundary-label"></span><span class="boundary-arrow">▼</span>';
-    bottomBtn.setAttribute('aria-label', 'Sblocca scroll verso anni successivi');
-    bottomBtn.title = 'Clicca per esplorare gli anni senza eventi';
+    bottomBtn.setAttribute('aria-label', t('boundary_unlock_bottom_aria'));
+    bottomBtn.title = t('boundary_unlock_title');
     bottomBtn.addEventListener('click', function (e) {
         e.stopPropagation();
         unlockScroll();
@@ -395,9 +382,9 @@ function createBoundaryButtons() {
     var lockToggle = document.createElement('button');
     lockToggle.id = 'lockToggle';
     lockToggle.className = 'lock-toggle';
-    lockToggle.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Blocca scroll';
-    lockToggle.setAttribute('aria-label', 'Riattiva restrizione scroll');
-    lockToggle.title = 'Limita lo scroll agli anni con eventi';
+    lockToggle.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> ' + t('lock_toggle_label');
+    lockToggle.setAttribute('aria-label', t('lock_toggle_aria'));
+    lockToggle.title = t('lock_toggle_title');
     lockToggle.addEventListener('click', function (e) {
         e.stopPropagation();
         relockScroll();
@@ -407,7 +394,9 @@ function createBoundaryButtons() {
 
 function init() {
     loadState();
-    // Ripristina zoom salvato
+    // Apply i18n first so static text is translated before rendering
+    applyI18n();
+    // Restore zoom
     var zoomLabel = document.getElementById('zoomLabel');
     if (zoomLabel) {
         zoomLabel.textContent = pixelsPerYear + 'px';
@@ -428,7 +417,6 @@ function init() {
     loadSettings();
     fullRender();
     scrollToLatestEvent();
-    // Re-position mini-map after full render (pills are now visible)
     positionMiniMap();
     updateMiniMap();
     // Initial clamp after everything is rendered

@@ -7,13 +7,13 @@ function exportData() {
     const data = JSON.stringify({ timeline: timeline, exportDate: new Date().toISOString() }, null, 2);
     const suggestedName = 'timeline_' + timeline.name.replace(/[^a-zA-Z0-9]/g, '_') + '_' + new Date().toLocaleDateString('sv-SE') + '.json';
     if (window.showSaveFilePicker) {
-        window.showSaveFilePicker({ suggestedName: suggestedName, types: [{ description: 'File JSON', accept: { 'application/json': ['.json'] } }] })
+        window.showSaveFilePicker({ suggestedName: suggestedName, types: [{ description: 'JSON File', accept: { 'application/json': ['.json'] } }] })
             .then(function (handle) { return handle.createWritable().then(function (writable) { return writable.write(data).then(function () { return writable.close(); }); }); })
-            .then(function () { showToast('Dati esportati', 'success'); })
-            .catch(function (err) { if (err.name !== 'AbortError') { showToast('Errore durante esportazione', 'error'); } });
+            .then(function () { showToast(t('toast_data_exported'), 'success'); })
+            .catch(function (err) { if (err.name !== 'AbortError') { showToast(t('toast_export_error'), 'error'); } });
         return;
     }
-    let filename = prompt('Salva con nome:', suggestedName);
+    let filename = prompt(t('toast_export_prompt'), suggestedName);
     if (filename === null) return;
     if (!filename.trim()) filename = suggestedName;
     if (!filename.endsWith('.json')) filename += '.json';
@@ -26,7 +26,7 @@ function exportData() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    showToast('Dati esportati', 'success');
+    showToast(t('toast_data_exported'), 'success');
 }
 
 function importData(event) {
@@ -42,27 +42,32 @@ function importData(event) {
             if (data.timeline && data.timeline.events && data.timeline.categories) {
                 importedEvents = data.timeline.events;
                 importedCategories = data.timeline.categories;
-                importedName = data.timeline.name || 'Importata';
+                importedName = data.timeline.name || t('legacy_import_name_prefix');
             } else if (data.events && Array.isArray(data.events)) {
                 importedEvents = data.events;
                 importedCategories = data.categories || [];
-                importedName = 'Importata (legacy)';
+                importedName = t('legacy_import_name_prefix') + ' ' + t('legacy_import_name_suffix');
             } else {
-                showToast('File non valido', 'error');
+                showToast(t('toast_invalid_file'), 'error');
                 event.target.value = '';
                 return;
             }
-            pendingImportData = { events: importedEvents, categories: importedCategories, name: importedName };
+            pendingImportData = { events: importedEvents, categories: importedCategories, name: importedName, segments: data.timeline ? data.timeline.segments : null };
             const currentTl = getCurrentTimeline();
             const hasContent = (currentTl && (currentTl.events.length > 0 || currentTl.categories.length > 0));
             if (hasContent) {
                 $('importCurrentTimelineName').textContent = currentTl.name;
+                // Update import choice description
+                var descEl = document.getElementById('importChoiceDesc');
+                if (descEl) {
+                    descEl.innerHTML = t('import_choice_desc', { name: currentTl.name });
+                }
                 $('importChoiceModal').classList.add('open');
             } else {
                 importIntoCurrentTimeline();
             }
         } catch (err) {
-            showToast('Errore durante l\'importazione', 'error');
+            showToast(t('toast_import_error'), 'error');
         }
     };
     reader.readAsText(file);
@@ -78,12 +83,15 @@ function importIntoCurrentTimeline() {
     pendingImportData.categories = sanitizeImportedCategories(pendingImportData.categories);
     timeline.events = pendingImportData.events;
     timeline.categories = pendingImportData.categories;
+    if (pendingImportData.segments && Array.isArray(pendingImportData.segments) && pendingImportData.segments.length > 0) {
+        timeline.segments = pendingImportData.segments;
+    }
     pendingImportData = null;
     closeImportChoiceModal();
     saveState();
     expandedEventId = null;
     fullRender();
-    showToast('Timeline "' + timeline.name + '" aggiornata con i dati importati', 'success');
+    showToast(t('toast_imported_into_current', { name: timeline.name }), 'success');
 }
 
 function importIntoNewTimeline() {
@@ -97,14 +105,17 @@ function importIntoNewTimeline() {
     pendingImportData.events = sanitizeImportedEvents(pendingImportData.events);
     pendingImportData.categories = sanitizeImportedCategories(pendingImportData.categories);
     const id = generateId();
-    state.timelines[id] = { id: id, name: candidateName, events: pendingImportData.events, categories: pendingImportData.categories };
+    const segments = (pendingImportData.segments && Array.isArray(pendingImportData.segments) && pendingImportData.segments.length > 0)
+        ? pendingImportData.segments
+        : getDefaultSegments();
+    state.timelines[id] = { id: id, name: candidateName, events: pendingImportData.events, categories: pendingImportData.categories, segments: segments };
     state.currentTimelineId = id;
     pendingImportData = null;
     closeImportChoiceModal();
     saveState();
     expandedEventId = null;
     fullRender();
-    showToast('Timeline "' + candidateName + '" importata', 'success');
+    showToast(t('toast_imported_new', { name: candidateName }), 'success');
 }
 
 function closeImportChoiceModal() {
@@ -114,14 +125,14 @@ function closeImportChoiceModal() {
 function loadExampleTimeline() {
     fetch('https://gist.githubusercontent.com/Parenji/02b79bb98905671eca2d5a2dd8fa5dc6/raw/14eae517171094a91a401e02010f011f5b366eb4/gistfile1.json')
         .then(function (response) {
-            if (!response.ok) throw new Error('File non trovato');
+            if (!response.ok) throw new Error('File not found');
             return response.json();
         })
         .then(function (data) {
-            if (!data.timeline || !data.timeline.events) { throw new Error('Formato non valido'); }
+            if (!data.timeline || !data.timeline.events) { throw new Error('Invalid format'); }
             const importedEvents = sanitizeImportedEvents(data.timeline.events);
             const importedCategories = sanitizeImportedCategories(data.timeline.categories || []);
-            const importedName = data.timeline.name || 'Storia';
+            const importedName = data.timeline.name || 'History';
             const currentTl = getCurrentTimeline();
             const hasContent = (currentTl && (currentTl.events.length > 0 || currentTl.categories.length > 0));
             if (hasContent) {
@@ -132,12 +143,15 @@ function loadExampleTimeline() {
                     candidateName = baseName + ' (' + (++suffix) + ')';
                 }
                 const newId = generateId();
-                state.timelines[newId] = { id: newId, name: candidateName, events: importedEvents, categories: importedCategories };
+                const exSegments = (data.timeline && data.timeline.segments && Array.isArray(data.timeline.segments) && data.timeline.segments.length > 0)
+                    ? data.timeline.segments
+                    : getDefaultSegments();
+                state.timelines[newId] = { id: newId, name: candidateName, events: importedEvents, categories: importedCategories, segments: exSegments };
                 state.currentTimelineId = newId;
                 saveState();
                 expandedEventId = null;
                 fullRender();
-                showToast('Timeline d\'esempio "' + candidateName + '" caricata', 'success');
+                showToast(t('toast_example_loaded', { name: candidateName }), 'success');
             } else {
                 pushUndo();
                 currentTl.name = importedName;
@@ -146,11 +160,11 @@ function loadExampleTimeline() {
                 saveState();
                 expandedEventId = null;
                 fullRender();
-                showToast('Timeline d\'esempio caricata: ' + importedName, 'success');
+                showToast(t('toast_example_loaded_existing', { name: importedName }), 'success');
             }
             if (importedEvents.length > 0) { scrollToYear(importedEvents[0].startYear); }
         })
         .catch(function (err) {
-            showToast('Impossibile caricare la timeline d\'esempio: ' + err.message, 'error');
+            showToast(t('toast_example_error', { error: err.message }), 'error');
         });
 }

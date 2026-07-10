@@ -45,12 +45,16 @@ function wrapSelection(textareaId, marker) {
 function formatYear(year, month, day) {
     let result = '';
     if (year < 0) {
-        result = Math.abs(year) + ' a.C.';
+        result = Math.abs(year) + t('bc_suffix');
     } else {
         result = '' + year;
     }
     if (month) {
-        const monthNames = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+        const monthNames = [
+            t('month_jan'), t('month_feb'), t('month_mar'), t('month_apr'),
+            t('month_may'), t('month_jun'), t('month_jul'), t('month_aug'),
+            t('month_sep'), t('month_oct'), t('month_nov'), t('month_dec')
+        ];
         result += ' ' + monthNames[month - 1];
         if (day) {
             result += ' ' + day;
@@ -267,7 +271,7 @@ function openImageLightbox(url, title) {
     const img = $('imageLightboxImg');
     if (!lb || !img || !url) return;
     img.src = url;
-    img.alt = title ? 'Immagine ingrandita: ' + title : 'Immagine ingrandita';
+    img.alt = title ? t('image_enlarged_with_title', { title: title }) : t('image_enlarged');
     lb.classList.add('open');
 }
 
@@ -275,4 +279,3 @@ function closeImageLightbox() {
     const lb = $('imageLightbox');
     if (lb) lb.classList.remove('open');
 }
-

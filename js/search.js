@@ -14,7 +14,6 @@ function renderPills() {
     const container = document.getElementById('pillRow');
     const categories = sortCategoriesByFirstEvent(getCategories());
 
-    // ── FLIP: capture current positions before DOM mutation ──
     var oldPositions = {};
     var existingPills = container.querySelectorAll('.pill:not([data-all-pill])');
     existingPills.forEach(function (pill) {
@@ -24,7 +23,6 @@ function renderPills() {
         }
     });
 
-    // ── Build new order: "Tutte", then active pills, then the rest ──
     var activePills = [];
     var inactivePills = [];
     categories.forEach(function (category) {
@@ -40,12 +38,12 @@ function renderPills() {
     container.innerHTML = '';
     const allPill = document.createElement('span');
     allPill.className = 'pill' + (activeCategoryFilters.length === 0 ? ' active' : '');
-    allPill.textContent = 'Tutte';
+    allPill.textContent = t('all');
     allPill.dataset.allPill = 'true';
     allPill.setAttribute('tabindex', '0');
     allPill.setAttribute('role', 'radio');
     allPill.setAttribute('aria-checked', activeCategoryFilters.length === 0 ? 'true' : 'false');
-    allPill.setAttribute('aria-label', 'Mostra tutte le categorie');
+    allPill.setAttribute('aria-label', t('show_all_categories_aria'));
     allPill.onclick = function () {
         activeCategoryFilters = [];
         if (highlightedCategoryId) { unhighlightCategoryConnector(highlightedCategoryId); }
@@ -65,7 +63,7 @@ function renderPills() {
         pill.setAttribute('tabindex', '0');
         pill.setAttribute('role', 'radio');
         pill.setAttribute('aria-checked', isActive ? 'true' : 'false');
-        pill.setAttribute('aria-label', 'Filtra categoria ' + category.name);
+        pill.setAttribute('aria-label', t('filter_category_aria', { name: category.name }));
         pill.style.borderLeft = '3px solid ' + category.color;
         pill.onclick = function () {
             const idx = activeCategoryFilters.indexOf(category.id);
@@ -84,7 +82,6 @@ function renderPills() {
         container.appendChild(pill);
     });
 
-    // ── FLIP: apply inverse transform and animate to new positions ──
     var newPills = container.querySelectorAll('.pill:not([data-all-pill])');
     newPills.forEach(function (pill) {
         var catId = pill.dataset.categoryId;
@@ -94,15 +91,11 @@ function renderPills() {
         var deltaX = oldRect.left - newRect.left;
         var deltaY = oldRect.top - newRect.top;
         if (deltaX !== 0 || deltaY !== 0) {
-            // Disable transition temporarily
             pill.style.transition = 'none';
             pill.style.transform = 'translate(' + deltaX + 'px, ' + deltaY + 'px)';
-            // Force a layout recalculation
             pill.offsetHeight;
-            // Animate to final position
             pill.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
             pill.style.transform = 'translate(0, 0)';
-            // Clean up after animation
             pill.addEventListener('transitionend', function cleanup() {
                 pill.style.transition = '';
                 pill.style.transform = '';
@@ -111,10 +104,7 @@ function renderPills() {
         }
     });
 
-    // Scroll the pill row back to the start so selected pills are visible
     container.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-
-    // Apply current search filter visibility
     filterPillsBySearch(document.getElementById('searchInput').value.toLowerCase());
 }
 
@@ -122,9 +112,8 @@ function filterPillsBySearch(searchTerm) {
     const pills = document.querySelectorAll('#pillRow .pill');
     if (!searchTerm) { pills.forEach(function (pill) { pill.style.display = ''; }); return; }
     pills.forEach(function (pill) {
-        if (pill.textContent === 'Tutte') { pill.style.display = ''; return; }
+        if (pill.textContent === t('all')) { pill.style.display = ''; return; }
         const catId = pill.dataset.categoryId;
-        // Never hide active/selected pills, regardless of search term
         if (catId && activeCategoryFilters.indexOf(catId) !== -1) { pill.style.display = ''; return; }
         const pillName = pill.textContent.toLowerCase();
         pill.style.display = pillName.includes(searchTerm) ? '' : 'none';
@@ -143,7 +132,6 @@ function applyAllFilters() {
     const events = getEvents();
     const allCards = document.querySelectorAll('.event-card, .period-strip, .note-card');
     const allEventNodes = document.querySelectorAll('.event-node');
-    // Remove previous text highlights before re-evaluating
     removeTextHighlights();
     allCards.forEach(function (el) {
         const eventId = el.dataset.eventId;
@@ -188,7 +176,6 @@ function applyAllFilters() {
             node.style.opacity = '';
         }
     });
-    // Apply text highlights on visible matching cards
     if (hasSearch && !isYearSearch) {
         highlightTextInCards(searchTerm);
     }
@@ -315,7 +302,6 @@ function clearSearch() {
 
 function applySearchGlow(event) {
     removeSearchGlow();
-    // Find the DOM element for this event (card, period strip, or note card)
     var el = document.querySelector(
         '.event-card[data-event-id="' + event.id + '"], ' +
         '.period-strip[data-event-id="' + event.id + '"], ' +
@@ -323,7 +309,6 @@ function applySearchGlow(event) {
     );
     if (el) {
         el.classList.add('search-glow');
-        // Auto-remove glow after 2s of inactivity
         clearTimeout(_searchGlowTimer);
         _searchGlowTimer = setTimeout(removeSearchGlow, 2000);
     }
@@ -351,12 +336,10 @@ function removeTextHighlights() {
 function highlightTextInCards(searchTerm) {
     if (!searchTerm) return;
     var lowerTerm = searchTerm.toLowerCase();
-    // Only target cards that are currently visible (opacity = 1)
     var matchingCards = document.querySelectorAll(
         '.event-card[style*="opacity: 1"], .period-strip[style*="opacity: 1"], .note-card[style*="opacity: 1"]'
     );
     matchingCards.forEach(function (card) {
-        // Text-bearing elements within the card
         var textElements = card.querySelectorAll(
             '.event-name, .event-description, .event-date, ' +
             '.note-title, .note-desc, ' +
@@ -369,11 +352,9 @@ function highlightTextInCards(searchTerm) {
     });
 }
 
-// TreeWalker-based text node highlighter — safely wraps matches in <mark>
 function highlightTextNode(root, lowerTerm) {
     var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
         acceptNode: function (node) {
-            // Skip text nodes inside existing <mark>, <script>, <style>, <svg>
             if (node.parentNode && node.parentNode.nodeName === 'MARK') return NodeFilter.FILTER_REJECT;
             if (node.parentNode && ['SCRIPT', 'STYLE', 'SVG'].indexOf(node.parentNode.nodeName) !== -1) return NodeFilter.FILTER_REJECT;
             return node.textContent.toLowerCase().indexOf(lowerTerm) !== -1 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
@@ -393,11 +374,9 @@ function highlightTextNode(root, lowerTerm) {
         var lastIndex = 0;
         var idx = lowerText.indexOf(lowerTerm, lastIndex);
         while (idx !== -1) {
-            // Text before match
             if (idx > lastIndex) {
                 fragment.appendChild(document.createTextNode(text.substring(lastIndex, idx)));
             }
-            // Highlighted match
             var mark = document.createElement('mark');
             mark.className = 'search-highlight';
             mark.textContent = text.substring(idx, idx + lowerTerm.length);
@@ -405,7 +384,6 @@ function highlightTextNode(root, lowerTerm) {
             lastIndex = idx + lowerTerm.length;
             idx = lowerText.indexOf(lowerTerm, lastIndex);
         }
-        // Remaining text after last match
         if (lastIndex < text.length) {
             fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
         }

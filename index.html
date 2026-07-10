@@ -15,7 +15,7 @@
 <body>
 
     <!-- Skip link for keyboard users -->
-    <a class="skip-link" href="#timelineRuler">Vai al contenuto</a>
+    <a class="skip-link" href="#timelineRuler" data-i18n="skip_to_content">Vai al contenuto</a>
 
     <div class="toast-container" id="toastContainer" role="status" aria-live="polite"></div>
 
@@ -23,30 +23,33 @@
         <div class="toolbar-row top-row">
             <div class="toolbar-group timeline-group">
                 <select class="tl-select" id="timelineSelect" onchange="switchTimeline(this.value)"></select>
-                <button class="btn-icon primary" onclick="addTimeline()" title="Crea una nuova timeline">
+                <button class="btn-icon primary" onclick="addTimeline()" data-i18n="title:new_timeline_title" title="Crea una nuova timeline">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
                         stroke-linejoin="round">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
-                    Nuova
+                    <span data-i18n="new_timeline_btn">Nuova</span>
                 </button>
-                <button class="btn-icon" onclick="renameTimeline()" title="Rinomina la timeline corrente">
+                <button class="btn-icon" onclick="editTimeline()" data-i18n="title:edit_timeline_title" title="Modifica la timeline corrente">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                         stroke-linejoin="round">
-                        <path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                     </svg>
-                    Rinomina
+                    <span data-i18n="edit_f">Modifica</span>
                 </button>
-                <button class="btn-icon danger" onclick="deleteTimeline()" title="Elimina la timeline corrente">
+                <button class="btn-icon danger" onclick="deleteTimeline()" data-i18n="title:delete_timeline_title" title="Elimina la timeline corrente">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                         stroke-linejoin="round">
                         <polyline points="3 6 5 6 21 6"></polyline>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
                     </svg>
-                    Elimina
+                    <span data-i18n="delete">Elimina</span>
                 </button>
-                <button class="btn-icon" onclick="toggleShortcutsHint()" title="Scorciatoie da tastiera (?)">
+                <button class="btn-icon" onclick="toggleShortcutsHint()" data-i18n="title:shortcuts_title" title="Scorciatoie da tastiera (?)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                         stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"></circle>
@@ -58,7 +61,7 @@
 
             <span class="search-wrapper">
                 <span class="search-input-wrap">
-                    <input type="text" class="search-input" id="searchInput" placeholder="Cerca anno o parola..."
+                    <input type="text" class="search-input" id="searchInput" data-i18n="placeholder:search_placeholder" placeholder="Cerca anno o parola..."
                         oninput="searchEvents()" onkeydown="handleSearchEnter(event)">
                     <button class="search-clear" id="searchClear" onclick="clearSearch()"
                         style="display:none;">×</button>
@@ -68,19 +71,19 @@
                     <span id="searchCounter">0/0</span>
                     <button class="search-nav-btn" id="searchNextBtn" onclick="searchNext()">▶</button>
                 </span>
-                <button class="btn mob-toggle" onclick="toggleMobileMenu()" title="Menu" style="display:none">☰</button>
+                <button class="btn mob-toggle" onclick="toggleMobileMenu()" data-i18n="title:mobile_menu" title="Menu" style="display:none">☰</button>
             </span>
 
             <div class="tools-group">
                 <span class="toolbar-divider"></span>
-                <button class="btn-icon" onclick="undo()" title="Annulla (Ctrl+Z)">
+                <button class="btn-icon" onclick="undo()" data-i18n="title:undo_title" title="Annulla (Ctrl+Z)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                         stroke-linejoin="round">
                         <polyline points="1 4 1 10 7 10"></polyline>
                         <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
                     </svg>
                 </button>
-                <button class="btn-icon" onclick="redo()" title="Ripeti (Ctrl+Shift+Z)">
+                <button class="btn-icon" onclick="redo()" data-i18n="title:redo_title" title="Ripeti (Ctrl+Shift+Z)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                         stroke-linejoin="round">
                         <polyline points="23 4 23 10 17 10"></polyline>
@@ -89,46 +92,44 @@
                 </button>
                 <span class="toolbar-divider"></span>
 
-                <button class="btn-icon" onclick="exportData()" title="Esporta la timeline (E)">
+                <button class="btn-icon" onclick="exportData()" data-i18n="title:export_title" title="Esporta la timeline (E)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                         stroke-linejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="7 10 12 15 17 10"></polyline>
                         <line x1="12" y1="15" x2="12" y2="3"></line>
                     </svg>
-                    Esporta
+                    <span data-i18n="export_btn">Esporta</span>
                 </button>
                 <button class="btn-icon" onclick="document.getElementById('importInput').click()"
-                    title="Importa una timeline (I)">
+                    data-i18n="title:import_title" title="Importa una timeline (I)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                         stroke-linejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="17 8 12 3 7 8"></polyline>
                         <line x1="12" y1="3" x2="12" y2="15"></line>
                     </svg>
-                    Importa
+                    <span data-i18n="import_btn">Importa</span>
                 </button>
                 <input type="file" id="importInput" accept=".json" style="display:none" onchange="importData(event)">
 
 
 
-                <button class="btn-icon danger" onclick="confirmDeleteAll()" title="Cancella tutti gli eventi">
+                <button class="btn-icon danger" onclick="confirmDeleteAll()" data-i18n="title:clear_all_title" title="Cancella tutti gli eventi">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                         stroke-linejoin="round">
                         <polyline points="3 6 5 6 21 6"></polyline>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        <line x1="10" y1="11" x2="10" y2="17"></line>
-                        <line x1="14" y1="11" x2="14" y2="17"></line>
                     </svg>
-                    Svuota
+                    <span data-i18n="clear_all_btn">Svuota</span>
                 </button>
                 <span class="toolbar-divider"></span>
-                <button class="btn-icon" onclick="openSettingsModal()" title="Impostazioni">
+                <button class="btn-icon" onclick="openSettingsModal()" data-i18n="title:settings_title" title="Impostazioni">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="3"></circle>
                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                     </svg>
-                    Impostazioni
+                    <span data-i18n="settings_btn">Impostazioni</span>
                 </button>
 
             </div>
@@ -141,62 +142,62 @@
         <div class="mobile-drawer" id="mobileDrawer">
             <div class="mobile-drawer-handle"></div>
             <div class="mobile-drawer-header">
-                <span class="mobile-drawer-title">Menu</span>
+                <span class="mobile-drawer-title" data-i18n="mobile_menu">Menu</span>
                 <button class="mobile-drawer-close" onclick="toggleMobileMenu()">✕</button>
             </div>
             <div class="mobile-drawer-content">
                 <div class="mobile-drawer-section">
-                    <div class="mobile-drawer-section-title">Timeline attuale</div>
+                    <div class="mobile-drawer-section-title" data-i18n="mobile_current_timeline">Timeline attuale</div>
                     <select class="tl-select mobile-tl-select" id="mobileTimelineSelect" onchange="switchTimeline(this.value)"></select>
                 </div>
                 <div class="mobile-drawer-section">
-                    <div class="mobile-drawer-section-title">Timeline</div>
+                    <div class="mobile-drawer-section-title" data-i18n="mobile_timeline_section">Timeline</div>
                     <div class="mobile-drawer-actions">
                         <button class="mobile-drawer-btn primary" onclick="addTimeline(); toggleMobileMenu();">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                            Nuova Timeline
+                            <span data-i18n="mobile_new_timeline">Nuova Timeline</span>
                         </button>
-                        <button class="mobile-drawer-btn" onclick="renameTimeline(); toggleMobileMenu();">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path></svg>
-                            Rinomina
+                        <button class="mobile-drawer-btn" onclick="editTimeline(); toggleMobileMenu();">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                            <span data-i18n="mobile_edit_timeline">Modifica</span>
                         </button>
                         <button class="mobile-drawer-btn danger" onclick="deleteTimeline(); toggleMobileMenu();">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                            Elimina Timeline
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                            <span data-i18n="mobile_delete_timeline">Elimina Timeline</span>
                         </button>
                     </div>
                 </div>
                 <div class="mobile-drawer-section">
-                    <div class="mobile-drawer-section-title">Azioni</div>
+                    <div class="mobile-drawer-section-title" data-i18n="mobile_actions">Azioni</div>
                     <div class="mobile-drawer-actions">
                         <button class="mobile-drawer-btn" onclick="undo(); toggleMobileMenu();">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
-                            Annulla
+                            <span data-i18n="mobile_undo">Annulla</span>
                         </button>
                         <button class="mobile-drawer-btn" onclick="redo(); toggleMobileMenu();">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"></path></svg>
-                            Ripeti
+                            <span data-i18n="mobile_redo">Ripeti</span>
                         </button>
                         <button class="mobile-drawer-btn" onclick="exportData(); toggleMobileMenu();">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                            Esporta
+                            <span data-i18n="mobile_export">Esporta</span>
                         </button>
                         <button class="mobile-drawer-btn" onclick="document.getElementById('importInput').click(); toggleMobileMenu();">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                            Importa
+                            <span data-i18n="mobile_import">Importa</span>
                         </button>
                         <button class="mobile-drawer-btn danger" onclick="confirmDeleteAll(); toggleMobileMenu();">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                            Svuota
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            <span data-i18n="mobile_clear">Svuota</span>
                         </button>
                     </div>
                 </div>
                 <div class="mobile-drawer-section">
-                    <div class="mobile-drawer-section-title">App</div>
+                    <div class="mobile-drawer-section-title" data-i18n="mobile_app">App</div>
                     <div class="mobile-drawer-actions">
                         <button class="mobile-drawer-btn" onclick="toggleMobileMenu(); openSettingsModal();">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                            Impostazioni
+                            <span data-i18n="mobile_settings">Impostazioni</span>
                         </button>
                     </div>
                 </div>
@@ -218,22 +219,22 @@
         </div>
     </main>
 
-    <h1 class="sr-only">Timeline Storica</h1>
+    <h1 class="sr-only" data-i18n="page_title">Timeline Storica</h1>
 
     <div class="empty-state" id="emptyState">
-        <h3>Timeline Vuota</h3>
-        <p style="margin-bottom:0.75rem;">Premi il pulsante in basso a destra per creare il tuo primo evento, oppure...
+        <h3 data-i18n="empty_title">Timeline Vuota</h3>
+        <p style="margin-bottom:0.75rem;" data-i18n="empty_desc">Premi il pulsante in basso a destra per creare il tuo primo evento, oppure...
         </p>
-        <button class="btn-load-example" onclick="loadExampleTimeline()">📂 Carica timeline d'esempio</button>
-        <p style="font-size:0.75rem;margin-top:0.5rem;opacity:0.6;">(Appunti di storia di Lorenzo)</p>
+        <button class="btn-load-example" onclick="loadExampleTimeline()" data-i18n="empty_load_example">📂 Carica timeline d'esempio</button>
+        <p style="font-size:0.75rem;margin-top:0.5rem;opacity:0.6;" data-i18n="empty_subtitle">(Appunti di storia di Lorenzo)</p>
         <div id="emptyArrow" style="font-size:1.5rem;opacity:0.5;margin-top:0.5rem;">&#x2198;</div>
     </div>
 
     <!-- Zoom pill (bottom-left, vertical, same visibility & style as year indicator) -->
     <div class="zoom-pill" id="zoomPill">
-        <button class="zoom-pill-btn zoom-pill-top" onclick="zoomIn()" title="Zoom avanti (+)" aria-label="Zoom avanti">+</button>
+        <button class="zoom-pill-btn zoom-pill-top" onclick="zoomIn()" data-i18n="title:zoom_in" title="Zoom avanti (+)" data-i18n="aria-label:zoom_in" aria-label="Zoom avanti">+</button>
         <span class="zoom-label" id="zoomLabel">20px</span>
-        <button class="zoom-pill-btn zoom-pill-bottom" onclick="zoomOut()" title="Zoom indietro (-)" aria-label="Zoom indietro">−</button>
+        <button class="zoom-pill-btn zoom-pill-bottom" onclick="zoomOut()" data-i18n="title:zoom_out" title="Zoom indietro (-)" data-i18n="aria-label:zoom_out" aria-label="Zoom indietro">−</button>
     </div>
 
     <div class="year-indicator" id="yearIndicator">
@@ -246,168 +247,163 @@
         <span class="year-indicator-text"></span>
     </div>
 
-    <button class="fab-secondary" onclick="openCategoryModal()" title="Gestisci categorie" aria-label="Gestisci categorie">
+    <button class="fab-secondary" onclick="openCategoryModal()" data-i18n="title:manage_categories" title="Gestisci categorie" data-i18n="aria-label:manage_categories" aria-label="Gestisci categorie">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
             <line x1="7" y1="7" x2="7.01" y2="7"/>
         </svg>
     </button>
-    <button class="fab pulse" id="fabBtn" onclick="openModal()" aria-label="Crea nuovo evento">+</button>
+    <button class="fab pulse" id="fabBtn" onclick="openModal()" data-i18n="aria-label:create_new_event" aria-label="Crea nuovo evento">+</button>
 
     <!-- Event Modal -->
     <div class="modal-overlay" id="eventModal">
         <div class="modal">
             <div class="modal-tabs" id="modalTabs" role="tablist" aria-label="Tipo di contenuto">
-                <button type="button" class="modal-tab active" data-tab="event" role="tab" aria-selected="true" onclick="switchFormTab('event')">Evento</button>
-                <button type="button" class="modal-tab" data-tab="period" role="tab" aria-selected="false" onclick="switchFormTab('period')">Periodo</button>
-                <button type="button" class="modal-tab" data-tab="note" role="tab" aria-selected="false" onclick="switchFormTab('note')">Appunto</button>
+                <button type="button" class="modal-tab active" data-tab="event" role="tab" aria-selected="true" onclick="switchFormTab('event')" data-i18n="modal_tab_event">Evento</button>
+                <button type="button" class="modal-tab" data-tab="period" role="tab" aria-selected="false" onclick="switchFormTab('period')" data-i18n="modal_tab_period">Periodo</button>
+                <button type="button" class="modal-tab" data-tab="note" role="tab" aria-selected="false" onclick="switchFormTab('note')" data-i18n="modal_tab_note">Appunto</button>
             </div>
-            <h2 id="eventModalTitle">Nuovo Evento</h2>
+            <h2 id="eventModalTitle" data-i18n="new_event_title">Nuovo Evento</h2>
             <form id="eventForm">
                 <!-- Event-specific fields -->
                 <div id="eventFields">
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="startYear">Anno Inizio *</label>
+                            <label for="startYear"><span data-i18n="year_start">Anno Inizio</span> <span data-i18n="required">*</span></label>
                             <input type="number" id="startYear" required placeholder="es. 1000">
-                            <small style="color:var(--text-secondary);font-size:0.6875rem;">Negativo = a.C.</small>
+                            <small style="color:var(--text-secondary);font-size:0.6875rem;" data-i18n="negative_year_hint">Negativo = a.C.</small>
                         </div>
                         <div class="form-group">
-                            <label for="startMonth">Mese</label>
+                            <label for="startMonth" data-i18n="month">Mese</label>
                             <input type="number" id="startMonth" min="1" max="12" placeholder="1-12">
                         </div>
                         <div class="form-group">
-                            <label for="startDay">Giorno</label>
+                            <label for="startDay" data-i18n="day">Giorno</label>
                             <input type="number" id="startDay" min="1" max="31" placeholder="1-31">
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="endYear">Anno Fine</label>
+                            <label for="endYear" data-i18n="year_end">Anno Fine</label>
                             <input type="number" id="endYear" placeholder="es. 1200">
-                            <small style="color:var(--text-secondary);font-size:0.6875rem;">Negativo = a.C.</small>
+                            <small style="color:var(--text-secondary);font-size:0.6875rem;" data-i18n="negative_year_hint">Negativo = a.C.</small>
                         </div>
                         <div class="form-group">
-                            <label for="endMonth">Mese Fine</label>
+                            <label for="endMonth" data-i18n="month_end">Mese Fine</label>
                             <input type="number" id="endMonth" min="1" max="12" placeholder="1-12">
                         </div>
                         <div class="form-group">
-                            <label for="endDay">Giorno Fine</label>
+                            <label for="endDay" data-i18n="day_end">Giorno Fine</label>
                             <input type="number" id="endDay" min="1" max="31" placeholder="1-31">
                         </div>
                     </div>
                 </div>
-                <!-- Convert to period button (only visible when editing an event with end date) -->
+                <!-- Convert to period button -->
                 <div id="convertToPeriodContainer" style="display:none; margin-bottom: 0.75rem; text-align: center;">
-                    <button type="button" class="btn-convert-period" onclick="convertToPeriod()">🔄 Trasforma in Periodo</button>
-                    <small style="display:block; color:var(--text-secondary); font-size:0.6875rem; margin-top:0.25rem;">Converte l'evento in un periodo con barra colorata sulla timeline.</small>
+                    <button type="button" class="btn-convert-period" onclick="convertToPeriod()" data-i18n="convert_to_period">🔄 Trasforma in Periodo</button>
+                    <small style="display:block; color:var(--text-secondary); font-size:0.6875rem; margin-top:0.25rem;" data-i18n="convert_to_period_desc">Converte l'evento in un periodo con barra colorata sulla timeline.</small>
                 </div>
                 <!-- Period-specific fields -->
                 <div id="periodFields" style="display:none;">
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="periodStartYear">Anno Inizio *</label>
+                            <label for="periodStartYear"><span data-i18n="year_start">Anno Inizio</span> <span data-i18n="required">*</span></label>
                             <input type="number" id="periodStartYear" placeholder="es. 1000">
-                            <small style="color:var(--text-secondary);font-size:0.6875rem;">Negativo = a.C.</small>
+                            <small style="color:var(--text-secondary);font-size:0.6875rem;" data-i18n="negative_year_hint">Negativo = a.C.</small>
                         </div>
                         <div class="form-group">
-                            <label for="periodStartMonth">Mese</label>
+                            <label for="periodStartMonth" data-i18n="month">Mese</label>
                             <input type="number" id="periodStartMonth" min="1" max="12" placeholder="1-12">
                         </div>
                         <div class="form-group">
-                            <label for="periodStartDay">Giorno</label>
+                            <label for="periodStartDay" data-i18n="day">Giorno</label>
                             <input type="number" id="periodStartDay" min="1" max="31" placeholder="1-31">
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="periodEndYear">Anno Fine *</label>
+                            <label for="periodEndYear"><span data-i18n="year_end">Anno Fine</span> <span data-i18n="required">*</span></label>
                             <input type="number" id="periodEndYear" placeholder="es. 1200">
-                            <small style="color:var(--text-secondary);font-size:0.6875rem;">Negativo = a.C.</small>
+                            <small style="color:var(--text-secondary);font-size:0.6875rem;" data-i18n="negative_year_hint">Negativo = a.C.</small>
                         </div>
                         <div class="form-group">
-                            <label for="periodEndMonth">Mese Fine</label>
+                            <label for="periodEndMonth" data-i18n="month_end">Mese Fine</label>
                             <input type="number" id="periodEndMonth" min="1" max="12" placeholder="1-12">
                         </div>
                         <div class="form-group">
-                            <label for="periodEndDay">Giorno Fine</label>
+                            <label for="periodEndDay" data-i18n="day_end">Giorno Fine</label>
                             <input type="number" id="periodEndDay" min="1" max="31" placeholder="1-31">
                         </div>
                     </div>
                 </div>
-                <!-- Convert to event button (only visible when editing a period) -->
+                <!-- Convert to event button -->
                 <div id="convertToEventContainer" style="display:none; margin-bottom: 0.75rem; text-align: center;">
-                    <button type="button" class="btn-convert-period" onclick="convertToEvent()">🔄 Trasforma in Evento</button>
-                    <small style="display:block; color:var(--text-secondary); font-size:0.6875rem; margin-top:0.25rem;">Converte il periodo in un evento puntuale con card sulla timeline.</small>
+                    <button type="button" class="btn-convert-period" onclick="convertToEvent()" data-i18n="convert_to_event">🔄 Trasforma in Evento</button>
+                    <small style="display:block; color:var(--text-secondary); font-size:0.6875rem; margin-top:0.25rem;" data-i18n="convert_to_event_desc">Converte il periodo in un evento puntuale con card sulla timeline.</small>
                 </div>
                 <!-- Note-specific fields -->
                 <div id="noteFields" style="display:none;">
                     <div class="form-group">
-                        <label for="noteYear">Anno *</label>
+                        <label for="noteYear"><span data-i18n="year">Anno</span> <span data-i18n="required">*</span></label>
                         <input type="number" id="noteYear" placeholder="es. 1000">
-                        <small style="color:var(--text-secondary);font-size:0.6875rem;">Negativo = a.C. (Serve solo per
-                            il posizionamento, non verrà mostrato.)</small>
+                        <small style="color:var(--text-secondary);font-size:0.6875rem;" data-i18n="note_year_hint">Serve solo per il posizionamento, non verrà mostrato.</small>
                     </div>
                 </div>
                 <!-- Common fields -->
                 <div class="form-group">
-                    <label for="eventTitle" id="eventTitleLabel">Nome *</label>
+                    <label for="eventTitle" id="eventTitleLabel" data-i18n="title_label">Nome *</label>
                     <input type="text" id="eventTitle" required placeholder="es. Caduta dell'Impero Romano">
                 </div>
                 <div class="form-group">
-                    <label for="eventDescription">Descrizione</label>
+                    <label for="eventDescription" data-i18n="description">Descrizione</label>
                     <textarea id="eventDescription" placeholder="Descrivi l'evento..."></textarea>
                     <div class="format-toolbar">
-                        <button type="button" class="format-btn" onclick="wrapSelection('eventDescription','**')"
-                            title="Grassetto"><b>B</b></button>
-                        <button type="button" class="format-btn" onclick="wrapSelection('eventDescription','*')"
-                            title="Corsivo"><i>I</i></button>
-                        <button type="button" class="format-btn" onclick="wrapSelection('eventDescription','__')"
-                            title="Sottolineato"><u>U</u></button>
+                        <button type="button" class="format-btn" onclick="wrapSelection('eventDescription','**')" data-i18n="title:bold" title="Grassetto"><b>B</b></button>
+                        <button type="button" class="format-btn" onclick="wrapSelection('eventDescription','*')" data-i18n="title:italic" title="Corsivo"><i>I</i></button>
+                        <button type="button" class="format-btn" onclick="wrapSelection('eventDescription','__')" data-i18n="title:underline" title="Sottolineato"><u>U</u></button>
                     </div>
                 </div>
                 <div class="form-group" id="imageUrlGroup">
-                    <label for="eventImageUrl">URL Immagine</label>
+                    <label for="eventImageUrl" data-i18n="image_url">URL Immagine</label>
                     <input type="url" id="eventImageUrl" placeholder="https://esempio.com/immagine.jpg">
-                    <small style="color:var(--text-secondary);font-size:0.6875rem;">Opzionale. Appare nella card
-                        espansa.</small>
+                    <small style="color:var(--text-secondary);font-size:0.6875rem;" data-i18n="image_url_hint">Appare nella card espansa.</small>
                 </div>
                 <!-- Event-only fields -->
                 <div id="eventOnlyFields">
                     <div class="form-group">
-                        <label>Categoria principale</label>
+                        <label data-i18n="primary_category">Categoria principale</label>
                         <div class="category-selector">
                             <select id="categorySelect" onchange="onPrimaryCategoryChange()">
-                                <option value="">Seleziona categoria...</option>
+                                <option value="" data-i18n="select_category">Seleziona categoria...</option>
                             </select>
                             <button type="button" class="category-add-btn" onclick="openCategoryModal(true)">+</button>
                         </div>
                     </div>
                     <div class="form-group" id="secondCategoryGroup" style="display:none; opacity:0; max-height:0; overflow:hidden; transition: max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease; margin-top:0;">
-                        <label>Categoria secondaria <small style="font-weight:400;color:var(--text-secondary);">(opzionale)</small></label>
+                        <label><span data-i18n="secondary_category">Categoria secondaria</span> <small style="font-weight:400;color:var(--text-secondary);" data-i18n="optional">(opzionale)</small></label>
                         <div class="category-selector">
                             <select id="categorySelect2">
-                                <option value="">Nessuna</option>
+                                <option value="" data-i18n="none">Nessuna</option>
                             </select>
                         </div>
                     </div>
                 </div>
-                <!-- Link fields (only for events, not periods/notes) -->
+                <!-- Link fields -->
                 <div id="linkFields">
                     <div class="form-group">
-                        <label>Eventi Collegati</label>
+                        <label data-i18n="linked_events">Eventi Collegati</label>
                         <div id="selectedLinkedEventsList" style="margin-bottom:0.5rem;"></div>
                         <div class="linked-event-picker">
-                            <input type="text" id="eventSearchInput" placeholder="Cerca evento da collegare..."
+                            <input type="text" id="eventSearchInput" data-i18n="placeholder:search_event_to_link" placeholder="Cerca evento da collegare..."
                                 oninput="filterLinkedEvents()">
                             <div id="linkedEventList" class="linked-event-list"></div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-buttons">
-                    <button type="button" class="btn-cancel" onclick="closeModal()">Annulla</button>
+                    <button type="button" class="btn-cancel" onclick="closeModal()" data-i18n="cancel">Annulla</button>
                     <button type="submit" class="btn"
-                        style="background:var(--accent);color:#fff;border:none;">Salva</button>
+                        style="background:var(--accent);color:#fff;border:none;" data-i18n="save">Salva</button>
                 </div>
             </form>
         </div>
@@ -416,81 +412,81 @@
     <!-- Category Modal -->
     <div class="modal-overlay" id="categoryModal">
         <div class="modal">
-            <h2 id="categoryModalTitle">Gestione Categorie</h2>
+            <h2 id="categoryModalTitle" data-i18n="category_modal_title">Gestione Categorie</h2>
             <div class="category-top-actions">
-                <button type="button" class="category-new-btn" onclick="openCategoryForm()">+ Nuova Categoria</button>
+                <button type="button" class="category-new-btn" onclick="openCategoryForm()" data-i18n="new_category_btn">+ Nuova Categoria</button>
             </div>
             <div class="category-form-section" id="categoryFormSection">
                 <form id="categoryForm">
                     <div class="form-group">
-                        <label for="categoryName" id="categoryNameLabel">Nuova Categoria</label>
-                        <input type="text" id="categoryName" required placeholder="es. Politica, Cultura...">
+                        <label for="categoryName" id="categoryNameLabel" data-i18n="new_category_label">Nuova Categoria</label>
+                        <input type="text" id="categoryName" required data-i18n="placeholder:category_name_placeholder" placeholder="es. Politica, Cultura...">
                     </div>
                     <div class="form-group">
-                        <label>Colore</label>
+                        <label data-i18n="category_color">Colore</label>
                         <div class="color-picker" id="colorPicker"></div>
                     </div>
                     <div class="form-group">
-                        <label for="categorySide">Lato preferito</label>
+                        <label for="categorySide" data-i18n="category_side_label">Lato preferito</label>
                         <select id="categorySide">
-                            <option value="auto">Automatico (alternato)</option>
-                            <option value="left">Preferibilmente a sinistra</option>
-                            <option value="right">Preferibilmente a destra</option>
+                            <option value="auto" data-i18n="category_side_auto">Automatico (alternato)</option>
+                            <option value="left" data-i18n="category_side_left">Preferibilmente a sinistra</option>
+                            <option value="right" data-i18n="category_side_right">Preferibilmente a destra</option>
                         </select>
-                        <small style="color:var(--text-secondary);font-size:0.6875rem;">Gli eventi potranno comunque
-                            cambiare lato se necessario per trovare spazio.</small>
+                        <small style="color:var(--text-secondary);font-size:0.6875rem;" data-i18n="category_side_hint">Gli eventi potranno comunque cambiare lato se necessario per trovare spazio.</small>
                     </div>
-                    <!-- Split accordion (only visible when editing) -->
-                    <button type="button" class="category-split-toggle" id="categorySplitToggle" onclick="toggleSplitAccordion()" style="display:none;">Dividi eventi ►</button>
+                    <!-- Split accordion -->
+                    <button type="button" class="category-split-toggle" id="categorySplitToggle" onclick="toggleSplitAccordion()" style="display:none;" data-i18n="category_split_toggle">Dividi eventi ►</button>
                     <div class="category-split-container" id="categorySplitContainer">
                         <div class="category-split-section" id="categorySplitSection"></div>
                     </div>
                     <div class="modal-buttons">
-                        <button type="button" class="btn-cancel" onclick="closeCategoryForm()">Annulla</button>
+                        <button type="button" class="btn-cancel" onclick="closeCategoryForm()" data-i18n="cancel">Annulla</button>
                         <button type="submit" class="btn" style="background:var(--accent);color:#fff;border:none;"
-                            id="categorySaveBtn">Salva</button>
+                            id="categorySaveBtn" data-i18n="save">Salva</button>
                     </div>
                 </form>
             </div>
             <div class="category-list-header" id="categoryListHeader">
-                <h3>Categorie Esistenti</h3>
+                <h3 data-i18n="category_existing">Categorie Esistenti</h3>
                 <div class="category-list-header-actions" id="categoryListHeaderActions">
                     <div class="category-selection-actions" id="categorySelectionActions" style="display:none;">
-                        <button type="button" class="category-selection-btn merge-btn" id="categoryMergeBtn" onclick="showMergeForm()" disabled>Unisci</button>
-                        <button type="button" class="category-selection-btn delete-selection-btn" id="categoryDeleteBtn" onclick="deleteSelectedCategories()" disabled>Elimina</button>
-                        <button type="button" class="category-selection-cancel" id="categorySelectionCancel" onclick="exitSelectionMode()">Annulla</button>
+                        <button type="button" class="category-selection-btn merge-btn" id="categoryMergeBtn" onclick="showMergeForm()" disabled data-i18n="category_merge_btn">Unisci</button>
+                        <button type="button" class="category-selection-btn delete-selection-btn" id="categoryDeleteBtn" onclick="deleteSelectedCategories()" disabled data-i18n="category_delete_selection">Elimina</button>
+                        <button type="button" class="category-selection-cancel" id="categorySelectionCancel" onclick="exitSelectionMode()" data-i18n="category_selection_cancel">Annulla</button>
                     </div>
-                    <button type="button" class="category-select-mode-btn" id="categorySelectModeBtn" onclick="enterSelectionMode()">Seleziona</button>
+                    <button type="button" class="category-select-mode-btn" id="categorySelectModeBtn" onclick="enterSelectionMode()" data-i18n="category_select_mode">Seleziona</button>
                 </div>
             </div>
             <div class="category-search-wrap">
-                <input type="text" class="category-search-input" id="categorySearchInput" placeholder="Cerca categoria..." oninput="renderCategoryList()">
+                <input type="text" class="category-search-input" id="categorySearchInput" data-i18n="placeholder:category_search_placeholder" placeholder="Cerca categoria..." oninput="renderCategoryList()">
             </div>
             <div class="category-merge-form" id="categoryMergeForm">
                 <div class="form-group">
-                    <label for="mergeCategoryName">Nome nuova categoria unificata</label>
-                    <input type="text" id="mergeCategoryName" placeholder="es. Politica e Società">
+                    <label for="mergeCategoryName" data-i18n="category_merge_name">Nome nuova categoria unificata</label>
+                    <input type="text" id="mergeCategoryName" data-i18n="placeholder:category_merge_example" placeholder="es. Politica e Società">
                 </div>
                 <div class="form-group">
-                    <label>Colore</label>
+                    <label data-i18n="category_color">Colore</label>
                     <div class="color-picker" id="mergeColorPicker"></div>
                 </div>
                 <div class="form-group">
-                    <label for="mergeCategorySide">Lato preferito</label>
+                    <label for="mergeCategorySide" data-i18n="category_side_label">Lato preferito</label>
                     <select id="mergeCategorySide">
-                        <option value="auto">Automatico (alternato)</option>
-                        <option value="left">Preferibilmente a sinistra</option>
-                        <option value="right">Preferibilmente a destra</option>
+                        <option value="auto" data-i18n="category_side_auto">Automatico (alternato)</option>
+                        <option value="left" data-i18n="category_side_left">Preferibilmente a sinistra</option>
+                        <option value="right" data-i18n="category_side_right">Preferibilmente a destra</option>
                     </select>
                 </div>
                 <div class="modal-buttons">
-                    <button type="button" class="btn-cancel" onclick="hideMergeForm()">Annulla</button>
-                    <button type="button" class="btn" style="background:var(--accent);color:#fff;border:none;" onclick="executeMerge()">Unisci</button>
+                    <button type="button" class="btn-cancel" onclick="hideMergeForm()" data-i18n="cancel">Annulla</button>
+                    <button type="button" class="btn" style="background:var(--accent);color:#fff;border:none;" onclick="executeMerge()" data-i18n="category_merge_btn">Unisci</button>
                 </div>
             </div>
             <div class="category-list" id="categoryList"></div>
             <div class="modal-buttons" style="margin-top:1rem;">
-                <button type="button" class="btn-cancel" onclick="closeCategoryModal()" style="flex:1;">Chiudi</button>
+                <button type="button" class="btn-cancel" onclick="closeCategoryModal()" data-i18n="cancel">Annulla</button>
+                <button type="button" class="btn" style="background:var(--accent);color:#fff;border:none;" onclick="saveCategoryChanges()" data-i18n="save">Salva</button>
             </div>
         </div>
     </div>
@@ -498,13 +494,13 @@
     <!-- Delete Confirm Modal -->
     <div class="modal-overlay" id="deleteConfirmModal">
         <div class="modal">
-            <h2>Conferma Cancella</h2>
-            <p>Vuoi esportare i dati prima di cancellarli?</p>
+            <h2 data-i18n="delete_confirm_title">Conferma Cancella</h2>
+            <p data-i18n="delete_confirm_desc">Vuoi esportare i dati prima di cancellarli?</p>
             <div class="modal-buttons">
-                <button type="button" class="btn-cancel" onclick="closeDeleteModal()">Annulla</button>
-                <button type="button" class="btn danger" onclick="deleteWithoutExport()">No</button>
+                <button type="button" class="btn-cancel" onclick="closeDeleteModal()" data-i18n="cancel">Annulla</button>
+                <button type="button" class="btn danger" onclick="deleteWithoutExport()" data-i18n="no">No</button>
                 <button type="button" class="btn" style="background:var(--accent);color:#fff;"
-                    onclick="exportAndDelete()">Ok</button>
+                    onclick="exportAndDelete()" data-i18n="delete_export_and_delete">Ok</button>
             </div>
         </div>
     </div>
@@ -512,35 +508,74 @@
     <!-- Import Choice Modal -->
     <div class="modal-overlay" id="importChoiceModal">
         <div class="modal">
-            <h2>Importa Dati</h2>
+            <h2 data-i18n="import_choice_title">Importa Dati</h2>
             <div class="import-choice-content">
-                <p>La timeline corrente "<strong id="importCurrentTimelineName"></strong>" contiene già eventi o
-                    categorie.<br>Come vuoi procedere?</p>
+                <p id="importChoiceDesc">La timeline corrente contiene già eventi o categorie.<br>Come vuoi procedere?</p>
                 <div class="import-choice-buttons">
-                    <button class="btn-import-overwrite" onclick="importIntoCurrentTimeline()">Sovrascrivi timeline
-                        attuale</button>
-                    <button class="btn-import-new" onclick="importIntoNewTimeline()">Crea una nuova timeline</button>
-                    <button class="btn-import-cancel" onclick="closeImportChoiceModal()">Annulla</button>
+                    <button class="btn-import-overwrite" onclick="importIntoCurrentTimeline()" data-i18n="import_overwrite">Sovrascrivi timeline attuale</button>
+                    <button class="btn-import-new" onclick="importIntoNewTimeline()" data-i18n="import_new_timeline">Crea una nuova timeline</button>
+                    <button class="btn-import-cancel" onclick="closeImportChoiceModal()" data-i18n="cancel">Annulla</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Timeline Name Modal -->
+    <!-- Timeline Name / Edit Modal -->
     <div class="modal-overlay" id="timelineModal">
         <div class="modal">
-            <h2 id="timelineModalTitle">Nuova Timeline</h2>
-            <form id="timelineForm">
+            <h2 id="timelineModalTitle" data-i18n="timeline_new_title">Nuova Timeline</h2>
+            <form id="timelineForm" novalidate>
                 <div class="form-group">
-                    <label for="timelineName">Nome Timeline</label>
-                    <input type="text" id="timelineName" required placeholder="es. Storia Antica">
+                    <label for="timelineName" data-i18n="timeline_name_label">Nome Timeline</label>
+                    <input type="text" id="timelineName" required data-i18n="placeholder:timeline_name_placeholder" placeholder="es. Storia Antica">
                 </div>
-                <div class="modal-buttons">
-                    <button type="button" class="btn-cancel" onclick="closeTimelineModal()">Annulla</button>
+                <!-- Settings-style toggle buttons (only visible when editing) -->
+                <div id="timelineEditActions" style="display:none;">
+                    <div class="settings-group">
+                        <div class="settings-toggle settings-toggle-link" onclick="openSegmentsModal()">
+                            <span class="settings-toggle-label" data-i18n="timeline_segments_toggle">Gestione segmenti</span>
+                            <span class="settings-chevron">›</span>
+                        </div>
+                    </div>
+                    <div class="settings-group">
+                        <div class="settings-toggle settings-toggle-link" onclick="openCategoryModalFromEdit()">
+                            <span class="settings-toggle-label" data-i18n="timeline_categories_toggle">Gestione categorie</span>
+                            <span class="settings-chevron">›</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-buttons" style="margin-top:1.25rem;">
+                    <button type="button" class="btn-cancel" onclick="closeTimelineModal()" data-i18n="cancel">Annulla</button>
                     <button type="submit" class="btn"
-                        style="background:var(--accent);color:#fff;border:none;">Salva</button>
+                        style="background:var(--accent);color:#fff;border:none;" data-i18n="save">Salva</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Segments Modal -->
+    <div class="modal-overlay" id="segmentsModal">
+        <div class="modal">
+            <h2 data-i18n="segments_modal_title">Gestione Segmenti</h2>
+            <small style="color:var(--text-secondary);font-size:0.6875rem;display:block;margin-bottom:0.75rem" data-i18n="segments_description">Definisci come lo spazio verticale della timeline è distribuito tra i vari periodi storici. Maggiore è la spaziatura, più spazio avrà quel periodo.</small>
+            <div class="segments-table" id="segmentsTable">
+                <div class="segments-header">
+                    <span class="seg-col-start" data-i18n="segments_header_start">Inizio</span>
+                    <span class="seg-col-end" data-i18n="segments_header_end">Fine</span>
+                    <span class="seg-col-density" data-i18n="segments_header_density">Spaziatura</span>
+                    <span class="seg-col-step" data-i18n="segments_header_step">Passo righello</span>
+                </div>
+                <div class="segments-body" id="segmentsBody"></div>
+            </div>
+            <div class="segments-actions">
+                <button type="button" class="btn-segment-add" onclick="addSegmentUI()" data-i18n="segments_add">+ Aggiungi segmento</button>
+                    <button type="button" class="btn-segment-add" onclick="resetToSingleSegmentUI()" data-i18n="segments_single">Segmento singolo</button>
+                    <button type="button" class="btn-segment-reset" onclick="resetSegmentsToDefaultUI()" data-i18n="title:segments_reset" title="Ripristina i segmenti predefiniti" data-i18n="segments_reset">Ripristina default</button>
+            </div>
+            <div class="modal-buttons" style="margin-top:1.25rem;">
+                <button type="button" class="btn-cancel" onclick="closeSegmentsModal(false)" data-i18n="cancel">Annulla</button>
+                <button type="button" class="btn" style="background:var(--accent);color:#fff;border:none;" onclick="closeSegmentsModal(true)" data-i18n="save">Salva</button>
+            </div>
         </div>
     </div>
 
@@ -548,39 +583,26 @@
     <!-- Settings Modal -->
     <div class="modal-overlay" id="settingsModal">
         <div class="modal">
-            <h2>Impostazioni</h2>
+            <h2 data-i18n="settings_modal_title">Impostazioni</h2>
             <div class="settings-group">
                 <label class="settings-toggle">
-                    <span class="settings-toggle-label">Mostra barra categorie</span>
-                    <input type="checkbox" id="settingShowPills" checked onchange="saveSettings()">
+                    <span class="settings-toggle-label" data-i18n="settings_show_pills">Mostra barra categorie</span>
+                    <input type="checkbox" id="settingShowPills" checked onchange="savePillSetting()">
                     <span class="settings-toggle-slider"></span>
                 </label>
-                <small style="color:var(--text-secondary);font-size:0.6875rem;display:block;margin-top:-0.25rem;">Mostra o nascondi la barra delle categorie nella toolbar.</small>
+                <small style="color:var(--text-secondary);font-size:0.6875rem;display:block;margin-top:-0.25rem;" data-i18n="settings_show_pills_desc">Mostra o nascondi la barra delle categorie nella toolbar.</small>
             </div>
-            <div class="settings-group settings-group-collapsible" style="margin-top:1rem;">
-                <div class="settings-group-header settings-accordion-toggle" onclick="toggleSegmentsAccordion()" role="button" tabindex="0" aria-expanded="true" id="segmentsAccordionToggle">
-                    <span class="settings-accordion-arrow" id="segmentsAccordionArrow">▼</span>
-                    <label class="settings-group-title">Gestione Segmenti Temporali</label>
-                    <span class="settings-segments-count" id="segmentsCountBadge"></span>
-                    <button type="button" class="btn-segment-reset" onclick="event.stopPropagation(); resetSegmentsToDefaultUI()" title="Ripristina i segmenti predefiniti">Ripristina default</button>
-                </div>
-                <div class="settings-accordion-body" id="segmentsAccordionBody">
-                    <small style="color:var(--text-secondary);font-size:0.6875rem;display:block;margin-bottom:0.5rem">Definisci come lo spazio verticale della timeline è distribuito tra i vari periodi storici. Maggiore è la spaziatura, più spazio avrà quel periodo.</small>
-                    <div class="segments-table" id="segmentsTable">
-                        <div class="segments-header">
-                            <span class="seg-col-start">Inizio</span>
-                            <span class="seg-col-end">Fine</span>
-                            <span class="seg-col-density">Spaziatura</span>
-                            <span class="seg-col-step">Passo righello</span>
-                        </div>
-                        <div class="segments-body" id="segmentsBody"></div>
-                    </div>
-                    <button type="button" class="btn-segment-add" onclick="addSegmentUI()" style="margin-top:0.5rem;">+ Aggiungi segmento</button>
-                </div>
+            <div class="settings-group">
+                <label class="settings-toggle" style="align-items:center;justify-content:space-between;gap:1rem;">
+                    <span class="settings-toggle-label" data-i18n="settings_language">Lingua</span>
+                    <select id="settingLanguage" onchange="setLanguage(this.value)" style="padding:0.35rem 0.5rem;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-tertiary);color:var(--text-primary);font-size:0.85rem;">
+                        <option value="it" data-i18n="language_it">🇮🇹 Italiano</option>
+                        <option value="en" data-i18n="language_en">🇬🇧 English</option>
+                    </select>
+                </label>
             </div>
             <div class="modal-buttons" style="margin-top:1.25rem;">
-                <button type="button" class="btn-cancel" onclick="closeSettingsModal()">Annulla</button>
-                <button type="button" class="btn" style="background:var(--accent);color:#fff;border:none;flex:1;" onclick="saveSettings()">Salva</button>
+                <button type="button" class="btn-cancel" onclick="closeSettingsModal()" data-i18n="close">Chiudi</button>
             </div>
         </div>
     </div>
@@ -588,18 +610,18 @@
     <div class="shortcuts-hint" id="shortcutsHint" role="dialog" aria-label="Scorciatoie da tastiera" aria-modal="true">
         <button class="shortcuts-hint-close"
             onclick="document.getElementById('shortcutsHint').classList.remove('open')" aria-label="Chiudi">×</button>
-        <h3>Scorciatoie da tastiera</h3>
-        <div><kbd>N</kbd> Nuovo evento</div>
-        <div><kbd>S</kbd> Salva evento</div>
-        <div><kbd>E</kbd> Esporta</div>
-        <div><kbd>I</kbd> Importa</div>
-        <div><kbd>Esc</kbd> Chiudi modale</div>
-        <div><kbd>+</kbd>/<kbd>-</kbd> Zoom</div>
-        <div><kbd>F</kbd> Cerca</div>
-        <div><kbd>G</kbd> Vai all'anno</div>
-        <div><kbd>Ctrl+Z</kbd> Annulla</div>
-        <div><kbd>Ctrl+Shift+Z</kbd> Ripeti</div>
-        <div><kbd>?</kbd> Aiuto scorciatoie</div>
+        <h3 data-i18n="shortcuts_dialog_title">Scorciatoie da tastiera</h3>
+        <div><kbd>N</kbd> <span data-i18n="shortcut_new_event">Nuovo evento</span></div>
+        <div><kbd>S</kbd> <span data-i18n="shortcut_save_event">Salva evento</span></div>
+        <div><kbd>E</kbd> <span data-i18n="shortcut_export">Esporta</span></div>
+        <div><kbd>I</kbd> <span data-i18n="shortcut_import">Importa</span></div>
+        <div><kbd>Esc</kbd> <span data-i18n="shortcut_close_modal">Chiudi modale</span></div>
+        <div><kbd>+</kbd>/<kbd>-</kbd> <span data-i18n="shortcut_zoom">Zoom</span></div>
+        <div><kbd>F</kbd> <span data-i18n="shortcut_search_focus">Cerca</span></div>
+        <div><kbd>G</kbd> <span data-i18n="shortcut_go_to_year">Vai all'anno</span></div>
+        <div><kbd>Ctrl+Z</kbd> <span data-i18n="shortcut_undo">Annulla</span></div>
+        <div><kbd>Ctrl+Shift+Z</kbd> <span data-i18n="shortcut_redo">Ripeti</span></div>
+        <div><kbd>?</kbd> <span data-i18n="shortcut_help">Mostra/nascondi aiuto</span></div>
     </div>
 
     <!-- JS Modules -->
@@ -623,21 +645,22 @@
 
     <div class="quick-create-balloon" id="quickCreateBalloon">
         <div class="quick-create-balloon-arrow"></div>
-        <div class="quick-create-balloon-title">Crea in <span id="quickCreateBalloonYear"></span></div>
+        <div class="quick-create-balloon-title"><span data-i18n="quick_create_title">Crea in</span> <span id="quickCreateBalloonYear"></span></div>
         <button class="quick-create-btn event-btn" onclick="quickCreateSelect('event')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            Nuovo Evento
+            <span data-i18n="quick_create_event">Nuovo Evento</span>
         </button>
         <button class="quick-create-btn period-btn" onclick="quickCreateSelect('period')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            Nuovo Periodo
+            <span data-i18n="quick_create_period">Nuovo Periodo</span>
         </button>
         <button class="quick-create-btn note-btn" onclick="quickCreateSelect('note')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            Nuovo Appunto
+            <span data-i18n="quick_create_note">Nuovo Appunto</span>
         </button>
     </div>
 
+    <script src="js/i18n.js"></script>
     <script src="js/state.js"></script>
     <script src="js/helpers.js"></script>
     <script src="js/tooltip.js"></script>

@@ -11,7 +11,7 @@ function saveEvent() {
     if (currentFormType === 'note') {
         const noteYearVal = document.getElementById('noteYear').value;
         const noteYear = noteYearVal ? parseInt(noteYearVal) : null;
-        if (isNaN(noteYear)) { showToast('Inserisci almeno l\'anno', 'error'); return; }
+        if (isNaN(noteYear)) { showToast(t('toast_min_year_title_error'), 'error'); return; }
         if (editingEventId) {
             const index = allEvents.findIndex(function (e) { return e.id === editingEventId; });
             if (index !== -1) {
@@ -20,10 +20,10 @@ function saveEvent() {
                 allEvents[index].description = description;
                 allEvents[index].imageUrl = imageUrl;
             }
-            showToast('Appunto modificato', 'success');
+            showToast(t('toast_note_updated'), 'success');
         } else {
             allEvents.push({ id: generateId(), type: 'note', startYear: noteYear, title: title, description: description, imageUrl: imageUrl });
-            showToast('Appunto creato', 'success');
+            showToast(t('toast_note_created'), 'success');
         }
         setEvents(allEvents);
         saveState();
@@ -40,19 +40,19 @@ function saveEvent() {
         const pEndYear = parseInt(document.getElementById('periodEndYear').value);
         const pEndMonth = document.getElementById('periodEndMonth').value ? parseInt(document.getElementById('periodEndMonth').value) : null;
         const pEndDay = document.getElementById('periodEndDay').value ? parseInt(document.getElementById('periodEndDay').value) : null;
-        if (isNaN(pStartYear) || isNaN(pEndYear) || !title) { showToast('Inserisci anno inizio, anno fine e nome', 'error'); return; }
+        if (isNaN(pStartYear) || isNaN(pEndYear) || !title) { showToast(t('toast_year_start_end_name_error'), 'error'); return; }
         const maxOverlap = getMaxSimultaneousPeriodsInRange(pStartYear, pEndYear, editingEventId);
-        if (maxOverlap >= 2) { showToast('Limite raggiunto: in qualche punto di questo intervallo ci sarebbero troppi periodi simultanei', 'error'); return; }
+        if (maxOverlap >= 2) { showToast(t('toast_max_periods_error'), 'error'); return; }
         var catIds = getSelectedCategoryIds();
         if (editingEventId) {
             const idx = allEvents.findIndex(function (e) { return e.id === editingEventId; });
             if (idx !== -1) {
                 allEvents[idx] = { id: editingEventId, type: 'event', startYear: pStartYear, startMonth: pStartMonth, startDay: pStartDay, endYear: pEndYear, endMonth: pEndMonth, endDay: pEndDay, title: title, description: description, imageUrl: imageUrl, categoryIds: catIds, isPeriod: true };
             }
-            showToast('Periodo modificato', 'success');
+            showToast(t('toast_period_updated'), 'success');
         } else {
             allEvents.push({ id: generateId(), type: 'event', startYear: pStartYear, startMonth: pStartMonth, startDay: pStartDay, endYear: pEndYear, endMonth: pEndMonth, endDay: pEndDay, title: title, description: description, imageUrl: imageUrl, categoryIds: catIds, isPeriod: true });
-            showToast('Periodo creato', 'success');
+            showToast(t('toast_period_created'), 'success');
         }
         setEvents(allEvents);
         saveState();
@@ -70,17 +70,17 @@ function saveEvent() {
     const endMonth = document.getElementById('endMonth').value ? parseInt(document.getElementById('endMonth').value) : null;
     const endDay = document.getElementById('endDay').value ? parseInt(document.getElementById('endDay').value) : null;
     const linkedEvents = selectedLinkedEvents.slice();
-    if (isNaN(startYear) || !title) { showToast('Inserisci almeno l\'anno e il nome', 'error'); return; }
+    if (isNaN(startYear) || !title) { showToast(t('toast_min_year_name_error'), 'error'); return; }
     var catIds = getSelectedCategoryIds();
     if (editingEventId) {
         const index = allEvents.findIndex(function (e) { return e.id === editingEventId; });
         if (index !== -1) {
             allEvents[index] = { id: editingEventId, type: 'event', startYear: startYear, startMonth: startMonth, startDay: startDay, endYear: endYear, endMonth: endMonth, endDay: endDay, title: title, description: description, imageUrl: imageUrl, categoryIds: catIds, linkedEvents: linkedEvents, isPeriod: false };
         }
-        showToast('Evento modificato', 'success');
+        showToast(t('toast_event_updated'), 'success');
     } else {
         allEvents.push({ id: generateId(), type: 'event', startYear: startYear, startMonth: startMonth, startDay: startDay, endYear: endYear, endMonth: endMonth, endDay: endDay, title: title, description: description, imageUrl: imageUrl, categoryIds: catIds, linkedEvents: linkedEvents, isPeriod: false });
-        showToast('Evento creato', 'success');
+        showToast(t('toast_event_created'), 'success');
     }
     setEvents(allEvents);
     saveState();
@@ -102,7 +102,7 @@ function editEvent(eventId) {
         document.getElementById('eventTitle').value = event.title || '';
         document.getElementById('eventDescription').value = event.description || '';
         if (document.getElementById('eventImageUrl')) document.getElementById('eventImageUrl').value = imageUrl;
-        document.getElementById('eventModalTitle').textContent = 'Modifica Appunto';
+        document.getElementById('eventModalTitle').textContent = t('edit_note_title');
         switchFormTab('note');
     } else if (event.isPeriod) {
         currentFormType = 'period';
@@ -130,7 +130,7 @@ function editEvent(eventId) {
         }
         selectedLinkedEvents = [];
         renderLinkedEventsList();
-        document.getElementById('eventModalTitle').textContent = 'Modifica Periodo';
+        document.getElementById('eventModalTitle').textContent = t('edit_period_title');
         switchFormTab('period');
         // Show convert-to-event button for periods
         var convertEventContainer = document.getElementById('convertToEventContainer');
@@ -165,7 +165,7 @@ function editEvent(eventId) {
         selectedLinkedEvents = (event.linkedEvents && Array.isArray(event.linkedEvents)) ? event.linkedEvents.slice() : [];
         renderLinkedEventsList();
         populateLinkedEvents();
-        document.getElementById('eventModalTitle').textContent = 'Modifica Evento';
+        document.getElementById('eventModalTitle').textContent = t('edit_event_title');
         switchFormTab('event');
         // Show convert-to-period button if event has endYear
         var convertContainer = document.getElementById('convertToPeriodContainer');
@@ -181,15 +181,15 @@ function convertToPeriod() {
     const allEvents = getEvents();
     const event = allEvents.find(function (e) { return String(e.id) === String(editingEventId); });
     if (!event) return;
-    if (event.isPeriod) { showToast('È già un periodo', 'info'); return; }
-    if (!event.endYear) { showToast('L\'evento non ha una data di fine', 'error'); return; }
+    if (event.isPeriod) { showToast(t('toast_already_period'), 'info'); return; }
+    if (!event.endYear) { showToast(t('toast_no_end_date'), 'error'); return; }
     pushUndo();
     event.isPeriod = true;
     setEvents(allEvents);
     saveState();
     closeModal();
     renderEvents();
-    showToast('Evento trasformato in periodo', 'success');
+    showToast(t('toast_event_to_period'), 'success');
 }
 
 function convertToEvent() {
@@ -197,24 +197,24 @@ function convertToEvent() {
     const allEvents = getEvents();
     const event = allEvents.find(function (e) { return String(e.id) === String(editingEventId); });
     if (!event) return;
-    if (!event.isPeriod) { showToast('È già un evento', 'info'); return; }
+    if (!event.isPeriod) { showToast(t('toast_already_event'), 'info'); return; }
     pushUndo();
     event.isPeriod = false;
     setEvents(allEvents);
     saveState();
     closeModal();
     renderEvents();
-    showToast('Periodo trasformato in evento', 'success');
+    showToast(t('toast_period_to_event'), 'success');
 }
 
 function deleteEvent(eventId) {
-    if (!confirm('Eliminare questo evento?')) return;
+    if (!confirm(t('toast_confirm_delete_event'))) return;
     pushUndo();
     setEvents(getEvents().filter(function (e) { return e.id !== eventId; }));
     saveState();
     if (expandedEventId === eventId) expandedEventId = null;
     renderEvents();
-    showToast('Evento eliminato', 'info');
+    showToast(t('toast_event_deleted'), 'info');
 }
 
 // ================================================================
@@ -279,11 +279,11 @@ function renderLinkedEventsList() {
     container.innerHTML = '';
     const allEvents = getEvents();
     if (selectedLinkedEvents.length === 0) {
-        container.innerHTML = '<div style="color:var(--text-secondary);font-size:0.75rem;padding:0.3rem 0;">Nessun evento collegato.</div>';
+        container.innerHTML = '<div style="color:var(--text-secondary);font-size:0.75rem;padding:0.3rem 0;">' + t('no_linked_events') + '</div>';
     }
     selectedLinkedEvents.forEach(function (link, index) {
         const linkedEvent = allEvents.find(function (e) { return String(e.id) === String(link.eventId); });
-        const name = linkedEvent ? linkedEvent.title : '(evento non trovato)';
+        const name = linkedEvent ? linkedEvent.title : t('event_not_found');
         const year = linkedEvent ? formatYear(linkedEvent.startYear) : '';
         const side = link.side || 'auto';
         const item = document.createElement('div');
@@ -293,9 +293,9 @@ function renderLinkedEventsList() {
             '<div style="font-size:0.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(name) + '</div>' +
             '</div>' +
             '<select onchange="updateLinkedEventSide(' + index + ', this.value)" style="width:auto;padding:0.2rem 0.35rem;font-size:0.7rem;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:4px;color:var(--text-primary);">' +
-            '<option value="auto"' + (side === 'auto' ? ' selected' : '') + '>Auto</option>' +
-            '<option value="left"' + (side === 'left' ? ' selected' : '') + '>← Sx</option>' +
-            '<option value="right"' + (side === 'right' ? ' selected' : '') + '>Dx →</option>' +
+            '<option value="auto"' + (side === 'auto' ? ' selected' : '') + '>' + t('auto') + '</option>' +
+            '<option value="left"' + (side === 'left' ? ' selected' : '') + '>← ' + t('side_left_short') + '</option>' +
+            '<option value="right"' + (side === 'right' ? ' selected' : '') + '>' + t('side_right_short') + ' →</option>' +
             '</select>' +
             '<button type="button" onclick="removeLinkedEvent(' + index + ')" style="background:transparent;border:none;color:var(--text-secondary);cursor:pointer;font-size:1.1rem;padding:0 0.2rem;">×</button>';
         container.appendChild(item);
@@ -304,7 +304,7 @@ function renderLinkedEventsList() {
 
 function addLinkedEvent(eventId) {
     const alreadyAdded = selectedLinkedEvents.some(function (l) { return String(l.eventId) === String(eventId); });
-    if (alreadyAdded) { showToast('Evento già collegato', 'info'); return; }
+    if (alreadyAdded) { showToast(t('already_linked'), 'info'); return; }
     selectedLinkedEvents.push({ eventId: eventId, side: 'auto' });
     document.getElementById('eventSearchInput').value = '';
     document.getElementById('linkedEventList').classList.remove('visible');

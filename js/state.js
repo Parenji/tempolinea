@@ -3,7 +3,6 @@
 // ================================================================
 const STORAGE_KEY = 'timeline_app_v3';
 const ZOOM_STORAGE_KEY = 'timeline_zoom_v1';
-const SEGMENTS_STORAGE_KEY = 'timeline_segments_v1';
 const DEFAULT_PIXELS_PER_YEAR = 20;
 
 const DEFAULT_SEGMENTS = [
@@ -15,32 +14,32 @@ const DEFAULT_SEGMENTS = [
     { start: 1900, end: 2100, density: 60, rulerStep: 1, rulerLabel: 'year' }
 ];
 
-let _segmentsCache = null;
+function getDefaultSegments() {
+    return DEFAULT_SEGMENTS.map(function(s) { return Object.assign({}, s); });
+}
 
 function getSegments() {
-    if (_segmentsCache) return _segmentsCache;
-    const stored = localStorage.getItem(SEGMENTS_STORAGE_KEY);
-    if (stored) {
-        try {
-            const parsed = JSON.parse(stored);
-            if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].start !== undefined) {
-                _segmentsCache = parsed;
-                return _segmentsCache;
-            }
-        } catch (e) { /* ignore */ }
+    const timeline = getCurrentTimeline();
+    if (timeline && timeline.segments && Array.isArray(timeline.segments) && timeline.segments.length > 0) {
+        return timeline.segments;
     }
-    _segmentsCache = DEFAULT_SEGMENTS.map(function(s) { return Object.assign({}, s); });
-    return _segmentsCache;
+    return getDefaultSegments();
 }
 
 function saveSegments(segments) {
-    localStorage.setItem(SEGMENTS_STORAGE_KEY, JSON.stringify(segments));
-    _segmentsCache = segments;
+    const timeline = getCurrentTimeline();
+    if (timeline) {
+        timeline.segments = segments;
+        saveState();
+    }
 }
 
 function resetSegmentsToDefault() {
-    localStorage.removeItem(SEGMENTS_STORAGE_KEY);
-    _segmentsCache = null;
+    const timeline = getCurrentTimeline();
+    if (timeline) {
+        timeline.segments = getDefaultSegments();
+        saveState();
+    }
     clearYearCache();
 }
 
@@ -97,7 +96,7 @@ function loadState() {
         const events = oldEvents ? JSON.parse(oldEvents) : [];
         const categories = oldCategories ? JSON.parse(oldCategories) : [];
         const timelineId = generateId();
-        state.timelines[timelineId] = { id: timelineId, name: 'Timeline (importata dal backup)', events: events, categories: categories };
+        state.timelines[timelineId] = { id: timelineId, name: t('legacy_import_name'), events: events, categories: categories, segments: getDefaultSegments() };
         state.currentTimelineId = timelineId;
         localStorage.removeItem('timeline_events_v2');
         localStorage.removeItem('timeline_categories_v2');
@@ -106,13 +105,17 @@ function loadState() {
     }
     // Default
     const defaultId = 'default';
-    state.timelines[defaultId] = { id: defaultId, name: 'Timeline 1', events: [], categories: [] };
+    state.timelines[defaultId] = { id: defaultId, name: 'Timeline 1', events: [], categories: [], segments: getDefaultSegments() };
     state.currentTimelineId = defaultId;
     saveState();
 }
 
 function migrateState() {
     Object.values(state.timelines).forEach(function (tl) {
+        // Ensure segments exist (per-timeline feature)
+        if (!tl.segments || !Array.isArray(tl.segments) || tl.segments.length === 0) {
+            tl.segments = getDefaultSegments();
+        }
         if (tl.categories) {
             tl.categories = sanitizeImportedCategories(tl.categories);
         }
@@ -189,7 +192,7 @@ function pushUndo() {
 
 function undo() {
     if (undoStack.length === 0) {
-        showToast('Niente da annullare', 'info');
+        showToast(t('toast_nothing_to_undo'), 'info');
         return;
     }
     const timeline = getCurrentTimeline();
@@ -201,12 +204,12 @@ function undo() {
     saveState();
     expandedEventId = null;
     fullRender();
-    showToast('Annullato (Ctrl+Z)', 'info');
+    showToast(t('toast_undone'), 'info');
 }
 
 function redo() {
     if (redoStack.length === 0) {
-        showToast('Niente da ripetere', 'info');
+        showToast(t('toast_nothing_to_redo'), 'info');
         return;
     }
     const timeline = getCurrentTimeline();
@@ -218,5 +221,5 @@ function redo() {
     saveState();
     expandedEventId = null;
     fullRender();
-    showToast('Ripetuto (Ctrl+Shift+Z)', 'info');
+    showToast(t('toast_redone'), 'info');
 }

@@ -6,8 +6,10 @@ function setupKeyboardShortcuts() {
         // Don't trigger shortcuts when typing in inputs/textareas
         const tag = (e.target.tagName || '').toLowerCase();
         const isInput = tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable;
-        // Allow Escape even in inputs
+        // Allow Escape even in inputs: clear search, then blur
         if (e.key === 'Escape' && isInput) {
+            e.preventDefault();
+            if (typeof clearSearch === 'function') clearSearch();
             e.target.blur();
             return;
         }
@@ -47,8 +49,24 @@ function setupKeyboardShortcuts() {
             if (document.getElementById('eventModal').classList.contains('open')) { closeModal(); return; }
             if (document.getElementById('categoryModal').classList.contains('open')) { closeCategoryModal(); return; }
             if (document.getElementById('deleteConfirmModal').classList.contains('open')) { closeDeleteModal(); return; }
+            if (document.getElementById('segmentsModal').classList.contains('open')) { closeSegmentsModal(false); return; }
             if (document.getElementById('timelineModal').classList.contains('open')) { closeTimelineModal(); return; }
             if (document.getElementById('importChoiceModal').classList.contains('open')) { closeImportChoiceModal(); return; }
+            if (document.getElementById('settingsModal').classList.contains('open')) { closeSettingsModal(); return; }
+            // Clear search text if present
+            if (document.getElementById('searchInput').value.trim()) {
+                clearSearch();
+                return;
+            }
+            // Deselect category pills if any active
+            if (activeCategoryFilters.length > 0) {
+                activeCategoryFilters = [];
+                if (highlightedCategoryId) { unhighlightCategoryConnector(highlightedCategoryId); }
+                renderPills();
+                renderEvents();
+                searchEvents();
+                return;
+            }
             // Deselect periods
             document.querySelectorAll('.period-strip.active').forEach(function (el) { el.classList.remove('active'); });
             document.querySelectorAll('.period-detail-card.visible').forEach(function (el) { el.classList.remove('visible'); });
@@ -136,22 +154,22 @@ function toggleShortcutsHint() {
         hint.id = 'shortcutsHint';
         hint.className = 'shortcuts-hint';
         hint.setAttribute('role', 'dialog');
-        hint.setAttribute('aria-label', 'Scorciatoie da tastiera');
+        hint.setAttribute('aria-label', t('shortcuts_dialog_title'));
         hint.setAttribute('aria-modal', 'true');
         hint.innerHTML =
-            '<button class="shortcuts-hint-close" onclick="document.getElementById(\'shortcutsHint\').classList.remove(\'open\')" aria-label="Chiudi">×</button>' +
-            '<h3>Scorciatoie da tastiera</h3>' +
-            '<div><kbd>N</kbd> Nuovo evento</div>' +
-            '<div><kbd>S</kbd> Salva evento</div>' +
-            '<div><kbd>E</kbd> Esporta</div>' +
-            '<div><kbd>I</kbd> Importa</div>' +
-            '<div><kbd>Esc</kbd> Chiudi modale</div>' +
-            '<div><kbd>+</kbd>/<kbd>-</kbd> Zoom</div>' +
-            '<div><kbd>F</kbd> Cerca</div>' +
-            '<div><kbd>G</kbd> Vai all\'anno</div>' +
-            '<div><kbd>Ctrl+Z</kbd> Annulla</div>' +
-            '<div><kbd>Ctrl+Shift+Z</kbd> Ripeti</div>' +
-            '<div><kbd>?</kbd> Mostra/nascondi aiuto</div>';
+            '<button class="shortcuts-hint-close" onclick="document.getElementById(\'shortcutsHint\').classList.remove(\'open\')" aria-label="' + t('close_aria') + '">×</button>' +
+            '<h3 data-i18n="shortcuts_dialog_title">' + t('shortcuts_dialog_title') + '</h3>' +
+            '<div><kbd>N</kbd> <span>' + t('shortcut_new_event') + '</span></div>' +
+            '<div><kbd>S</kbd> <span>' + t('shortcut_save_event') + '</span></div>' +
+            '<div><kbd>E</kbd> <span>' + t('shortcut_export') + '</span></div>' +
+            '<div><kbd>I</kbd> <span>' + t('shortcut_import') + '</span></div>' +
+            '<div><kbd>Esc</kbd> <span>' + t('shortcut_close_modal') + '</span></div>' +
+            '<div><kbd>+</kbd>/<kbd>-</kbd> <span>' + t('shortcut_zoom') + '</span></div>' +
+            '<div><kbd>F</kbd> <span>' + t('shortcut_search_focus') + '</span></div>' +
+            '<div><kbd>G</kbd> <span>' + t('shortcut_go_to_year') + '</span></div>' +
+            '<div><kbd>Ctrl+Z</kbd> <span>' + t('shortcut_undo') + '</span></div>' +
+            '<div><kbd>Ctrl+Shift+Z</kbd> <span>' + t('shortcut_redo') + '</span></div>' +
+            '<div><kbd>?</kbd> <span>' + t('shortcut_help') + '</span></div>';
         document.body.appendChild(hint);
         // Click-outside to close
         hint.addEventListener('click', function (e) { e.stopPropagation(); });
