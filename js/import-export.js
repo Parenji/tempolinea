@@ -56,12 +56,12 @@ function importData(event) {
             const currentTl = getCurrentTimeline();
             const hasContent = (currentTl && (currentTl.events.length > 0 || currentTl.categories.length > 0));
             if (hasContent) {
-                $('importCurrentTimelineName').textContent = currentTl.name;
                 // Update import choice description
                 var descEl = document.getElementById('importChoiceDesc');
                 if (descEl) {
                     descEl.innerHTML = t('import_choice_desc', { name: currentTl.name });
                 }
+                lastFocusedElement = document.activeElement;
                 $('importChoiceModal').classList.add('open');
             } else {
                 importIntoCurrentTimeline();
@@ -90,6 +90,7 @@ function importIntoCurrentTimeline() {
     closeImportChoiceModal();
     saveState();
     expandedEventId = null;
+    clearYearCache();
     fullRender();
     showToast(t('toast_imported_into_current', { name: timeline.name }), 'success');
 }
@@ -114,12 +115,18 @@ function importIntoNewTimeline() {
     closeImportChoiceModal();
     saveState();
     expandedEventId = null;
+    clearYearCache();
     fullRender();
     showToast(t('toast_imported_new', { name: candidateName }), 'success');
 }
 
 function closeImportChoiceModal() {
     $('importChoiceModal').classList.remove('open');
+    if (lastFocusedElement) {
+        var el = lastFocusedElement;
+        lastFocusedElement = null;
+        setTimeout(function () { if (el && typeof el.focus === 'function') el.focus(); }, 100);
+    }
 }
 
 function loadExampleTimeline() {

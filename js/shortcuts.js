@@ -32,7 +32,7 @@ function setupKeyboardShortcuts() {
         if (e.key === 'Escape') {
             e.preventDefault();
             // Close quick create first if visible
-            if (typeof hideQuickCreate === 'function' && isQuickCreateVisible()) {
+            if (typeof hideQuickCreate === 'function' && typeof isQuickCreateVisible === 'function' && isQuickCreateVisible()) {
                 hideQuickCreate();
                 return;
             }
@@ -44,8 +44,14 @@ function setupKeyboardShortcuts() {
             }
             // Close shortcuts hint
             const hint = document.getElementById('shortcutsHint');
-            if (hint && hint.classList.contains('open')) { hint.classList.remove('open'); return; }
-            // Close any open modal
+            if (hint && hint.classList.contains('open')) {
+                hint.classList.remove('open');
+                // Restore focus to the button that opened it
+                var triggerBtn = document.querySelector('[onclick="toggleShortcutsHint()"]');
+                if (triggerBtn) triggerBtn.focus();
+                return;
+            }
+            // Close any open modal (with focus restoration handled by each close function)
             if (document.getElementById('eventModal').classList.contains('open')) { closeModal(); return; }
             if (document.getElementById('categoryModal').classList.contains('open')) { closeCategoryModal(); return; }
             if (document.getElementById('deleteConfirmModal').classList.contains('open')) { closeDeleteModal(); return; }
@@ -53,6 +59,24 @@ function setupKeyboardShortcuts() {
             if (document.getElementById('timelineModal').classList.contains('open')) { closeTimelineModal(); return; }
             if (document.getElementById('importChoiceModal').classList.contains('open')) { closeImportChoiceModal(); return; }
             if (document.getElementById('settingsModal').classList.contains('open')) { closeSettingsModal(); return; }
+            // Collapse any expanded event/note card and focus it
+            if (expandedEventId) {
+                collapseAndFocus(expandedEventId);
+                return;
+            }
+            // Close any active period detail and focus the strip
+            var activePeriod = document.querySelector('.period-strip.active');
+            if (activePeriod) {
+                var detailCard = document.getElementById('detail-' + activePeriod.dataset.eventId);
+                var node = document.querySelector('.event-node[data-event-id="' + activePeriod.dataset.eventId + '"]');
+                var ruler = document.getElementById('timelineRuler');
+                activePeriod.classList.remove('active');
+                activePeriod.setAttribute('aria-expanded', 'false');
+                if (detailCard) detailCard.classList.remove('visible');
+                if (node) { node.classList.remove('expanded-node', 'period-highlighted'); }
+                activePeriod.focus();
+                return;
+            }
             // Clear search text if present
             if (document.getElementById('searchInput').value.trim()) {
                 clearSearch();
@@ -67,9 +91,10 @@ function setupKeyboardShortcuts() {
                 searchEvents();
                 return;
             }
-            // Deselect periods
-            document.querySelectorAll('.period-strip.active').forEach(function (el) { el.classList.remove('active'); });
-            document.querySelectorAll('.period-detail-card.visible').forEach(function (el) { el.classList.remove('visible'); });
+            // Blur the active element to prevent stuck focus
+            if (document.activeElement && document.activeElement !== document.body) {
+                document.activeElement.blur();
+            }
         }
 
         if (e.key === 's' && !ctrl) {

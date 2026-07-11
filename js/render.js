@@ -121,8 +121,8 @@ function cardImageHtml(event) {
 
 function cardButtonsHtml(eventId) {
     return '<div class="card-btns">' +
-        '<button class="detail-btn" onclick="event.stopPropagation(); editEvent(\'' + eventId + '\')" aria-label="' + t('card_edit') + '">' + t('card_edit') + '</button>' +
-        '<button class="detail-btn danger" onclick="event.stopPropagation(); deleteEvent(\'' + eventId + '\')" aria-label="' + t('card_delete') + '">' + t('card_delete') + '</button>' +
+        '<button class="detail-btn" tabindex="-1" onclick="event.stopPropagation(); editEvent(\'' + eventId + '\')" aria-label="' + t('card_edit') + '">' + t('card_edit') + '</button>' +
+        '<button class="detail-btn danger" tabindex="-1" onclick="event.stopPropagation(); deleteEvent(\'' + eventId + '\')" aria-label="' + t('card_delete') + '">' + t('card_delete') + '</button>' +
         '</div>';
 }
 
@@ -130,7 +130,7 @@ function categoryPillsHtml(eventCategories) {
     if (!eventCategories || eventCategories.length === 0) return '';
     var html = '<div class="event-categories">';
     eventCategories.forEach(function(cat) {
-        html += '<span class="pill" style="border-left:3px solid ' + escapeHtml(cat.color) + '" onclick="event.stopPropagation();filterByCategory(\'' + escapeHtml(cat.id) + '\')" tabindex="0" role="radio" aria-label="' + t('filter_category_aria', { name: escapeHtml(cat.name) }) + '">' + escapeHtml(cat.name) + '</span>';
+        html += '<span class="pill" style="border-left:3px solid ' + escapeHtml(cat.color) + '" onclick="event.stopPropagation();filterByCategory(\'' + escapeHtml(cat.id) + '\')" tabindex="-1" role="radio" aria-label="' + t('filter_category_aria', { name: escapeHtml(cat.name) }) + '">' + escapeHtml(cat.name) + '</span>';
     });
     html += '</div>';
     return html;
@@ -156,8 +156,8 @@ function noteContentHtml(event, eventCategories) {
     if (event.description) html += '<div class="note-desc">' + formatDescription(event.description) + '</div>';
     if (eventCategories && eventCategories.length > 0) html += categoryPillsHtml(eventCategories);
     html += '<div class="note-btns">' +
-        '<button class="note-btn note-edit-btn" onclick="event.stopPropagation(); editEvent(\'' + event.id + '\')" aria-label="' + t('card_edit_note') + '">' + t('card_edit') + '</button>' +
-        '<button class="note-btn note-delete-btn" onclick="event.stopPropagation(); deleteEvent(\'' + event.id + '\')" aria-label="' + t('card_delete_note') + '">' + t('card_delete') + '</button>' +
+        '<button class="note-btn note-edit-btn" tabindex="-1" onclick="event.stopPropagation(); editEvent(\'' + event.id + '\')" aria-label="' + t('card_edit_note') + '">' + t('card_edit') + '</button>' +
+        '<button class="note-btn note-delete-btn" tabindex="-1" onclick="event.stopPropagation(); deleteEvent(\'' + event.id + '\')" aria-label="' + t('card_delete_note') + '">' + t('card_delete') + '</button>' +
         '</div>';
     return html;
 }
@@ -171,8 +171,8 @@ function periodDetailHtml(event, color, yearText, eventCategories) {
     if (event.description) html += '<div class="detail-desc">' + formatDescription(event.description) + '</div>';
     if (eventCategories && eventCategories.length > 0) html += categoryPillsHtml(eventCategories);
     html += '<div class="detail-btns">' +
-        '<button class="detail-btn" onclick="event.stopPropagation(); editEvent(\'' + event.id + '\')">' + t('card_edit') + '</button>' +
-        '<button class="detail-btn danger" onclick="event.stopPropagation(); deleteEvent(\'' + event.id + '\')">' + t('card_delete') + '</button>' +
+        '<button class="detail-btn" tabindex="-1" onclick="event.stopPropagation(); editEvent(\'' + event.id + '\')">' + t('card_edit') + '</button>' +
+        '<button class="detail-btn danger" tabindex="-1" onclick="event.stopPropagation(); deleteEvent(\'' + event.id + '\')">' + t('card_delete') + '</button>' +
         '</div>';
     return html;
 }
@@ -247,6 +247,8 @@ function renderEvents() {
                 if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); toggleExpand(noteId); }
                 if (e.key === 'Escape' && expandedEventId === noteId) { e.preventDefault(); e.stopPropagation(); collapseAndFocus(noteId); }
             });
+            // Start with all inner elements unfocusable unless this is the expanded card
+            setCardInnerTabindex(note, expandedEventId === noteId);
             container.appendChild(note);
         } else if (event.isPeriod && event.endYear) {
             var evtId = event.id;
@@ -339,7 +341,46 @@ function renderEvents() {
                 repositionAfterImagesLoad(detailCard, strip, lane);
             };
             strip.addEventListener('click', periodClickHandler);
-            strip.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); periodClickHandler(e); } });
+            strip.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    periodClickHandler(e);
+                    // Move focus to detail card when opened from keyboard
+                    if (strip.classList.contains('active')) {
+                        setTimeout(function() {
+                            var focusable = getFocusableElements(detailCard);
+                            if (focusable.length > 0) focusable[0].focus();
+                            else detailCard.focus();
+                        }, 150);
+                    }
+                }
+                if (e.key === 'Escape' && strip.classList.contains('active')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var node = document.querySelector('.event-node[data-event-id="' + stripEvtId + '"]');
+                    closePeriodDetail(strip, detailCard, node);
+                    if (strip._scrollCloseHandler) {
+                        document.getElementById('timelineRuler').removeEventListener('scroll', strip._scrollCloseHandler);
+                        strip._scrollCloseHandler = null;
+                    }
+                    strip.focus();
+                }
+            });
+            // Make detail card focusable and handle Escape
+            detailCard.setAttribute('tabindex', '-1');
+            detailCard.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var node = document.querySelector('.event-node[data-event-id="' + stripEvtId + '"]');
+                    closePeriodDetail(strip, detailCard, node);
+                    if (strip._scrollCloseHandler) {
+                        document.getElementById('timelineRuler').removeEventListener('scroll', strip._scrollCloseHandler);
+                        strip._scrollCloseHandler = null;
+                    }
+                    strip.focus();
+                }
+            });
             var hoverTimeout = null;
             strip.addEventListener('mouseenter', function () {
                 if (window.innerWidth <= 768) return;
@@ -398,6 +439,8 @@ function renderEvents() {
                 if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleExpand(evtId2); }
                 if (e.key === 'Escape' && expandedEventId === evtId2) { e.preventDefault(); collapseAndFocus(evtId2); }
             });
+            // Start with all inner elements unfocusable unless this is the expanded card
+            setCardInnerTabindex(card, expandedEventId === evtId2);
             container.appendChild(card);
         }
     });
@@ -413,11 +456,297 @@ function renderEvents() {
     }
 }
 
+function setCardInnerTabindex(card, enabled) {
+    var idx = enabled ? '0' : '-1';
+    var interactives = card.querySelectorAll('button, .pill, [tabindex]');
+    interactives.forEach(function(el) {
+        if (el === card) return;
+        el.setAttribute('tabindex', idx);
+    });
+}
+
+// ================================================================
+//  EXPANSION DISPLACEMENT — shift cards + ruler below the fracture point
+// ================================================================
+
+function clearExpansionDisplacement() {
+    if (cardResizeObserver) {
+        cardResizeObserver.disconnect();
+        cardResizeObserver = null;
+    }
+    if (activeExpansionCard && activeExpansionDelta > 0) {
+        shiftDownstreamElements(-activeExpansionDelta, activeExpansionFracturePoint);
+        shiftRulerMarks(-activeExpansionDelta, activeExpansionFracturePoint);
+        setTimeout(function () { redrawConnectors(); }, 500);
+    }
+    activeExpansionDelta = 0;
+    activeExpansionFracturePoint = null;
+    activeExpansionCard = null;
+}
+
+function getNearestBelowTop(fracturePoint) {
+    var container = document.getElementById('eventsContainer');
+    var allCards = container.querySelectorAll('.event-card, .note-card, .period-strip');
+    var nearest = Infinity;
+    for (var c = 0; c < allCards.length; c++) {
+        var cTop = parseFloat(allCards[c].style.top) || 0;
+        if (cTop > fracturePoint && cTop < nearest) {
+            nearest = cTop;
+        }
+    }
+    return nearest;
+}
+
+function measureAndApplyDisplacement(card, ruler) {
+    var wasExpanded = card.classList.contains('expanded');
+    if (!wasExpanded) {
+        activeExpansionDelta = 0;
+        activeExpansionFracturePoint = null;
+        activeExpansionCard = card;
+        return; // not expanded, no displacement needed
+    }
+
+    // We'll compute compactHeight by temporarily hiding expanded inner elements
+    // This is tricky. Let's use getBoundingClientRect on the expanded card,
+    // then estimate compact height = title + date + padding + border + image-icon area + ~10px.
+    // Actually: the card has child elements visible in compact mode:
+    //   - .event-date (visible)
+    //   - .event-name (visible)
+    //   - .event-image (max-height:0, opacity:0 → 0px contribution when not expanded)
+    //   - .event-description (max-height:0, opacity:0 → 0px)
+    //   - .event-categories (max-height:0, opacity:0 → 0px)
+    //   - .card-btns (max-height:0, opacity:0 → 0px)
+    //   - .card-image-icon (pos absolute, always visible)
+    // So the only visible compact elements are: date, name, image-icon (absolute), padding, border.
+    // The image-icon is absolute, it doesn't contribute to flow height.
+    // So compactHeight ≈ paddingTop + dateHeight + dateMarginBottom + nameHeight + paddingBottom + border
+
+    // Simpler: measure the card height by reading the card's offsetHeight while expanded is just applied.
+    // But we also need the pre-expansion (compact) height. We can approximate it from the computed style:
+    var style = getComputedStyle(card);
+    var paddingTop = parseFloat(style.paddingTop);
+    var paddingBottom = parseFloat(style.paddingBottom);
+    var borderTop = parseFloat(style.borderTopWidth) || 0;
+    var borderBottom = parseFloat(style.borderBottomWidth) || 0;
+    var dateEl = card.querySelector('.event-date');
+    var nameEl = card.querySelector('.event-name');
+    var noteTitleEl = card.querySelector('.note-title');
+    var noteDescEl = card.querySelector('.note-desc');
+    var dateHeight = dateEl ? dateEl.offsetHeight : 0;
+    var nameHeight = (nameEl || noteTitleEl) ? (nameEl || noteTitleEl).offsetHeight : 0;
+    var dateMarginBottom = dateEl ? parseFloat(getComputedStyle(dateEl).marginBottom) : 0;
+    var nameMarginBottom = (nameEl || noteTitleEl) ? parseFloat(getComputedStyle(nameEl || noteTitleEl).marginBottom) || 0 : 0;
+    var compactHeight = paddingTop + dateHeight + dateMarginBottom + nameHeight + nameMarginBottom + paddingBottom + borderTop + borderBottom;
+    // Small fudge factor for inline elements
+    compactHeight += 4;
+
+    var expandedHeight = card.scrollHeight;
+    var DISPLACEMENT_GAP = 40;
+    var delta = expandedHeight - compactHeight + DISPLACEMENT_GAP;
+
+    // Guard: if delta is too small (card already tiny description), don't shift
+    if (delta < 8) {
+        activeExpansionDelta = 0;
+        activeExpansionFracturePoint = null;
+        activeExpansionCard = card;
+        return;
+    }
+
+    // Fracture point is the original top of the expanded card
+    var fractureTop = parseFloat(card.style.top) || 0;
+    // Cards are positioned via `top` where `top` = position - 15 (for event cards) or just `position` for notes
+    // The fracture point in ruler-coordinates is fractureTop + compactHeight (bottom of compact card)
+    var fracturePoint = fractureTop + compactHeight;
+
+    // === ALL-OR-NOTHING + MINIMUM DELTA LOGIC ===
+    var expandedCardBottom = fractureTop + compactHeight + delta;
+    var nearestBelowTop = getNearestBelowTop(fracturePoint);
+    // Save original nearest position BEFORE cards are shifted,
+    // so the ResizeObserver can reuse it without re-measuring shifted cards
+    var originalNearest = nearestBelowTop;
+
+    // Determine if displacement is needed
+    var neededDelta = 0;
+    if (nearestBelowTop === Infinity || nearestBelowTop >= expandedCardBottom) {
+        // No card is being covered by the expansion — skip displacement entirely
+        neededDelta = 0;
+    } else {
+        // Shift all downstream cards by the minimum amount needed
+        // = how much the expanded card overflows past the nearest card below
+        neededDelta = expandedCardBottom - nearestBelowTop;
+        // Cap: never shift more than the full delta (shouldn't happen, but safety)
+        if (neededDelta > delta) neededDelta = delta;
+        if (neededDelta < 1) neededDelta = 0;
+    }
+
+    console.log('--- DISPLACEMENT DEBUG ---',
+        'fractureTop:', fractureTop,
+        'compactHeight:', compactHeight,
+        'fracturePoint:', fracturePoint,
+        'expandedHeight:', expandedHeight,
+        'delta:', delta,
+        'nearestBelowTop:', nearestBelowTop,
+        'expandedCardBottom:', expandedCardBottom,
+        'neededDelta:', neededDelta
+    );
+
+    if (neededDelta === 0) {
+        // No displacement needed: reset state
+        activeExpansionDelta = 0;
+        activeExpansionFracturePoint = null;
+        activeExpansionCard = card;
+        return;
+    }
+
+    activeExpansionDelta = neededDelta;
+    activeExpansionFracturePoint = fracturePoint;
+    activeExpansionCard = card;
+
+    shiftDownstreamElements(neededDelta, fracturePoint);
+    shiftRulerMarks(neededDelta, fracturePoint);
+
+    // Setup ResizeObserver for late-loading images
+    // Reuses originalNearest to maintain all-or-nothing logic even after cards have shifted
+    if (cardResizeObserver) { cardResizeObserver.disconnect(); }
+    cardResizeObserver = new ResizeObserver(function (entries) {
+        for (var i = 0; i < entries.length; i++) {
+            var entry = entries[i];
+            var newExpandedHeight = entry.contentRect.height;
+            if (newExpandedHeight > 0 && activeExpansionCard === card && activeExpansionDelta > 0) {
+                var fullDelta = newExpandedHeight - compactHeight + DISPLACEMENT_GAP;
+                var newExpandedBottom = fractureTop + compactHeight + fullDelta;
+                var newNeeded = 0;
+                if (originalNearest === Infinity || originalNearest >= newExpandedBottom) {
+                    newNeeded = 0;
+                } else {
+                    newNeeded = newExpandedBottom - originalNearest;
+                    if (newNeeded > fullDelta) newNeeded = fullDelta;
+                    if (newNeeded < 1) newNeeded = 0;
+                }
+                console.log('--- ResizeObserver DEBUG ---',
+                    'fullDelta:', fullDelta,
+                    'originalNearest:', originalNearest,
+                    'newExpandedBottom:', newExpandedBottom,
+                    'newNeeded:', newNeeded,
+                    'current activeExpansionDelta:', activeExpansionDelta
+                );
+                if (Math.abs(newNeeded - activeExpansionDelta) > 4) {
+                    // Remove old displacement
+                    shiftDownstreamElements(-activeExpansionDelta, fracturePoint);
+                    shiftRulerMarks(-activeExpansionDelta, fracturePoint);
+                    // Apply new displacement
+                    activeExpansionDelta = newNeeded;
+                    if (newNeeded > 0) {
+                        shiftDownstreamElements(newNeeded, fracturePoint);
+                        shiftRulerMarks(newNeeded, fracturePoint);
+                    }
+                    setTimeout(function () { redrawConnectors(); }, 500);
+                }
+            }
+        }
+    });
+    cardResizeObserver.observe(card);
+
+    setTimeout(function () { redrawConnectors(); }, 500);
+}
+
+function shiftDownstreamElements(deltaPx, fracturePoint) {
+    var container = document.getElementById('eventsContainer');
+    var cards = container.querySelectorAll('.event-card, .note-card, .period-strip');
+    var nodes = container.querySelectorAll('.event-node');
+    // Build map: eventId -> node top, so we can check if a card's dot is below the fracture
+    var nodeTopMap = {};
+    for (var m = 0; m < nodes.length; m++) {
+        var nd = nodes[m];
+        var nId = nd.dataset.eventId;
+        if (nId) {
+            nodeTopMap[nId] = parseFloat(nd.style.top) || 0;
+        }
+    }
+    for (var k = 0; k < cards.length; k++) {
+        var el = cards[k];
+        var elTop = parseFloat(el.style.top) || 0;
+        var elId = el.dataset.eventId;
+        var isPeriod = el.classList.contains('period-strip');
+        // Check if this card's corresponding node is below the fracture point
+        var cardNodeBelow = elId && nodeTopMap.hasOwnProperty(elId) && nodeTopMap[elId] > fracturePoint;
+        if (isPeriod) {
+            var elHeight = parseFloat(el.style.height) || 0;
+            var elBottom = elTop + elHeight;
+            // Period strip straddling the fracture point: stretch its height
+            if (elTop <= fracturePoint && elBottom > fracturePoint) {
+                el.style.height = (elHeight + deltaPx) + 'px';
+            }
+            // Period strip fully below fracture point: shift top and keep height
+            else if (elTop > fracturePoint) {
+                el.style.top = (elTop + deltaPx) + 'px';
+            }
+        } else {
+            // Event cards and note cards: shift if below fracture point OR if dot is below
+            if (elTop > fracturePoint || cardNodeBelow) {
+                el.style.top = (elTop + deltaPx) + 'px';
+            }
+        }
+    }
+    for (var m = 0; m < nodes.length; m++) {
+        var node = nodes[m];
+        var nodeTop = parseFloat(node.style.top) || 0;
+        if (nodeTop > fracturePoint) {
+            node.style.top = (nodeTop + deltaPx) + 'px';
+        }
+    }
+}
+
+function shiftRulerMarks(deltaPx, fracturePoint) {
+    var rulerContainer = document.getElementById('rulerMarks');
+    var marks = rulerContainer.querySelectorAll('.year-mark, .century-label, .decade-label');
+    for (var i = 0; i < marks.length; i++) {
+        var mark = marks[i];
+        var mTop = parseFloat(mark.style.top) || 0;
+        if (mTop > fracturePoint) {
+            mark.style.top = (mTop + deltaPx) + 'px';
+        }
+    }
+}
+
+function redrawConnectors() {
+    var svg = document.getElementById('linksSvg');
+    if (!svg) return;
+    // Re-draw connector lines
+    var events = getEvents();
+    var categories = getCategories();
+    if (events.length === 0) return;
+    var layout = computeFullLayout(getEvents(), categories, {});
+    var sortedEvents = layout.sortedEvents;
+    var categorySides = layout.categorySides;
+    var eventSides = layout.eventSides;
+    var eventPositions = layout.eventPositions;
+    // Adjust eventPositions for active displacement
+    if (activeExpansionDelta > 0 && activeExpansionFracturePoint !== null) {
+        Object.keys(eventPositions).forEach(function (eid) {
+            if (eventPositions[eid] > activeExpansionFracturePoint) {
+                eventPositions[eid] += activeExpansionDelta;
+            }
+        });
+    }
+    drawCategoryConnectors(sortedEvents, categorySides, eventSides, eventPositions, categories);
+    drawLinkedEventLines(sortedEvents, eventPositions, eventSides, categories);
+    if (highlightedCategoryId) {
+        highlightCategoryConnector(highlightedCategoryId, false);
+    }
+}
+
+// ================================================================
+
 function toggleExpand(eventId) {
+    // Remove any previous expansion displacement
+    clearExpansionDisplacement();
+
     var ruler = document.getElementById('timelineRuler');
     if (expandedEventId && expandedEventId !== eventId) {
         var prevCard = document.querySelector('.event-card[data-event-id="' + expandedEventId + '"], .note-card[data-event-id="' + expandedEventId + '"]');
         if (prevCard) {
+            setCardInnerTabindex(prevCard, false);
             prevCard.classList.add('collapsing');
             prevCard.classList.remove('expanded');
             prevCard.setAttribute('aria-expanded', 'false');
@@ -432,6 +761,7 @@ function toggleExpand(eventId) {
     var card = document.querySelector('.event-card[data-event-id="' + eventId + '"], .note-card[data-event-id="' + eventId + '"]');
     if (!card) return;
     if (expandedEventId === eventId) {
+        setCardInnerTabindex(card, false);
         card.classList.add('collapsing');
         card.classList.remove('expanded');
         card.setAttribute('aria-expanded', 'false');
@@ -448,18 +778,23 @@ function toggleExpand(eventId) {
         expandedEventId = eventId;
         var thisNode = document.querySelector('.event-node[data-event-id="' + eventId + '"]');
         if (thisNode) { thisNode.classList.add('expanded-node'); }
+        setCardInnerTabindex(card, true);
         card.focus({ preventScroll: true });
+        // Measure and apply displacement after expansion transition starts
         setTimeout(function () {
             ensureCardVisible(card, ruler);
+            measureAndApplyDisplacement(card, ruler);
         }, 550);
     }
     if (highlightedCategoryId) { highlightCategoryConnector(highlightedCategoryId, false); }
 }
 
 function collapseAndFocus(eventId) {
+    clearExpansionDisplacement();
     var ruler = document.getElementById('timelineRuler');
     var card = document.querySelector('.event-card[data-event-id="' + eventId + '"], .note-card[data-event-id="' + eventId + '"]');
     if (card) {
+        setCardInnerTabindex(card, false);
         card.classList.add('collapsing');
         card.classList.remove('expanded');
         card.setAttribute('aria-expanded', 'false');

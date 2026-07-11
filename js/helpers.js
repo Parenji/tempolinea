@@ -279,3 +279,43 @@ function closeImageLightbox() {
     const lb = $('imageLightbox');
     if (lb) lb.classList.remove('open');
 }
+
+// ================================================================
+//  FOCUS MANAGEMENT (used by render.js and modals.js)
+// ================================================================
+function getFocusableElements(container) {
+    return Array.from(container.querySelectorAll(
+        'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )).filter(function(el) {
+        if (el.hasAttribute('disabled')) return false;
+        if (el.offsetParent === null) return false;
+        // Exclude elements inside a category-form-section that is not open
+        var formSection = el.closest ? el.closest('.category-form-section:not(.open)') : null;
+        if (formSection) return false;
+        return true;
+    });
+}
+
+function trapFocus(e, containerSelector) {
+    var container = document.querySelector(containerSelector);
+    if (!container) return;
+    var focusable = getFocusableElements(container);
+    if (focusable.length === 0) return;
+
+    var first = focusable[0];
+    var last = focusable[focusable.length - 1];
+
+    if (e.key === 'Tab') {
+        if (e.shiftKey) {
+            if (document.activeElement === first) {
+                e.preventDefault();
+                last.focus();
+            }
+        } else {
+            if (document.activeElement === last) {
+                e.preventDefault();
+                first.focus();
+            }
+        }
+    }
+}

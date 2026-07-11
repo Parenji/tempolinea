@@ -805,6 +805,7 @@ function updateColorPicker() {
 var categoryModalOrigin = null; // 'fab' | 'edit_timeline' | null
 
 function openCategoryModal(openForm) {
+    lastFocusedElement = document.activeElement;
     // Save a deep copy of current state to support "cancel" rollback
     _originalCategoriesSnapshot = getCategories().map(function(c) { return Object.assign({}, c); });
     _originalEventsSnapshot = getEvents().map(function(e) { return Object.assign({}, e); });
@@ -847,15 +848,30 @@ function closeCategoryModal() {
     selectionMode = false;
     closeCategoryForm();
     hideMergeForm();
+    // Restore focus
+    if (lastFocusedElement) {
+        var el = lastFocusedElement;
+        lastFocusedElement = null;
+        setTimeout(function () { if (el && typeof el.focus === 'function') el.focus(); }, 100);
+    }
     if (wasFromEditTimeline) {
         editTimeline();
     }
+}
+
+function setFormSectionTabindex(formSection, enabled) {
+    var idx = enabled ? '0' : '-1';
+    var focusable = formSection.querySelectorAll('input, select, textarea, button');
+    focusable.forEach(function(el) {
+        el.setAttribute('tabindex', idx);
+    });
 }
 
 function openCategoryForm() {
     const section = document.getElementById('categoryFormSection');
     const header = document.getElementById('categoryListHeader');
     section.classList.add('open');
+    setFormSectionTabindex(section, true);
     if (header) header.style.display = 'none';
 
     editingCategoryId = null;
@@ -881,6 +897,7 @@ function closeCategoryForm() {
     const section = document.getElementById('categoryFormSection');
     const header = document.getElementById('categoryListHeader');
     section.classList.remove('open');
+    setFormSectionTabindex(section, false);
     if (header) header.style.display = '';
     editingCategoryId = null;
     splitCategoryId = null;

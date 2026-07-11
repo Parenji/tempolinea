@@ -442,6 +442,7 @@ body {
     left: 50%;
     transform: translateX(-50%);
     background: var(--ruler-line);
+    transition: top 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .year-mark.year { width: 8px; height: 1px; }
@@ -458,6 +459,7 @@ body {
     white-space: nowrap;
     pointer-events: none;
     user-select: none;
+    transition: top 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .century-label.left-side {
@@ -481,6 +483,7 @@ body {
     white-space: nowrap;
     pointer-events: none;
     user-select: none;
+    transition: top 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .decade-label.left-side {
@@ -634,7 +637,8 @@ body {
     border-radius: 50%;
     border: 2px solid rgba(255, 255, 255, 0.7);
     z-index: 5;
-    transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    transition: top 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
         box-shadow 0.3s;
     box-shadow: 0 0 6px rgba(0, 0, 0, 0.3);
 }
@@ -675,7 +679,9 @@ mark.search-highlight {
     width: clamp(40px, 12vw, 250px);
     cursor: pointer;
     z-index: 8;
-    transition: opacity 0.2s, box-shadow 0.2s, background 0.3s;
+    transition: top 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        height 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        opacity 0.2s, box-shadow 0.2s, background 0.3s;
     display: flex;
     align-items: flex-start;
     justify-content: center;
@@ -960,7 +966,8 @@ mark.search-highlight {
         0 2px 6px rgba(0, 0, 0, 0.35),
         0 6px 20px rgba(0, 0, 0, 0.25),
         0 1px 0 rgba(255, 255, 255, 0.4) inset;
-    transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s,
+    transition: top 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        transform 0.25s ease, box-shadow 0.25s ease, background 0.25s,
         width 0.25s ease, margin-left 0.25s ease;
     font-family: 'Georgia', 'Times New Roman', serif;
     overflow: visible;
@@ -3007,6 +3014,17 @@ mark.search-highlight {
 .settings-toggle-link {
     cursor: pointer;
     transition: opacity 0.15s;
+    background: none;
+    border: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    padding: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
 }
 
 .settings-toggle-link:hover {

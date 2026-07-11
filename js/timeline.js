@@ -29,12 +29,18 @@ function switchTimeline(timelineId) {
 }
 
 function addTimeline() {
+    lastFocusedElement = document.activeElement;
     timelineModalMode = 'add';
     document.getElementById('timelineModalTitle').textContent = t('timeline_new_title');
     document.getElementById('timelineName').value = '';
     var actions = document.getElementById('timelineEditActions');
     if (actions) actions.style.display = 'none';
     document.getElementById('timelineModal').classList.add('open');
+    // Focus the timeline name input
+    setTimeout(function() {
+        var input = document.getElementById('timelineName');
+        if (input) input.focus();
+    }, 100);
 }
 
 function renameTimeline() {
@@ -44,6 +50,7 @@ function renameTimeline() {
 function editTimeline() {
     const timeline = getCurrentTimeline();
     if (!timeline) return;
+    lastFocusedElement = document.activeElement;
     timelineModalMode = 'edit';
     document.getElementById('timelineModalTitle').textContent = t('timeline_edit_title');
     document.getElementById('timelineName').value = timeline.name;
@@ -51,6 +58,11 @@ function editTimeline() {
     if (actions) actions.style.display = 'block';
     window._editingSegments = null;
     document.getElementById('timelineModal').classList.add('open');
+    // Focus the timeline name input
+    setTimeout(function() {
+        var input = document.getElementById('timelineName');
+        if (input) { input.focus(); input.select(); }
+    }, 100);
 }
 
 function deleteTimeline() {
@@ -71,6 +83,11 @@ function deleteTimeline() {
 
 function closeTimelineModal() {
     document.getElementById('timelineModal').classList.remove('open');
+    if (lastFocusedElement) {
+        var el = lastFocusedElement;
+        lastFocusedElement = null;
+        setTimeout(function () { if (el && typeof el.focus === 'function') el.focus(); }, 100);
+    }
 }
 
 function saveTimeline() {

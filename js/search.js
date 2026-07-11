@@ -36,6 +36,9 @@ function renderPills() {
     var orderedCategories = activePills.concat(inactivePills);
 
     container.innerHTML = '';
+    container.setAttribute('role', 'radiogroup');
+    container.setAttribute('aria-label', t('pill_row_aria_label') || 'Filtri per categoria');
+
     const allPill = document.createElement('span');
     allPill.className = 'pill' + (activeCategoryFilters.length === 0 ? ' active' : '');
     allPill.textContent = t('all');
@@ -51,7 +54,6 @@ function renderPills() {
         renderEvents();
         searchEvents();
     };
-    allPill.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); allPill.click(); } });
     container.appendChild(allPill);
 
     orderedCategories.forEach(function (category) {
@@ -60,7 +62,7 @@ function renderPills() {
         pill.className = 'pill' + (isActive ? ' active' : '');
         pill.textContent = category.name;
         pill.dataset.categoryId = category.id;
-        pill.setAttribute('tabindex', '0');
+        pill.setAttribute('tabindex', '-1'); // roving: only one tabindex=0 at a time
         pill.setAttribute('role', 'radio');
         pill.setAttribute('aria-checked', isActive ? 'true' : 'false');
         pill.setAttribute('aria-label', t('filter_category_aria', { name: category.name }));
@@ -78,8 +80,32 @@ function renderPills() {
             if (idx === -1) { highlightCategoryConnector(category.id, false); }
             searchEvents();
         };
-        pill.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pill.click(); } });
         container.appendChild(pill);
+    });
+
+    // Roving tabindex: only the focused pill has tabindex=0
+    container.addEventListener('keydown', function(e) {
+        var pills = Array.from(container.querySelectorAll('.pill'));
+        if (pills.length === 0) return;
+        var currentIdx = pills.indexOf(document.activeElement);
+        if (currentIdx === -1) return;
+
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            var nextIdx = (currentIdx + 1) % pills.length;
+            pills[currentIdx].setAttribute('tabindex', '-1');
+            pills[nextIdx].setAttribute('tabindex', '0');
+            pills[nextIdx].focus();
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            var prevIdx = (currentIdx - 1 + pills.length) % pills.length;
+            pills[currentIdx].setAttribute('tabindex', '-1');
+            pills[prevIdx].setAttribute('tabindex', '0');
+            pills[prevIdx].focus();
+        } else if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            document.activeElement.click();
+        }
     });
 
     var newPills = container.querySelectorAll('.pill:not([data-all-pill])');

@@ -106,6 +106,45 @@ function switchFormTab(type) {
 
 var lastFocusedElement = null;
 
+// NOTE: getFocusableElements and trapFocus are now defined in helpers.js
+
+function openModalWithFocus(modalId, focusSelector) {
+    lastFocusedElement = document.activeElement;
+    var overlay = document.getElementById(modalId);
+    if (!overlay) return;
+    overlay.classList.add('open');
+    var modal = overlay.querySelector('.modal');
+    if (modal) modal.scrollTop = 0;
+
+    // Focus first focusable element or specified selector
+    setTimeout(function() {
+        var target;
+        if (focusSelector) {
+            target = overlay.querySelector(focusSelector);
+        }
+        if (!target) {
+            var focusable = getFocusableElements(overlay);
+            if (focusable.length > 0) target = focusable[0];
+        }
+        if (target && typeof target.focus === 'function') target.focus();
+    }, 100);
+}
+
+function closeModalWithFocus(modalId, overlayCloseFn) {
+    var overlay = document.getElementById(modalId);
+    if (!overlay) return;
+    overlay.classList.remove('open');
+    // Restore focus
+    if (lastFocusedElement) {
+        var el = lastFocusedElement;
+        lastFocusedElement = null;
+        setTimeout(function () {
+            if (el && typeof el.focus === 'function') el.focus();
+        }, 100);
+    }
+    if (typeof overlayCloseFn === 'function') overlayCloseFn();
+}
+
 function openModal(opts) {
     if (!opts) opts = {};
     // Hide quick create if it's visible (e.g. user pressed N shortcut)
@@ -140,6 +179,11 @@ function openModal(opts) {
         }
     }
     switchFormTab(type);
+    // Focus first focusable element
+    setTimeout(function() {
+        var focusable = getFocusableElements(document.getElementById('eventModal'));
+        if (focusable.length > 0) focusable[0].focus();
+    }, 100);
 }
 
 function closeModal() {
@@ -163,11 +207,17 @@ function confirmDeleteAll() {
         showToast(t('toast_no_data_to_delete'), 'info');
         return;
     }
+    lastFocusedElement = document.activeElement;
     document.getElementById('deleteConfirmModal').classList.add('open');
 }
 
 function closeDeleteModal() {
     document.getElementById('deleteConfirmModal').classList.remove('open');
+    if (lastFocusedElement) {
+        var el = lastFocusedElement;
+        lastFocusedElement = null;
+        setTimeout(function () { if (el && typeof el.focus === 'function') el.focus(); }, 100);
+    }
 }
 
 function deleteWithoutExport() {
@@ -214,6 +264,7 @@ function toggleMobileMenu() {
 function openSettingsModal() {
     var modal = document.getElementById('settingsModal');
     if (!modal) return;
+    lastFocusedElement = document.activeElement;
     var checkbox = document.getElementById('settingShowPills');
     if (checkbox) {
         var showPills = localStorage.getItem('timeline_showPills');
@@ -228,11 +279,21 @@ function openSettingsModal() {
     modal.addEventListener('click', function handler(e) {
         if (e.target === modal) { closeSettingsModal(); modal.removeEventListener('click', handler); }
     });
+    // Focus the first focusable element
+    setTimeout(function() {
+        var focusable = getFocusableElements(modal);
+        if (focusable.length > 0) focusable[0].focus();
+    }, 100);
 }
 
 function closeSettingsModal() {
     var modal = document.getElementById('settingsModal');
     if (modal) modal.classList.remove('open');
+    if (lastFocusedElement) {
+        var el = lastFocusedElement;
+        lastFocusedElement = null;
+        setTimeout(function () { if (el && typeof el.focus === 'function') el.focus(); }, 100);
+    }
 }
 
 function savePillSetting() {
@@ -590,9 +651,15 @@ function updateSegmentsCountBadge(count) {
 function openSegmentsModal() {
     var timeline = getCurrentTimeline();
     if (!timeline) return;
+    lastFocusedElement = document.activeElement;
     window._editingSegments = timeline.segments.map(function(s) { return Object.assign({}, s); });
     renderSegmentsFromArray(window._editingSegments);
     document.getElementById('segmentsModal').classList.add('open');
+    // Focus the first focusable element
+    setTimeout(function() {
+        var focusable = getFocusableElements(document.getElementById('segmentsModal'));
+        if (focusable.length > 0) focusable[0].focus();
+    }, 100);
 }
 
 function closeSegmentsModal(save) {
@@ -609,6 +676,11 @@ function closeSegmentsModal(save) {
         }
     }
     document.getElementById('segmentsModal').classList.remove('open');
+    if (lastFocusedElement) {
+        var el = lastFocusedElement;
+        lastFocusedElement = null;
+        setTimeout(function () { if (el && typeof el.focus === 'function') el.focus(); }, 100);
+    }
 }
 
 function openCategoryModalFromEdit() {
@@ -633,3 +705,51 @@ function resetToSingleSegmentUI() {
     renderSegmentsFromArray([singleSeg]);
     showToast(t('toast_segments_reset'), 'info');
 }
+
+// ================================================================
+//  GLOBAL FOCUS TRAP + CLICK-OUTSIDE FOR ALL MODALS
+// ================================================================
+document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Tab') return;
+    // Find which modal is open (check in priority order)
+    var openModalSelectors = [
+        '#eventModal.open',
+        '#categoryModal.open',
+        '#deleteConfirmModal.open',
+        '#segmentsModal.open',
+        '#timelineModal.open',
+        '#importChoiceModal.open',
+        '#settingsModal.open'
+    ];
+    for (var i = 0; i < openModalSelectors.length; i++) {
+        var overlay = document.querySelector(openModalSelectors[i]);
+        if (overlay) {
+            trapFocus(e, openModalSelectors[i].replace('.open', ''));
+            return;
+        }
+    }
+    // Also check shortcuts hint
+    var hint = document.getElementById('shortcutsHint');
+    if (hint && hint.classList.contains('open')) {
+        trapFocus(e, '#shortcutsHint');
+    }
+});
+
+// Click-outside to close for modals that support it
+document.addEventListener('click', function(e) {
+    var modalIds = ['eventModal', 'categoryModal', 'deleteConfirmModal', 'segmentsModal', 'timelineModal', 'importChoiceModal', 'settingsModal'];
+    for (var i = 0; i < modalIds.length; i++) {
+        var overlay = document.getElementById(modalIds[i]);
+        if (overlay && overlay.classList.contains('open') && e.target === overlay) {
+            // Close the modal
+            if (modalIds[i] === 'eventModal') closeModal();
+            else if (modalIds[i] === 'categoryModal') closeCategoryModal();
+            else if (modalIds[i] === 'deleteConfirmModal') closeDeleteModal();
+            else if (modalIds[i] === 'segmentsModal') closeSegmentsModal(false);
+            else if (modalIds[i] === 'timelineModal') closeTimelineModal();
+            else if (modalIds[i] === 'importChoiceModal') closeImportChoiceModal();
+            else if (modalIds[i] === 'settingsModal') closeSettingsModal();
+            break;
+        }
+    }
+});

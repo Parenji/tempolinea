@@ -76,6 +76,10 @@ let currentFormType = 'event';
 let pendingImportData = null;
 let highlightedCategoryId = null;
 let scrollRestricted = true;
+let activeExpansionDelta = 0;
+let activeExpansionFracturePoint = null;
+let activeExpansionCard = null;
+let cardResizeObserver = null;
 
 function loadState() {
     const stored = localStorage.getItem(STORAGE_KEY);
