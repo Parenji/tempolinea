@@ -1,0 +1,64 @@
+/* Stili di base e classi comuni. I componenti Svelte hanno i loro stili; qui solo ciò che serve ovunque. */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: 1.45;
+}
+
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.15; margin: 0; text-wrap: balance; }
+h1 { font-size: var(--h1); }
+h2 { font-size: var(--h2); }
+h3 { font-size: 1.15em; }
+p { margin: 0; }
+a { color: var(--accent); text-underline-offset: 3px; }
+
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+.eyebrow {
+  font-size: 14px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--highlight); margin: 0;
+}
+.muted { color: var(--muted); }
+.num { font-variant-numeric: tabular-nums; }
+
+/* sfondo a quadretti, per le aree di lavoro */
+.squared {
+  background-color: var(--panel);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* figure SVG: le stesse classi in tutti gli strumenti di geometria */
+.fig-grid { stroke: var(--grid); stroke-width: 1; }
+.fig-shape { fill: color-mix(in srgb, var(--accent) 14%, transparent); stroke: none; }
+.fig-side { stroke: var(--ink); stroke-width: calc(5px * var(--stroke)); stroke-linecap: round; fill: none; }
+.fig-side.a { stroke: var(--highlight); stroke-width: calc(8px * var(--stroke)); }
+.fig-side.b { stroke: var(--accent); stroke-width: calc(8px * var(--stroke)); }
+.fig-dash { stroke: var(--muted); stroke-width: calc(3px * var(--stroke)); stroke-dasharray: 12 9; fill: none; }
+.fig-arc { fill: none; stroke: var(--highlight); stroke-width: calc(3px * var(--stroke)); }
+.fig-label { fill: var(--ink); font: 700 23px var(--font-body); }
+.fig-vertex { fill: var(--ink); font: 600 30px var(--font-display); }
+
+.visually-hidden {
+  position: absolute !important; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* stampa: bianco e nero leggibile, niente controlli */
+@media print {
+  :root { --paper: #fff; --panel: #fff; --ink: #000; --muted: #333; --line: #000; --grid: #bbb; color-scheme: light; }
+  .no-print { display: none !important; }
+  body { font-size: 11.5pt; }
+}

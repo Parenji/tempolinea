@@ -1,0 +1,26 @@
+{
+  "timeline": {
+    "id": "sample_1",
+    "name": "Campione di compatibilità",
+    "events": [
+      { "id": "1781515233599", "startYear": 827, "endYear": null, "title": "Evento con null e linkedEventId nullo", "description": "Testo **grassetto** e *corsivo*", "linkedEventId": null, "type": "event", "isPeriod": false, "categoryIds": ["c1"] },
+      { "id": 42, "startYear": 1492, "startMonth": 10, "startDay": 12, "endYear": null, "endMonth": null, "endDay": null, "title": "Id numerico, data completa", "description": "", "type": "event", "isPeriod": false, "categoryIds": ["c1", "c2"], "linkedEvents": [{ "eventId": "1781515233599", "side": "right" }] },
+      { "id": "e3", "startYear": 1492, "startMonth": 3, "title": "Stesso anno, mese precedente", "description": "", "categoryId": "c2" },
+      { "id": "e4", "startYear": -44, "startMonth": 3, "startDay": 15, "title": "Anno a.C.", "description": "", "categoryId": 7 },
+      { "id": "e5", "startYear": 79, "title": "Anno a due cifre", "description": "", "type": "event", "categoryIds": [], "linkedEventId": "e4" },
+      { "id": "e6", "startYear": 1300, "endYear": 1500, "title": "Periodo", "description": "", "type": "event", "isPeriod": true, "categoryIds": ["c2"], "imageUrl": "https://example.org/a.jpg" },
+      { "id": "e7", "startYear": 1400, "title": "Appunto", "description": "nota", "type": "note", "imageUrl": "" },
+      { "id": "e8", "startYear": 1000, "title": "Collegamenti come stringhe", "description": "", "categoryIds": ["c1"], "linkedEvents": ["e6", { "eventId": 42 }] }
+    ],
+    "categories": [
+      { "id": "c1", "name": "Politica", "color": "#ef4444", "showConnectors": true, "preferredSide": "left" },
+      { "id": "c2", "name": "Cultura", "color": "#3b82f6" },
+      { "id": 7, "name": "Id numerico", "color": "#10b981", "showConnectors": false, "preferredSide": "auto" }
+    ],
+    "segments": [
+      { "start": -1000, "end": 1000, "density": 5, "rulerStep": 10, "rulerLabel": "decade" },
+      { "start": 1000, "end": 2100, "density": 20, "rulerStep": 1, "rulerLabel": "year" }
+    ]
+  },
+  "exportDate": "2026-09-29T21:44:35.993Z"
+}

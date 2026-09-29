@@ -1,0 +1,105 @@
+/* ================================================================
+   QUADERNO: valori di base comuni a tutti gli strumenti.
+   Nati dal "Laboratorio dei quadrilateri": carta a quadretti, inchiostro blu scuro,
+   Fredoka per i titoli, Nunito per il testo.
+   Ogni strumento sceglie la sua materia con data-subject sull'<html>: --accent la segue.
+   ================================================================ */
+:root {
+  /* superfici e testo */
+  --paper: #F5F8FC;
+  --panel: #FFFFFF;
+  --ink: #1F2A44;
+  --muted: #4E5A73;
+  --grid: #D8E2EE;
+  --line: #CBD7E5;
+  --chip: #EAF1F7;
+  --focus: #C9601A;
+
+  /* stati */
+  --good: #1F6B40;   --good-bg: #DDF0E4;
+  --bad: #A3302A;    --bad-bg: #F8E1DF;
+  --off-bg: #ECEFF4;
+
+  /* materie */
+  --mat: #2F6FB0;    --mat-soft: #E3EDF8;
+  --sto: #B4561A;    --sto-soft: #F8E9DD;
+  --sci: #2E7D4F;    --sci-soft: #E0F1E7;
+  --geo: #0F7C86;    --geo-soft: #DDF1F2;
+  --ita: #6B4FB3;    --ita-soft: #ECE6F7;
+  --accent: var(--mat);
+  --accent-soft: var(--mat-soft);
+  --highlight: #C9601A; /* secondo colore delle figure (lati paralleli, archi) */
+
+  /* testo */
+  --font-display: 'Fredoka', 'Trebuchet MS', Arial, sans-serif;
+  --font-body: 'Nunito Variable', 'Nunito', 'Segoe UI', Arial, sans-serif;
+  --text-base: 18px;
+  --text-sm: 0.89em;
+  --text-lg: 1.15em;
+  --h1: clamp(26px, 3vw, 38px);
+  --h2: clamp(21px, 2.2vw, 26px);
+
+  /* forma */
+  --radius: 20px;
+  --radius-sm: 12px;
+  --border: 2px;
+  --stroke: 1;            /* moltiplicatore per gli spessori delle figure SVG */
+  --target: 44px;         /* area minima toccabile (iPad) */
+  --gap: 16px;
+
+  color-scheme: light;
+}
+
+:root[data-subject="storia"]     { --accent: var(--sto); --accent-soft: var(--sto-soft); }
+:root[data-subject="scienze"]    { --accent: var(--sci); --accent-soft: var(--sci-soft); }
+:root[data-subject="geografia"]  { --accent: var(--geo); --accent-soft: var(--geo-soft); }
+:root[data-subject="italiano"]   { --accent: var(--ita); --accent-soft: var(--ita-soft); }
+
+/* ---------- tema scuro ---------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #111928; --panel: #192338; --ink: #E7EDF6; --muted: #A9B6CA;
+    --grid: #243149; --line: #33425E; --chip: #22304A; --focus: #F2A65A;
+    --good: #8FD8A9; --good-bg: #1D3B2B; --bad: #F2A09A; --bad-bg: #472321; --off-bg: #243049;
+    --mat: #82B4EA; --mat-soft: #1E3050;
+    --sto: #EDA06A; --sto-soft: #3D2A1E;
+    --sci: #7FCF9E; --sci-soft: #1C3829;
+    --geo: #6FCBD2; --geo-soft: #173739;
+    --ita: #B7A2EE; --ita-soft: #2D2548;
+    --highlight: #F2A65A;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #111928; --panel: #192338; --ink: #E7EDF6; --muted: #A9B6CA;
+  --grid: #243149; --line: #33425E; --chip: #22304A; --focus: #F2A65A;
+  --good: #8FD8A9; --good-bg: #1D3B2B; --bad: #F2A09A; --bad-bg: #472321; --off-bg: #243049;
+  --mat: #82B4EA; --mat-soft: #1E3050;
+  --sto: #EDA06A; --sto-soft: #3D2A1E;
+  --sci: #7FCF9E; --sci-soft: #1C3829;
+  --geo: #6FCBD2; --geo-soft: #173739;
+  --ita: #B7A2EE; --ita-soft: #2D2548;
+  --highlight: #F2A65A;
+  color-scheme: dark;
+}
+
+/* ---------- modalità proiettore ----------
+   I proiettori sbiadiscono i colori chiari e le linee sottili: testo più grande,
+   bordi e tratti più spessi, grigi più scuri. Vale sia in chiaro sia in scuro. */
+:root[data-projector] {
+  --text-base: 22px;
+  --border: 3px;
+  --stroke: 1.5;
+  --target: 56px;
+}
+:root[data-projector]:not([data-theme="dark"]) {
+  --paper: #FFFFFF;
+  --muted: #2F3B55;
+  --grid: #B9C8DA;
+  --line: #8FA3BD;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-projector]:not([data-theme="light"]) {
+    --paper: #000000; --panel: #111827; --muted: #CBD5E3; --grid: #334766; --line: #5A6F92;
+  }
+}

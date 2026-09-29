@@ -1,0 +1,7 @@
+node_modules/
+dist/
+playwright-report/
+test-results/
+.DS_Store
+# dati reali dell'utente per i test di compatibilità: il repo è pubblico
+app/tests/fixtures/private/
