@@ -15,6 +15,7 @@ Pubblicata su Vercel (`tempolinea.vercel.app`). Usata da computer, iPad della sc
 ## Regole
 
 - **I file JSON della timeline devono continuare a funzionare.** Il contratto è in `app/tests/compat.test.ts`: la normalizzazione nuova viene confrontata con quella della v1 (`js/helpers.js`) sugli stessi file. Mettere i file reali dell'utente in `app/tests/fixtures/private/` (ignorata da git: il repo è pubblico).
+- Timeline: le posizioni si calcolano solo in `engine/layout.ts` (funzione pura, testata in `tests/layout.test.ts`); i componenti disegnano e basta. Le modifiche ai dati sono funzioni in `data/ops.ts` chiamate dentro `edit()` dello store (annulla/ripeti + salvataggio): non modificare la timeline in altri modi.
 - Date storiche: mai `new Date(anno, …)` (gli anni 0–99 diventano 1900–1999). Usare `src/tools/timeline/data/dates.ts`.
 - Pensare a iPad e proiettore: niente funzioni solo al passaggio del mouse, aree toccabili ≥ `var(--target)`, controllare la modalità proiettore e il tema scuro.
 - Testi dell'interfaccia in italiano.

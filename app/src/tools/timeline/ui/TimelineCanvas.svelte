@@ -12,8 +12,12 @@
     zoom: number;
     /** categoria evidenziata (le altre si attenuano) */
     highlight: string | null;
+    onedit: (id: string) => void;
+    oncreate: (year: number) => void;
   }
-  let { timeline, zoom, highlight = $bindable() }: Props = $props();
+  let { timeline, zoom, highlight = $bindable(), onedit, oncreate }: Props = $props();
+  let flashId = $state<string | null>(null);
+  let quick = $state<{ y: number; year: number } | null>(null);
 
   let width = $state(0);
   let heights: Record<string, number> = $state({});
@@ -96,12 +100,50 @@
     window.scrollTo({ top: root.getBoundingClientRect().top + scrollY + c.top - innerHeight / 3, behavior: 'smooth' });
   }
 
+  /** Porta in vista un elemento appena salvato e lo fa lampeggiare. */
+  export function reveal(id: string) {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const c = layout?.cards.find((c) => c.id === id);
+      const p = layout?.periods.find((p) => p.id === id);
+      const y = c?.top ?? p?.top;
+      if (y == null || !root) return;
+      window.scrollTo({ top: root.getBoundingClientRect().top + scrollY + y - innerHeight / 3, behavior: 'smooth' });
+      flashId = id;
+      setTimeout(() => { if (flashId === id) flashId = null; }, 1700);
+    }));
+  }
+
+  /** Anno corrispondente a una y del contenitore (interpolando tra le tacche del righello). */
+  function yearAtY(y: number): number | null {
+    const t = layout?.ruler;
+    if (!t?.length) return null;
+    if (y <= t[0].y) return t[0].year;
+    for (let i = 1; i < t.length; i++) {
+      if (y <= t[i].y) {
+        const a = t[i - 1], b = t[i];
+        return Math.round(a.year + ((y - a.y) / Math.max(1, b.y - a.y)) * (b.year - a.year));
+      }
+    }
+    return t[t.length - 1].year;
+  }
+
+  // tocco su uno spazio vuoto: proposta di creare un evento in quel punto
+  function onCanvasClick(e: MouseEvent) {
+    const target = e.target as Element;
+    if (target.closest('.card, .period, .quick')) return;
+    if (quick) return void (quick = null);
+    const y = e.clientY - root.getBoundingClientRect().top;
+    const year = yearAtY(y);
+    if (year != null) quick = { y, year };
+  }
+
   const period = $derived(openPeriod ? eventById.get(openPeriod) : null);
 </script>
 
 <svelte:window onkeydown={(e) => { if (e.key === 'Escape') { expandedId = null; openPeriod = null; } }} />
 
-<div class="canvas" class:narrow={layout?.narrow} bind:this={root} bind:clientWidth={width} style:height="{layout?.height ?? 600}px">
+<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions (per la tastiera c'è il tasto N e il pulsante +) -->
+<div class="canvas" class:narrow={layout?.narrow} bind:this={root} bind:clientWidth={width} style:height="{layout?.height ?? 600}px" onclick={onCanvasClick}>
   {#if layout}
     <svg class="lines" width={layout.width} height={layout.height} aria-hidden="true">
       <defs>
@@ -172,6 +214,18 @@
       {/each}
     </svg>
 
+    {#if quick}
+      <button
+        type="button"
+        class="quick"
+        style:top="{quick.y}px"
+        style:left="{layout.axisX}px"
+        onclick={() => { const y = quick!.year; quick = null; oncreate(y); }}
+      >
+        + Nuovo evento nel {quick.year < 0 ? `${-quick.year} a.C.` : quick.year}
+      </button>
+    {/if}
+
     {#each layout.periods as p (p.id)}
       {@const e = eventById.get(p.id)}
       <button
@@ -179,6 +233,7 @@
         class="period"
         class:off={!inHighlight(e)}
         class:open={openPeriod === p.id}
+        class:flash={flashId === p.id}
         style:left="{p.x}px"
         style:top="{p.top}px"
         style:width="{p.width}px"
@@ -199,6 +254,8 @@
         categories={timeline.categories}
         expanded={expandedId === c.id}
         dimmed={!inHighlight(e)}
+        flash={flashId === c.id}
+        onedit={() => onedit(c.id)}
         bind:height={heights[c.id]}
         ontoggle={() => toggle(c.id)}
         oncategory={(id) => (highlight = highlight === id ? null : id)}
@@ -218,6 +275,7 @@
     </p>
     {#if period.imageUrl}<img src={period.imageUrl} alt={period.title ?? ''} loading="lazy" />{/if}
     {#if period.description}<p>{@html formatDescription(period.description)}</p>{/if}
+    <div><button type="button" class="edit" onclick={() => { const id = openPeriod!; openPeriod = null; onedit(id); }}>Modifica</button></div>
   </aside>
 {/if}
 
@@ -271,6 +329,19 @@
     background: var(--panel); border: var(--border) solid var(--line); border-radius: var(--radius);
     padding: 16px 20px; display: flex; flex-direction: column; gap: 8px;
     box-shadow: 0 12px 40px rgb(0 0 0 / 0.25);
+  }
+  .quick {
+    position: absolute; z-index: 6; transform: translate(-50%, -50%);
+    font: 800 15px var(--font-body); color: var(--panel); background: var(--accent);
+    border: 0; border-radius: 999px; padding: 10px 18px; min-height: var(--target); cursor: pointer;
+    box-shadow: 0 6px 20px rgb(0 0 0 / 0.25); white-space: nowrap;
+  }
+  .narrow .quick { transform: translate(-12px, -50%); }
+  .period.flash { animation: pflash 1.6s ease-out; }
+  @keyframes pflash { 0%, 30% { box-shadow: 0 0 0 5px var(--c); } 100% { box-shadow: none; } }
+  .edit {
+    font: 700 14px var(--font-body); color: var(--ink); background: var(--panel);
+    border: var(--border) solid var(--line); border-radius: 999px; padding: 6px 16px; min-height: 38px; cursor: pointer;
   }
   .period-sheet img { width: 100%; border-radius: 8px; }
   .when { color: var(--muted); font-weight: 700; }

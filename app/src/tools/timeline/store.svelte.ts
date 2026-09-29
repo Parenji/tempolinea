@@ -82,17 +82,93 @@ export function addImported(data: ImportedData): Timeline {
   store.timelines[id] = tl;
   store.currentId = id;
   save();
+  refreshHistory();
   return tl;
 }
 
 export function replaceCurrent(data: ImportedData) {
   const tl = current();
   if (!tl) return addImported(data);
-  tl.events = data.events;
-  tl.categories = data.categories;
-  if (data.segments) tl.segments = data.segments;
+  edit('Importa', (t) => {
+    t.events = data.events;
+    t.categories = data.categories;
+    if (data.segments) t.segments = data.segments;
+  });
+  return current()!;
+}
+
+// ---------------------------------------------------------------- modifiche, annulla e ripeti
+// Solo in memoria, come nella v1: ogni timeline ha la sua cronologia, che si svuota ricaricando la pagina.
+const MAX_UNDO = 50;
+const undoStacks = new Map<string, Timeline[]>();
+const redoStacks = new Map<string, Timeline[]>();
+export const history = $state({ canUndo: false, canRedo: false });
+
+function refreshHistory() {
+  const id = store.currentId ?? '';
+  history.canUndo = (undoStacks.get(id)?.length ?? 0) > 0;
+  history.canRedo = (redoStacks.get(id)?.length ?? 0) > 0;
+}
+
+const snap = (tl: Timeline) => structuredClone($state.snapshot(tl)) as Timeline;
+
+/** Applica una modifica alla timeline aperta, con annulla e salvataggio. */
+export function edit<T>(_label: string, fn: (tl: Timeline) => T): T | undefined {
+  const tl = current();
+  if (!tl) return undefined;
+  const undo = undoStacks.get(tl.id) ?? [];
+  undo.push(snap(tl));
+  if (undo.length > MAX_UNDO) undo.shift();
+  undoStacks.set(tl.id, undo);
+  redoStacks.set(tl.id, []);
+  const result = fn(tl);
   save();
-  return tl;
+  refreshHistory();
+  return result;
+}
+
+function swap(from: Map<string, Timeline[]>, to: Map<string, Timeline[]>): boolean {
+  const tl = current();
+  const prev = tl && from.get(tl.id)?.pop();
+  if (!tl || !prev) return false;
+  to.set(tl.id, [...(to.get(tl.id) ?? []), snap(tl)]);
+  store.timelines[tl.id] = prev;
+  save();
+  refreshHistory();
+  return true;
+}
+
+export const undo = () => swap(undoStacks, redoStacks);
+export const redo = () => swap(redoStacks, undoStacks);
+
+export function switchTimeline(id: string) {
+  if (!store.timelines[id]) return;
+  store.currentId = id;
+  save();
+  refreshHistory();
+}
+
+// ---------------------------------------------------------------- timeline
+
+export function renameCurrent(name: string) {
+  edit('Rinomina timeline', (tl) => { tl.name = name.trim(); });
+}
+
+export function isNameTaken(name: string, exceptId: string | null = null) {
+  const n = name.trim().toLowerCase();
+  return Object.values(store.timelines).some((t) => t.id !== exceptId && t.name.trim().toLowerCase() === n);
+}
+
+export function deleteCurrent(): boolean {
+  const tl = current();
+  if (!tl) return false;
+  delete store.timelines[tl.id];
+  undoStacks.delete(tl.id);
+  redoStacks.delete(tl.id);
+  store.currentId = Object.keys(store.timelines)[0] ?? null;
+  save();
+  refreshHistory();
+  return true;
 }
 
 export async function readImportFile(file: File) {
@@ -124,7 +200,9 @@ export async function loadExample() {
 }
 
 export function newEmpty(name = 'Nuova timeline') {
-  return addImported({ name, events: [], categories: [], segments: null });
+  const tl = addImported({ name, events: [], categories: [], segments: null });
+  refreshHistory();
+  return tl;
 }
 
 export { normalizeTimeline };

@@ -14,10 +14,12 @@
     expanded: boolean;
     dimmed: boolean;
     height?: number;
+    flash?: boolean;
     ontoggle: () => void;
     oncategory: (id: string) => void;
+    onedit: () => void;
   }
-  let { box, event, categories, expanded, dimmed, height = $bindable(), ontoggle, oncategory }: Props = $props();
+  let { box, event, categories, expanded, dimmed, flash = false, height = $bindable(), ontoggle, oncategory, onedit }: Props = $props();
 
   const dateText = $derived.by(() => {
     let t = formatDate({ year: event.startYear, month: event.startMonth, day: event.startDay });
@@ -25,13 +27,13 @@
     return t;
   });
   const cats = $derived(event.categoryIds.map((id) => categories.find((c) => c.id === id)).filter((c) => c != null));
-  const hasMore = $derived(!!(event.description || event.imageUrl || cats.length));
 </script>
 
 <article
   class="card {box.kind}"
   class:expanded
   class:dimmed
+  class:flash
   bind:offsetHeight={height}
   style:top="{box.top}px"
   style:left="{box.x}px"
@@ -40,7 +42,7 @@
   style:--c2={box.color2 ?? box.color}
   data-event-id={box.id}
 >
-  <button type="button" class="head" onclick={ontoggle} aria-expanded={expanded} disabled={!hasMore && !expanded}>
+  <button type="button" class="head" onclick={ontoggle} aria-expanded={expanded}>
     <span class="date num">{dateText}</span>
     <span class="title">{event.title || 'Senza titolo'}</span>
     {#if event.imageUrl && !expanded}<span class="has-img" aria-label="con immagine">▣</span>{/if}
@@ -60,6 +62,9 @@
           {/each}
         </div>
       {/if}
+      <div class="actions">
+        <button type="button" class="edit" onclick={onedit}>Modifica</button>
+      </div>
     </div>
   {/if}
 </article>
@@ -97,7 +102,6 @@
     position: relative;
     -webkit-tap-highlight-color: transparent;
   }
-  .head:disabled { cursor: default; }
   .head:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: var(--radius-sm); }
   .date { font-family: var(--font-display); font-weight: 600; font-size: 0.85em; color: var(--c1); }
   .title { font-weight: 800; font-size: 0.92em; line-height: 1.25; padding-right: 14px; }
@@ -112,5 +116,13 @@
     border: 0; border-radius: 999px; padding: 4px 10px 4px 8px; cursor: pointer;
     display: inline-flex; align-items: center; gap: 6px;
   }
+  .actions { display: flex; gap: 8px; }
+  .edit {
+    font: 700 14px var(--font-body); color: var(--ink); background: var(--panel);
+    border: var(--border) solid var(--line); border-radius: 999px; padding: 6px 16px; min-height: 38px; cursor: pointer;
+  }
+  .edit:hover { border-color: var(--c1); }
+  .flash { animation: flash 1.6s ease-out; }
+  @keyframes flash { 0%, 30% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--c1) 45%, transparent); } 100% { box-shadow: 0 1px 0 var(--line); } }
   .cat::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--cat); }
 </style>
