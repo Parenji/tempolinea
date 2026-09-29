@@ -9,7 +9,7 @@
   const subjects = [
     {
       name: 'Storia', v: 'sto',
-      tools: [{ title: 'Linea del tempo', desc: 'Eventi, periodi e collegamenti su una linea del tempo.', href: null as string | null }],
+      tools: [{ title: 'Linea del tempo', desc: 'Eventi, periodi e collegamenti su una linea del tempo.', href: base + 'timeline/' as string | null }],
     },
     {
       name: 'Matematica', v: 'mat',

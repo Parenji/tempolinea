@@ -34,6 +34,7 @@ export default defineConfig({
       input: {
         hub: resolve(import.meta.dirname, 'index.html'),
         stile: resolve(import.meta.dirname, 'stile/index.html'),
+        timeline: resolve(import.meta.dirname, 'timeline/index.html'),
       },
     },
   },

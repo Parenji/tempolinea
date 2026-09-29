@@ -27,7 +27,7 @@
 
 <header class="app-header no-print">
   <div class="title">
-    {#if home}<a class="home" href={import.meta.env.BASE_URL} aria-label="Torna all'indice">‹ Quaderno</a>{/if}
+    {#if home}<a class="home" href={import.meta.env.BASE_URL} aria-label="Torna all'indice">‹<span class="lbl">&nbsp;Quaderno</span></a>{/if}
     <h1>{title}</h1>
     {#if subject}<span class="subject">{subject}</span>{/if}
   </div>
@@ -73,5 +73,11 @@
   }
   .icon span[aria-hidden] { font-size: 20px; line-height: 1; }
   .projector[aria-pressed='true'] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-  @media (max-width: 520px) { .lbl { display: none; } }
+  @media (max-width: 520px) {
+    .lbl, .subject { display: none; }
+    .app-header { flex-wrap: nowrap; padding: 8px 12px; }
+    .title { flex-wrap: nowrap; min-width: 0; }
+    h1 { font-size: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .home { font-size: 24px; padding-right: 4px; }
+  }
 </style>
