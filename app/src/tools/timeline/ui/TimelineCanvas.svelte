@@ -1,22 +1,29 @@
 <script lang="ts">
   // Disegna il risultato del motore di layout. Card (HTML) e linee (SVG) stanno nello stesso
   // contenitore e leggono le stesse coordinate: nessuna misura dello schermo per posizionare le linee.
-  import { computeLayout, type Layout } from '../engine/layout';
+  import { computeLayout, headingKey, type Layout } from '../engine/layout';
   import type { Timeline, TimelineEvent } from '../data/schema';
   import { formatDate } from '../data/dates';
   import { formatDescription } from '../format';
   import EventCard from './EventCard.svelte';
+  import Lightbox from '$shared/ui/Lightbox.svelte';
 
   interface Props {
     timeline: Timeline;
     zoom: number;
     /** categoria evidenziata (le altre si attenuano) */
     highlight: string | null;
+    /** risultati della ricerca: gli altri eventi si attenuano */
+    matches?: string[] | null;
     onedit: (id: string) => void;
     oncreate: (year: number) => void;
   }
-  let { timeline, zoom, highlight = $bindable(), onedit, oncreate }: Props = $props();
+  let { timeline, zoom, highlight = $bindable(), matches = null, onedit, oncreate }: Props = $props();
+  const matchSet = $derived(matches ? new Set(matches) : null);
   let flashId = $state<string | null>(null);
+  let bigImage = $state<string | null>(null);
+  let bigCaption = $state('');
+  const showImage = (src: string, caption: string) => { bigCaption = caption; bigImage = src; };
   let quick = $state<{ y: number; year: number } | null>(null);
 
   let width = $state(0);
@@ -35,6 +42,23 @@
     for (const [id, h] of Object.entries(heights)) if (id !== expandedId && h) collapsed[id] = h;
   });
 
+  // Altezze reali delle card: un solo ResizeObserver per tutte. Il browser consegna in una sola
+  // chiamata tutte le misure di un frame, quindi il motore ricalcola una volta sola.
+  // (Con un binding per card il layout veniva ricalcolato ~200 volte all'avvio: 12 s di pagina bianca.)
+  const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver((entries) => {
+    let changed: Record<string, number> | null = null;
+    for (const entry of entries) {
+      const el = entry.target as HTMLElement;
+      const id = el.dataset.measureId ?? el.dataset.eventId;
+      if (id && heights[id] !== el.offsetHeight) (changed ??= {})[id] = el.offsetHeight;
+    }
+    if (changed) heights = { ...heights, ...changed };
+  });
+  function measure(node: HTMLElement) {
+    ro?.observe(node);
+    return { destroy: () => ro?.unobserve(node) };
+  }
+
   const layout: Layout | null = $derived(
     width > 0
       ? computeLayout(timeline.events, timeline.categories, timeline.segments, { width, zoom, heights, sideHeights })
@@ -43,7 +67,8 @@
   // etichette del righello nascoste se un nodo cade proprio lì sopra
   const busyY = $derived(new Set(layout?.cards.flatMap((c) => [Math.round(c.dateY / 8), Math.round(c.dateY / 8) - 1, Math.round(c.dateY / 8) + 1]) ?? []));
   const eventById = $derived(new Map(timeline.events.map((e) => [e.id, e])));
-  const inHighlight = (e: TimelineEvent | undefined) => !highlight || !!e?.categoryIds.includes(highlight);
+  const inHighlight = (e: TimelineEvent | undefined) =>
+    (!highlight || !!e?.categoryIds.includes(highlight)) && (!matchSet || (!!e && matchSet.has(e.id)));
 
   // quando si cambia timeline si riparte da zero
   let lastId = '';
@@ -104,8 +129,8 @@
   export function reveal(id: string) {
     requestAnimationFrame(() => requestAnimationFrame(() => {
       const c = layout?.cards.find((c) => c.id === id);
-      const p = layout?.periods.find((p) => p.id === id);
-      const y = c?.top ?? p?.top;
+      const h = layout?.headings.find((h) => h.id === id);
+      const y = c?.top ?? h?.top;
       if (y == null || !root) return;
       window.scrollTo({ top: root.getBoundingClientRect().top + scrollY + y - innerHeight / 3, behavior: 'smooth' });
       flashId = id;
@@ -130,14 +155,21 @@
   // tocco su uno spazio vuoto: proposta di creare un evento in quel punto
   function onCanvasClick(e: MouseEvent) {
     const target = e.target as Element;
-    if (target.closest('.card, .period, .quick')) return;
+    if (target.closest('.card, .heading, .strip, .quick')) return;
     if (quick) return void (quick = null);
     const y = e.clientY - root.getBoundingClientRect().top;
     const year = yearAtY(y);
     if (year != null) quick = { y, year };
   }
 
+  /** Apre la scheda di un periodo (usato anche dalla barra "sei qui"). */
+  export function showPeriod(id: string) {
+    openPeriod = id;
+  }
+
   const period = $derived(openPeriod ? eventById.get(openPeriod) : null);
+  const periodDates = (e: TimelineEvent) =>
+    `${formatDate({ year: e.startYear, month: e.startMonth, day: e.startDay })} – ${formatDate({ year: e.endYear!, month: e.endMonth, day: e.endDay })}`;
 </script>
 
 <svelte:window onkeydown={(e) => { if (e.key === 'Escape') { expandedId = null; openPeriod = null; } }} />
@@ -172,11 +204,30 @@
         {#if t.label && !busyY.has(Math.round(t.y / 8))}<text class="year num" x={layout.axisX} y={t.y}>{t.label}</text>{/if}
       {/each}
 
+      <!-- periodi: fasce accanto all'asse -->
+      {#each layout.periods as p (p.id)}
+        <rect
+          class="strip"
+          class:off={!inHighlight(eventById.get(p.id))}
+          x={p.x}
+          y={p.top}
+          width={p.width}
+          height={p.bottom - p.top}
+          rx={p.width / 2}
+          style:fill={p.color}
+          role="button"
+          tabindex="-1"
+          aria-label="Periodo: {eventById.get(p.id)?.title}"
+          onclick={() => (openPeriod = p.id)}
+          onkeydown={() => {}}
+        />
+      {/each}
+
       {#each layout.tracks as t (t.categoryId)}
         <g
           class="track"
           class:on={highlight === t.categoryId}
-          class:off={highlight && highlight !== t.categoryId}
+          class:off={(highlight && highlight !== t.categoryId) || !!matchSet}
           style:--c={t.color}
         >
           <line x1={t.x} y1={t.top} x2={t.x} y2={t.bottom} />
@@ -193,7 +244,7 @@
       {#each layout.links as l, i (l.key)}
         <path
           class="link"
-          class:off={highlight && !(inHighlight(eventById.get(l.fromId)) || inHighlight(eventById.get(l.toId)))}
+          class:off={(highlight || matchSet) && !(inHighlight(eventById.get(l.fromId)) || inHighlight(eventById.get(l.toId)))}
           d={l.path}
           stroke="url(#lg{i})"
         />
@@ -226,23 +277,24 @@
       </button>
     {/if}
 
-    {#each layout.periods as p (p.id)}
-      {@const e = eventById.get(p.id)}
+    {#each layout.headings as h (h.id)}
+      {@const e = eventById.get(h.id)!}
       <button
         type="button"
-        class="period"
+        class="heading"
         class:off={!inHighlight(e)}
-        class:open={openPeriod === p.id}
-        class:flash={flashId === p.id}
-        style:left="{p.x}px"
-        style:top="{p.top}px"
-        style:width="{p.width}px"
-        style:height="{p.bottom - p.top}px"
-        style:--c={p.color}
-        onclick={() => (openPeriod = openPeriod === p.id ? null : p.id)}
-        aria-label="Periodo: {e?.title}"
+        class:open={openPeriod === h.id}
+        class:flash={flashId === h.id}
+        data-measure-id={headingKey(h.id)}
+        use:measure
+        style:left="{h.x}px"
+        style:top="{h.top}px"
+        style:width="{h.width}px"
+        style:--c={h.color}
+        onclick={() => (openPeriod = openPeriod === h.id ? null : h.id)}
       >
-        <span>{e?.title}</span>
+        <span class="ht">{e.title}</span>
+        <span class="hd num">{periodDates(e)}</span>
       </button>
     {/each}
 
@@ -256,7 +308,8 @@
         dimmed={!inHighlight(e)}
         flash={flashId === c.id}
         onedit={() => onedit(c.id)}
-        bind:height={heights[c.id]}
+        onimage={showImage}
+        {measure}
         ontoggle={() => toggle(c.id)}
         oncategory={(id) => (highlight = highlight === id ? null : id)}
       />
@@ -269,19 +322,22 @@
     <button type="button" class="close" onclick={() => (openPeriod = null)} aria-label="Chiudi">×</button>
     <p class="eyebrow">Periodo</p>
     <h2>{period.title}</h2>
-    <p class="num when">
-      {formatDate({ year: period.startYear, month: period.startMonth, day: period.startDay })} –
-      {formatDate({ year: period.endYear!, month: period.endMonth, day: period.endDay })}
-    </p>
-    {#if period.imageUrl}<img src={period.imageUrl} alt={period.title ?? ''} loading="lazy" />{/if}
+    <p class="num when">{periodDates(period)}</p>
+    {#if period.imageUrl}
+      <button type="button" class="img" onclick={() => showImage(period.imageUrl!, period.title ?? '')} aria-label="Ingrandisci l'immagine">
+        <img src={period.imageUrl} alt={period.title ?? ''} loading="lazy" />
+      </button>
+    {/if}
     {#if period.description}<p>{@html formatDescription(period.description)}</p>{/if}
     <div><button type="button" class="edit" onclick={() => { const id = openPeriod!; openPeriod = null; onedit(id); }}>Modifica</button></div>
   </aside>
 {/if}
 
+<Lightbox bind:src={bigImage} caption={bigCaption} />
+
 <style>
   .canvas { position: relative; width: 100%; }
-  .lines { position: absolute; inset: 0; overflow: visible; z-index: 1; }
+  .lines { position: absolute; inset: 0; overflow: visible; z-index: 1; pointer-events: none; }
   .axis { stroke: var(--line); stroke-width: calc(4px * var(--stroke)); }
   .axis-gap { stroke: var(--paper); stroke-width: calc(4px * var(--stroke)); stroke-dasharray: 3 6; }
   .tick { stroke: var(--line); stroke-width: 2; }
@@ -303,26 +359,26 @@
     stroke: var(--paper); stroke-width: 7px; stroke-linejoin: round; paint-order: stroke;
   }
 
-  .period {
-    position: absolute; z-index: 1;
-    border: 0; padding: 8px 0; cursor: pointer;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--c) 22%, var(--paper));
-    border: 2px solid color-mix(in srgb, var(--c) 55%, transparent);
+  .strip { opacity: 0.55; pointer-events: auto; cursor: pointer; }
+  .strip.off { opacity: 0.1; }
+  .heading {
+    position: absolute; z-index: 3;
+    display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 2px 12px;
+    padding: 8px 18px; min-height: 40px;
+    border-radius: 18px; cursor: pointer; text-align: center;
+    background: color-mix(in srgb, var(--c) 16%, var(--panel));
+    border: var(--border) solid color-mix(in srgb, var(--c) 65%, transparent);
     color: var(--ink);
-    display: flex; justify-content: center; overflow: hidden;
+    box-shadow: 0 1px 0 var(--line);
     transition: opacity 0.2s;
   }
-  .period span {
-    writing-mode: vertical-rl; transform: rotate(180deg);
-    font: 800 12px var(--font-body); white-space: nowrap;
-    position: sticky; top: 140px; bottom: 16px;
-    max-height: 100%; overflow: hidden; text-overflow: ellipsis;
-  }
-  .narrow .period { padding: 0; }
-  .narrow .period span { display: none; }
-  .period.open { background: var(--c); color: var(--panel); }
-
+  .heading .ht { font: 600 1.2em var(--font-display); letter-spacing: 0.01em; }
+  .heading .hd { font-size: 0.85em; font-weight: 800; color: color-mix(in srgb, var(--c) 70%, var(--ink)); }
+  .heading.open { background: var(--c); color: #fff; }
+  .heading.open .hd { color: #fff; }
+  .heading.off { opacity: 0.3; }
+  .narrow .heading { justify-content: flex-start; text-align: left; padding: 6px 14px; }
+  .heading.flash { animation: pflash 1.6s ease-out; }
   .period-sheet {
     position: fixed; z-index: 20; right: 16px; bottom: 16px;
     width: min(380px, calc(100vw - 32px)); max-height: 60vh; overflow: auto;
@@ -337,13 +393,13 @@
     box-shadow: 0 6px 20px rgb(0 0 0 / 0.25); white-space: nowrap;
   }
   .narrow .quick { transform: translate(-12px, -50%); }
-  .period.flash { animation: pflash 1.6s ease-out; }
   @keyframes pflash { 0%, 30% { box-shadow: 0 0 0 5px var(--c); } 100% { box-shadow: none; } }
   .edit {
     font: 700 14px var(--font-body); color: var(--ink); background: var(--panel);
     border: var(--border) solid var(--line); border-radius: 999px; padding: 6px 16px; min-height: 38px; cursor: pointer;
   }
-  .period-sheet img { width: 100%; border-radius: 8px; }
+  .period-sheet .img { all: unset; display: block; cursor: zoom-in; }
+  .period-sheet img { display: block; width: 100%; border-radius: 8px; }
   .when { color: var(--muted); font-weight: 700; }
   .close {
     position: absolute; top: 8px; right: 8px; width: var(--target); height: var(--target);

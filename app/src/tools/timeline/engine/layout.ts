@@ -50,14 +50,31 @@ export interface CardBox {
   color2: string | null;
 }
 
+/** Fascia di un periodo accanto all'asse: mostra quanto dura. */
 export interface PeriodBox {
   id: string;
+  side: Side;
   x: number;
   width: number;
   top: number;
   bottom: number;
   color: string;
 }
+
+/** Intestazione di un periodo ("capitolo"): occupa tutta la riga all'inizio del periodo. */
+export interface HeadingBox {
+  id: string;
+  x: number;
+  width: number;
+  top: number;
+  height: number;
+  /** y della data d'inizio sull'asse */
+  dateY: number;
+  color: string;
+}
+
+/** Chiave delle altezze misurate per l'intestazione di un periodo. */
+export const headingKey = (id: string) => `p:${id}`;
 
 export interface Track {
   categoryId: string;
@@ -99,6 +116,7 @@ export interface Layout {
   axisX: number;
   cards: CardBox[];
   periods: PeriodBox[];
+  headings: HeadingBox[];
   tracks: Track[];
   links: LinkBox[];
   ruler: RulerTick[];
@@ -119,7 +137,10 @@ export const L = {
   LANE: 10,
   STEM: 18,
   MAX_CARD: 300,
-  PERIOD_W: 26,
+  STRIP: 6, // larghezza della fascia di un periodo
+  STRIP_GAP: 3,
+  STRIP_FROM: 9, // distanza della prima fascia dal centro dell'asse (i nodi hanno raggio 6)
+  MAX_HEADING: 540,
   PAD_TOP: 120,
   PAD_BOTTOM: 200,
   NODE_SPREAD: 5,
@@ -131,6 +152,11 @@ export function estimateHeight(e: TimelineEvent, width = 240): number {
   const charsPerLine = Math.max(12, Math.floor(width / 8.5));
   const lines = Math.ceil(((e.title ?? '').length || 1) / charsPerLine);
   return 36 + lines * 22;
+}
+
+export function estimateHeadingHeight(e: TimelineEvent, width = 500): number {
+  const chars = (e.title ?? '').length + 14; // titolo + date
+  return 22 + Math.ceil(chars / Math.max(16, Math.floor(width / 9))) * 22;
 }
 
 const primaryCat = (e: TimelineEvent) => e.categoryIds[0] ?? null;
@@ -172,9 +198,16 @@ export function computeLayout(
   const cats = new Map(categories.map((c) => [c.id, c]));
   const colorOf = (id: string | null | undefined) => safeColor((id && cats.get(id)?.color) || FALLBACK_COLOR);
 
-  const sorted = [...events].sort((a, b) => compareDates(eventStart(a), eventStart(b)) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-  const flow = sorted.filter((e) => !e.isPeriod);
-  const periods = sorted.filter((e) => e.isPeriod && e.endYear != null);
+  const isPeriod = (e: TimelineEvent) => !!e.isPeriod && e.endYear != null;
+  // a parità di data l'intestazione di un periodo viene prima degli eventi
+  const sorted = [...events].sort(
+    (a, b) =>
+      compareDates(eventStart(a), eventStart(b)) ||
+      Number(isPeriod(b)) - Number(isPeriod(a)) ||
+      (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+  );
+  const flow = sorted.filter((e) => !isPeriod(e));
+  const periods = sorted.filter(isPeriod);
   const catSide = categorySides(sorted, cats);
 
   // ---------- origine: un po' di spazio prima del primo evento ----------
@@ -184,7 +217,9 @@ export function computeLayout(
 
   // ---------- 2. posizione verticale ----------
   const cardW0 = narrow ? width - 80 : Math.min(L.MAX_CARD, width / 2 - 70);
+  const headW = narrow ? width - 2 * L.MARGIN : Math.min(L.MAX_HEADING, width - 2 * L.MARGIN);
   type Placed = { e: TimelineEvent; side: Side; top: number; height: number; dateY: number };
+  type PlacedHeading = { e: TimelineEvent; top: number; height: number; dateY: number };
 
   const place = (hs: Record<string, number>, fixedSides: Map<string, Side> | null) => {
     // spazi inseriti nell'asse: [base da cui valgono, dimensione]
@@ -192,11 +227,30 @@ export function computeLayout(
     const bottom: Record<Side, number> = { left: -Infinity, right: -Infinity };
     const lastCat: Record<Side, string | null> = { left: null, right: null };
     const out: Placed[] = [];
+    const heads: PlacedHeading[] = [];
     let shift = 0;
     let prevBase = -Infinity;
-    for (const e of flow) {
+    for (const e of sorted) {
       const b = base(eventStart(e));
       let dateY = b - origin + shift;
+      if (isPeriod(e)) {
+        // intestazione: centrata sulla data, sotto a tutto ciò che c'è già su entrambi i lati
+        const h = hs[headingKey(e.id)] ?? estimateHeadingHeight(e, headW);
+        let push = Math.max(0, Math.max(bottom.left, bottom.right) + L.CARD_GAP - (dateY - h / 2));
+        if (push > L.MAX_DRIFT && b > prevBase) {
+          const extra = push - L.MAX_DRIFT;
+          gaps.push({ atBase: b, size: extra });
+          shift += extra;
+          dateY += extra;
+          push = L.MAX_DRIFT;
+        }
+        const top = dateY - h / 2 + push;
+        bottom.left = bottom.right = top + h;
+        lastCat.left = lastCat.right = null;
+        prevBase = b;
+        heads.push({ e, top, height: h, dateY });
+        continue;
+      }
       const h = hs[e.id] ?? estimateHeight(e, cardW0);
       const catId = primaryCat(e);
       const pushOn = (s: Side) => Math.max(0, bottom[s] + L.CARD_GAP - (dateY - L.ANCHOR));
@@ -230,7 +284,7 @@ export function computeLayout(
       prevBase = b;
       out.push({ e, side, top, height: h, dateY });
     }
-    return { placed: out, gaps, shift };
+    return { placed: out, heads, gaps, shift };
   };
 
   // I lati si decidono con le altezze "a riposo" (card chiuse): aprire una card non fa saltare
@@ -267,38 +321,38 @@ export function computeLayout(
     }
   }
 
-  // ---------- 3b. corsie dei periodi ----------
+  // ---------- 3b. fasce dei periodi, accanto all'asse ----------
+  // corsia 0 a sinistra dell'asse, 1 a destra, 2 a sinistra più in fuori, ...
   type PeriodDraft = { e: TimelineEvent; start: number; end: number };
+  const headOf = new Map(pass.heads.map((h) => [h.e.id, h]));
   const pDrafts: PeriodDraft[] = periods.map((e) => {
-    const a = yOf(eventStart(e));
+    const a = headOf.get(e.id)!.dateY;
     const z = yOf({ year: e.endYear!, month: e.endMonth, day: e.endDay });
-    return { e, start: Math.min(a, z), end: Math.max(a, z) };
+    return { e, start: Math.min(a, z), end: Math.max(a, z, a + 24) };
   });
   const pLane = assignLanes(pDrafts, 6);
-  const pLanes = pDrafts.length ? Math.max(...pLane.values()) + 1 : 0;
-  // nel layout largo le corsie si alternano: 0 a sinistra, 1 a destra, 2 a sinistra...
-  const pLeft = narrow ? pLanes : Math.ceil(pLanes / 2);
-  const pRight = narrow ? 0 : Math.floor(pLanes / 2);
+  const strips: Record<Side, number> = { left: 0, right: 0 };
+  for (const lane of pLane.values()) strips[lane % 2 === 0 ? 'left' : 'right'] = Math.max(strips[lane % 2 === 0 ? 'left' : 'right'], Math.floor(lane / 2) + 1);
+  const stripBlock = (side: Side) => (strips[side] ? L.STRIP_FROM + strips[side] * (L.STRIP + L.STRIP_GAP) : 0);
 
   // ---------- 4. posizioni orizzontali ----------
-  // su schermo stretto corsie e periodi sono più sottili: lo spazio serve alle card
+  // su schermo stretto le corsie sono più sottili: lo spazio serve alle card
   const LANE = narrow ? 5 : L.LANE;
-  const PERIOD_W = narrow ? 12 : L.PERIOD_W;
   const STEM = narrow ? 12 : L.STEM;
-  const pBlock = (n: number) => (n ? n * PERIOD_W + 6 : 0);
-  const axisX = narrow ? L.MARGIN + pBlock(pLeft) + 6 : Math.round(width / 2);
+  const pad: Record<Side, number> = {
+    left: Math.max(L.AXIS_PAD, stripBlock('left') + 4),
+    right: Math.max(L.AXIS_PAD, stripBlock('right') + 4),
+  };
+  const axisX = narrow ? L.MARGIN + stripBlock('left') + 8 : Math.round(width / 2);
   const laneX = (side: Side, slot: number) => {
-    const d = L.AXIS_PAD + slot * LANE + LANE / 2;
+    const d = pad[side] + slot * LANE + LANE / 2;
     return side === 'left' ? axisX - d : axisX + d;
   };
   const edge: Record<Side, number> = {
-    left: axisX - (L.AXIS_PAD + slots.left * LANE + STEM),
-    right: axisX + (L.AXIS_PAD + slots.right * LANE + STEM),
+    left: axisX - (pad.left + slots.left * LANE + STEM),
+    right: axisX + (pad.right + slots.right * LANE + STEM),
   };
-  const outer: Record<Side, number> = {
-    left: L.MARGIN + pBlock(pLeft),
-    right: width - L.MARGIN - pBlock(pRight),
-  };
+  const outer: Record<Side, number> = { left: L.MARGIN, right: width - L.MARGIN };
   const cardWidth: Record<Side, number> = {
     left: Math.max(120, Math.min(L.MAX_CARD, edge.left - outer.left)),
     right: Math.max(120, Math.min(L.MAX_CARD, outer.right - edge.right)),
@@ -349,19 +403,28 @@ export function computeLayout(
 
   const periodBoxes: PeriodBox[] = pDrafts.map((p) => {
     const lane = pLane.get(p)!;
-    let x: number;
-    if (narrow) x = L.MARGIN + lane * PERIOD_W;
-    else if (lane % 2 === 0) x = L.MARGIN + (lane / 2) * PERIOD_W;
-    else x = width - L.MARGIN - ((lane - 1) / 2 + 1) * PERIOD_W;
+    const side: Side = lane % 2 === 0 ? 'left' : 'right';
+    const d = L.STRIP_FROM + Math.floor(lane / 2) * (L.STRIP + L.STRIP_GAP);
     return {
       id: p.e.id,
-      x,
-      width: PERIOD_W - (narrow ? 3 : 4),
+      side,
+      x: side === 'left' ? axisX - d - L.STRIP : axisX + d,
+      width: L.STRIP,
       top: p.start,
-      bottom: Math.max(p.end, p.start + 24),
+      bottom: p.end,
       color: colorOf(primaryCat(p.e)),
     };
   });
+
+  const headings: HeadingBox[] = pass.heads.map((h) => ({
+    id: h.e.id,
+    x: narrow ? L.MARGIN : Math.round(axisX - headW / 2),
+    width: headW,
+    top: h.top,
+    height: h.height,
+    dateY: h.dateY,
+    color: colorOf(primaryCat(h.e)),
+  }));
 
   // ---------- collegamenti ----------
   const links: LinkBox[] = [];
@@ -389,13 +452,13 @@ export function computeLayout(
   }
 
   // ---------- righello ----------
-  const lastY = cards.length ? Math.max(...cards.map((c) => c.top + c.height)) : 400;
-  const height = Math.max(lastY, ...periodBoxes.map((p) => p.bottom), 400) + L.PAD_BOTTOM;
+  const lastY = Math.max(400, ...cards.map((c) => c.top + c.height), ...headings.map((h) => h.top + h.height));
+  const height = Math.max(lastY, ...periodBoxes.map((p) => p.bottom)) + L.PAD_BOTTOM;
   const ruler = buildRuler(segments, zoom, origin, yOfBase, height, shift);
 
   const gaps: Gap[] = gapList.map((g) => ({ y: yOfBase(g.atBase) - g.size, size: g.size }));
 
-  return { width, height, narrow, axisX, cards, periods: periodBoxes, tracks, links, ruler, gaps, yOf };
+  return { width, height, narrow, axisX, cards, periods: periodBoxes, headings, tracks, links, ruler, gaps, yOf };
 }
 
 /** Curva di collegamento tra due card, dal bordo verso l'asse. */

@@ -13,13 +13,15 @@
     categories: Category[];
     expanded: boolean;
     dimmed: boolean;
-    height?: number;
+    /** azione che comunica al canvas l'altezza reale della card */
+    measure: (node: HTMLElement) => { destroy: () => void };
     flash?: boolean;
     ontoggle: () => void;
     oncategory: (id: string) => void;
     onedit: () => void;
+    onimage: (src: string, caption: string) => void;
   }
-  let { box, event, categories, expanded, dimmed, flash = false, height = $bindable(), ontoggle, oncategory, onedit }: Props = $props();
+  let { box, event, categories, expanded, dimmed, flash = false, measure, ontoggle, oncategory, onedit, onimage }: Props = $props();
 
   const dateText = $derived.by(() => {
     let t = formatDate({ year: event.startYear, month: event.startMonth, day: event.startDay });
@@ -34,7 +36,7 @@
   class:expanded
   class:dimmed
   class:flash
-  bind:offsetHeight={height}
+  use:measure
   style:top="{box.top}px"
   style:left="{box.x}px"
   style:width="{box.width}px"
@@ -50,7 +52,9 @@
   {#if expanded}
     <div class="body">
       {#if event.imageUrl}
-        <img src={event.imageUrl} alt={event.title ?? ''} loading="lazy" />
+        <button type="button" class="img" onclick={() => onimage(event.imageUrl!, event.title ?? '')} aria-label="Ingrandisci l'immagine">
+          <img src={event.imageUrl} alt={event.title ?? ''} loading="lazy" />
+        </button>
       {/if}
       {#if event.description}
         <p class="desc">{@html formatDescription(event.description)}</p>
@@ -108,7 +112,9 @@
   .has-img { position: absolute; top: 6px; right: 8px; font-size: 13px; color: var(--muted); }
 
   .body { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 10px; }
-  img { width: 100%; max-height: 260px; object-fit: cover; border-radius: 8px; background: var(--chip); }
+  .img { all: unset; display: block; cursor: zoom-in; border-radius: 8px; }
+  .img:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  img { display: block; width: 100%; max-height: 260px; object-fit: cover; border-radius: 8px; background: var(--chip); }
   .desc { font-size: 0.9em; line-height: 1.5; }
   .cats { display: flex; flex-wrap: wrap; gap: 6px; }
   .cat {

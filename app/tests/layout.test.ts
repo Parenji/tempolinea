@@ -92,12 +92,37 @@ function checkInvariants(tl: Timeline, lay: Layout) {
     expect(onEdge(x2, y2)).toBe(true);
   }
 
-  // periodi: dentro il contenitore, fuori dalla zona delle card
+  // periodi: fasce accanto all'asse (non sui bordi), mai sotto le card
+  const periods = tl.events.filter((e) => e.isPeriod && e.endYear != null);
+  expect(lay.periods).toHaveLength(periods.length);
+  expect(lay.headings).toHaveLength(periods.length);
   for (const p of lay.periods) {
     expect(p.bottom).toBeGreaterThan(p.top);
-    expect(p.x).toBeGreaterThanOrEqual(0);
-    expect(p.x + p.width).toBeLessThanOrEqual(lay.width);
+    expect(Math.abs(p.x + p.width / 2 - lay.axisX)).toBeLessThan(60);
     for (const c of lay.cards) expect(p.x + p.width <= c.x || p.x >= c.x + c.width).toBe(true);
+    for (const t of lay.tracks) expect(t.x < p.x || t.x > p.x + p.width).toBe(true);
+  }
+  // intestazioni dei periodi: tutta la riga libera, nessuna card sovrapposta
+  for (const h of lay.headings) {
+    expect(h.x).toBeGreaterThanOrEqual(0);
+    expect(h.x + h.width).toBeLessThanOrEqual(lay.width + EPS);
+    expect(h.top + h.height).toBeLessThanOrEqual(lay.height);
+    for (const c of lay.cards) {
+      const overlapY = c.top < h.top + h.height - EPS && c.top + c.height > h.top + EPS;
+      expect(overlapY).toBe(false);
+    }
+    for (const o of lay.headings) {
+      if (o !== h) expect(o.top >= h.top + h.height - EPS || o.top + o.height <= h.top + EPS).toBe(true);
+    }
+    // la fascia del periodo parte dalla sua intestazione
+    expect(lay.periods.find((p) => p.id === h.id)!.top).toBeCloseTo(h.dateY);
+  }
+  // l'intestazione viene prima delle card che iniziano nello stesso momento o dopo
+  for (const h of lay.headings) {
+    const e = byId.get(h.id)!;
+    for (const c of lay.cards) {
+      if (compareDates(eventStart(byId.get(c.id)!), eventStart(e)) >= 0) expect(c.top).toBeGreaterThanOrEqual(h.top + h.height - EPS);
+    }
   }
 
   // righello in ordine

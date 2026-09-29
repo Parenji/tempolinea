@@ -4,6 +4,19 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Stile del Quaderno</title>
+  <!-- tema e sfondo applicati prima che parta l'app: niente lampo bianco -->
+  <script>
+    try {
+      var d = JSON.parse(localStorage.getItem('quaderno.display') || '{}');
+      if (d.theme === 'light' || d.theme === 'dark') document.documentElement.dataset.theme = d.theme;
+      if (d.projector) document.documentElement.setAttribute('data-projector', '');
+    } catch (e) {}
+  </script>
+  <style>
+    html { background: #F5F8FC; }
+    @media (prefers-color-scheme: dark) { html:not([data-theme="light"]) { background: #111928; } }
+    html[data-theme="dark"] { background: #111928; }
+  </style>
 </head>
 <body>
   <div id="app"></div>
