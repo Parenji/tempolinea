@@ -1,6 +1,7 @@
 // Spaziatura delle epoche ("segmenti" della v1): quanto spazio verticale ha un anno in ogni epoca.
 // Nell'editor ogni riga dice da che anno parte un'epoca; la fine è l'inizio della riga dopo
 // (l'ultima ha una fine esplicita). Così non ci possono essere buchi o sovrapposizioni.
+import { t } from '$shared/i18n';
 import { defaultSegments, type Segment, type TimelineEvent } from './schema';
 
 export type RulerStep = 1 | 10 | 100;
@@ -28,15 +29,15 @@ export function toRows(segments: readonly Segment[]): { rows: SegmentRow[]; end:
 
 export function validateRows(rows: readonly SegmentRow[], end: number | null): string[] {
   const errors: string[] = [];
-  if (!rows.length) errors.push('Serve almeno un\'epoca.');
+  if (!rows.length) errors.push(t("Serve almeno un'epoca."));
   rows.forEach((r, i) => {
-    if (r.from == null || !Number.isInteger(r.from)) errors.push(`Riga ${i + 1}: manca l'anno d'inizio.`);
-    if (!(r.density > 0 && r.density <= 500)) errors.push(`Riga ${i + 1}: lo spazio per anno deve essere tra 0 e 500.`);
+    if (r.from == null || !Number.isInteger(r.from)) errors.push(t("Riga {n}: manca l'anno d'inizio.", { n: i + 1 }));
+    if (!(r.density > 0 && r.density <= 500)) errors.push(t('Riga {n}: lo spazio per anno deve essere tra 0 e 500.', { n: i + 1 }));
   });
   const froms = rows.map((r) => r.from).filter((f): f is number => f != null);
-  if (new Set(froms).size !== froms.length) errors.push('Due epoche iniziano nello stesso anno.');
-  if (end == null || !Number.isInteger(end)) errors.push('Manca l\'anno di fine dell\'ultima epoca.');
-  else if (froms.some((f) => f >= end)) errors.push('La fine deve venire dopo l\'inizio di tutte le epoche.');
+  if (new Set(froms).size !== froms.length) errors.push(t('Due epoche iniziano nello stesso anno.'));
+  if (end == null || !Number.isInteger(end)) errors.push(t("Manca l'anno di fine dell'ultima epoca."));
+  else if (froms.some((f) => f >= end)) errors.push(t("La fine deve venire dopo l'inizio di tutte le epoche."));
   return errors;
 }
 

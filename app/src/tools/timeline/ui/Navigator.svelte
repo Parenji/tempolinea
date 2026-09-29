@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$shared/i18n';
   import { untrack } from 'svelte';
   // "Vai a…": al posto della minimappa della v1. Si apre toccando l'anno in basso a sinistra:
   // un anno da raggiungere e una panoramica di quanti eventi ci sono in ogni epoca.
@@ -32,28 +33,28 @@
   }
 </script>
 
-<Dialog bind:open title="Vai a…" width={520}>
+<Dialog bind:open title={t('Vai a…')} width={520}>
   <form class="jump" onsubmit={(e) => { e.preventDefault(); const y = signedYear(target); if (y != null) go(y); }}>
-    <DateInput id="nav-year" label="Anno" yearOnly bind:value={target} />
-    <Button variant="primary" type="submit">Vai</Button>
+    <DateInput id="nav-year" label={t('Anno')} yearOnly bind:value={target} />
+    <Button variant="primary" type="submit">{t('Vai')}</Button>
   </form>
   <div class="row">
-    <Button onclick={() => go(Math.min(...years))} disabled={!years.length}>Inizio</Button>
-    <Button onclick={() => go(Math.max(...years))} disabled={!years.length}>Fine</Button>
+    <Button onclick={() => go(Math.min(...years))} disabled={!years.length}>{t('Inizio')}</Button>
+    <Button onclick={() => go(Math.max(...years))} disabled={!years.length}>{t('Fine')}</Button>
   </div>
 
   {#if data.buckets.length}
     <div class="field">
-      <span class="label">Panoramica: eventi per {data.step === 1 ? 'anno' : data.step === 100 ? 'secolo' : `${data.step} anni`}</span>
+      <span class="label">{data.step === 1 ? t('Panoramica: eventi per anno') : data.step === 100 ? t('Panoramica: eventi per secolo') : t('Panoramica: eventi ogni {n} anni', { n: data.step })}</span>
       <ul class="bars">
         {#each data.buckets as b (b.from)}
           {@const here = current != null && current >= b.from && current < b.to}
           <li>
-            <button type="button" class:here onclick={() => go(b.from)} aria-label="{bucketLabel(b, data.step)}: {b.events} eventi">
+            <button type="button" class:here onclick={() => go(b.from)} aria-label={t('{label}: {n} eventi', { label: bucketLabel(b, data.step), n: b.events })}>
               <span class="lbl num">{bucketLabel(b, data.step)}</span>
               <span class="bar"><span style:width="{(b.events / maxCount) * 100}%"></span></span>
               <span class="n num">{b.events || ''}</span>
-              {#if b.periods}<span class="p" title="{b.periods} periodi">{'▮'.repeat(Math.min(3, b.periods))}</span>{/if}
+              {#if b.periods}<span class="p" title={t('{n} periodi', { n: b.periods })}>{'▮'.repeat(Math.min(3, b.periods))}</span>{/if}
             </button>
           </li>
         {/each}

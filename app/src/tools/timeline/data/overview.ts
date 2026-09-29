@@ -1,5 +1,6 @@
 // Panoramica della timeline: quanti eventi ci sono in ogni epoca.
 // Sostituisce la minimappa della v1: si calcola solo quando si apre "Vai a…", niente a ogni scroll.
+import { t, lang } from '$shared/i18n';
 import type { TimelineEvent } from './schema';
 
 export interface Bucket {
@@ -35,10 +36,18 @@ export function overview(events: readonly TimelineEvent[], maxBuckets = 30): { s
 }
 
 export function bucketLabel(b: Bucket, step: number): string {
-  const y = (n: number) => (n < 0 ? `${-n} a.C.` : String(n));
+  const y = (n: number) => (n < 0 ? `${-n} ${t('a.C.')}` : String(n));
   if (step === 1) return y(b.from);
-  if (step === 100 && b.from > 0) return `${roman(b.from / 100 + 1)} secolo`;
+  if (step === 100 && b.from > 0) {
+    const c = b.from / 100 + 1;
+    return t('{n} secolo', { n: lang === 'en' ? ordinal(c) : roman(c) });
+  }
   return `${y(b.from)} – ${y(b.to - 1)}`;
+}
+
+function ordinal(n: number): string {
+  const s = n % 100 >= 11 && n % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[n % 10] ?? 'th';
+  return n + s;
 }
 
 function roman(n: number): string {

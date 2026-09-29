@@ -1,5 +1,6 @@
 <script lang="ts">
   import { untrack } from 'svelte';
+  import { t } from '$shared/i18n';
   // Gestione delle categorie: elenco, creazione/modifica, unione, eliminazione e
   // spostamento di eventi in un'altra categoria (il "dividi" della v1).
   // Ogni azione confermata passa da edit(): si può annullare con ↶.
@@ -51,9 +52,9 @@
   });
 
   const sides = [
-    { value: 'auto' as const, label: 'Automatico' },
-    { value: 'left' as const, label: 'Sinistra' },
-    { value: 'right' as const, label: 'Destra' },
+    { value: 'auto' as const, label: t('Automatico') },
+    { value: 'left' as const, label: t('Sinistra') },
+    { value: 'right' as const, label: t('Destra') },
   ];
 
   const list = $derived(
@@ -81,18 +82,18 @@
   }
 
   function save() {
-    if (!draft.name.trim()) return (error = 'Scrivi un nome.');
-    if (categoryNameTaken(timeline, draft.name, draft.id)) return (error = 'Esiste già una categoria con questo nome.');
+    if (!draft.name.trim()) return (error = t('Scrivi un nome.'));
+    if (categoryNameTaken(timeline, draft.name, draft.id)) return (error = t('Esiste già una categoria con questo nome.'));
     const isNew = !draft.id;
     edit(isNew ? 'Nuova categoria' : 'Modifica categoria', (tl) => saveCategory(tl, $state.snapshot(draft) as CategoryDraft));
-    onchange?.(isNew ? `Creata «${draft.name.trim()}».` : `Salvata «${draft.name.trim()}».`);
+    onchange?.(isNew ? t('Creata «{name}».', { name: draft.name.trim() }) : t('Salvata «{name}».', { name: draft.name.trim() }));
     view = 'list';
   }
 
   function remove(ids: string[]) {
     const names = ids.map((id) => timeline.categories.find((c) => c.id === id)?.name).filter(Boolean);
     edit('Elimina categorie', (tl) => deleteCategories(tl, ids));
-    onchange?.(ids.length === 1 ? `Eliminata «${names[0]}».` : `Eliminate ${ids.length} categorie.`);
+    onchange?.(ids.length === 1 ? t('Eliminata «{name}».', { name: names[0] ?? '' }) : t('Eliminate {n} categorie.', { n: ids.length }));
     selecting = false;
     selected = [];
     view = 'list';
@@ -105,12 +106,12 @@
     view = 'merge';
   }
   function merge() {
-    if (!draft.name.trim()) return (error = 'Scrivi un nome.');
+    if (!draft.name.trim()) return (error = t('Scrivi un nome.'));
     const ids = [...selected];
     const others = timeline.categories.filter((c) => !ids.includes(c.id));
-    if (others.some((c) => c.name.trim().toLowerCase() === draft.name.trim().toLowerCase())) return (error = 'Esiste già una categoria con questo nome.');
+    if (others.some((c) => c.name.trim().toLowerCase() === draft.name.trim().toLowerCase())) return (error = t('Esiste già una categoria con questo nome.'));
     edit('Unisci categorie', (tl) => mergeCategories(tl, ids, $state.snapshot(draft) as CategoryDraft));
-    onchange?.(`Unite in «${draft.name.trim()}».`);
+    onchange?.(t('Unite in «{name}».', { name: draft.name.trim() }));
     selecting = false;
     selected = [];
     view = 'list';
@@ -119,15 +120,15 @@
   function applyMove() {
     const fromId = draft.id!;
     if (!moving.length || !moveTo) return;
-    if (moveTo === '__new__' && !moveNewName.trim()) return (error = 'Scrivi il nome della nuova categoria.');
-    if (moveTo === '__new__' && categoryNameTaken(timeline, moveNewName)) return (error = 'Esiste già una categoria con questo nome.');
+    if (moveTo === '__new__' && !moveNewName.trim()) return (error = t('Scrivi il nome della nuova categoria.'));
+    if (moveTo === '__new__' && categoryNameTaken(timeline, moveNewName)) return (error = t('Esiste già una categoria con questo nome.'));
     const n = moving.length;
     const emptied = n === eventsOf(fromId).length;
     edit('Sposta eventi', (tl) => {
       const dest = moveTo === '__new__' ? saveCategory(tl, { ...newCategoryDraft(tl), name: moveNewName.trim() }) : moveTo;
       moveEvents(tl, fromId, moving, dest);
     });
-    onchange?.(`Spostati ${n} eventi.`);
+    onchange?.(t('Spostati {n} eventi.', { n }));
     moving = [];
     moveNewName = '';
     error = '';
@@ -135,24 +136,24 @@
   }
 
   const customColor = $derived(!PALETTE.some((c) => c.toLowerCase() === draft.color.toLowerCase()));
-  const title = $derived(view === 'merge' ? 'Unisci categorie' : view === 'edit' ? (draft.id ? 'Modifica categoria' : 'Nuova categoria') : 'Categorie');
+  const title = $derived(view === 'merge' ? t('Unisci categorie') : view === 'edit' ? (draft.id ? t('Modifica categoria') : t('Nuova categoria')) : t('Categorie'));
 </script>
 
 <Dialog bind:open {title} width={600}>
   {#if view === 'list'}
     <div class="top">
       {#if timeline.categories.length > 6}
-        <input type="search" bind:value={query} placeholder="Cerca una categoria" aria-label="Cerca una categoria" />
+        <input type="search" bind:value={query} placeholder={t('Cerca una categoria')} aria-label={t('Cerca una categoria')} />
       {/if}
       <div class="row">
-        <Button variant="primary" onclick={startNew}>+ Nuova categoria</Button>
+        <Button variant="primary" onclick={startNew}>+ {t('Nuova categoria')}</Button>
         {#if timeline.categories.length > 1}
-          <Button variant="ghost" onclick={() => { selecting = !selecting; selected = []; }}>{selecting ? 'Fine selezione' : 'Seleziona più categorie'}</Button>
+          <Button variant="ghost" onclick={() => { selecting = !selecting; selected = []; }}>{selecting ? t('Fine selezione') : t('Seleziona più categorie')}</Button>
         {/if}
       </div>
     </div>
     {#if !timeline.categories.length}
-      <p class="muted">Ancora nessuna categoria. Le categorie danno colore agli eventi e li collegano con una linea.</p>
+      <p class="muted">{t('Ancora nessuna categoria. Le categorie danno colore agli eventi e li collegano con una linea.')}</p>
     {/if}
     <ul class="list">
       {#each list as c (c.id)}
@@ -169,9 +170,9 @@
             <button type="button" class="open" onclick={() => startEdit(c)}>
               <span class="dot"></span>
               <span class="name">{c.name}</span>
-              <span class="count num">{n} {n === 1 ? 'evento' : 'eventi'}</span>
+              <span class="count num">{n === 1 ? t('1 evento') : t('{n} eventi', { n })}</span>
             </button>
-            <label class="lines" title="Mostra la linea che collega gli eventi della categoria">
+            <label class="lines" title={t('Mostra la linea che collega gli eventi della categoria')}>
               <input
                 type="checkbox"
                 role="switch"
@@ -181,7 +182,7 @@
                   if (cat) cat.showConnectors = cat.showConnectors === false;
                 })}
               />
-              <span>linea</span>
+              <span>{t('linea')}</span>
             </label>
           {/if}
         </li>
@@ -190,50 +191,50 @@
   {:else if view === 'edit' || view === 'merge'}
     <div class="form">
       <div class="field">
-        <label for="cat-name">Nome *</label>
-        <input id="cat-name" type="text" bind:value={draft.name} aria-invalid={!!error} placeholder="es. Politica, Arte, Scienza…" autocomplete="off" />
+        <label for="cat-name">{t('Nome')} *</label>
+        <input id="cat-name" type="text" bind:value={draft.name} aria-invalid={!!error} placeholder={t('es. Politica, Arte, Scienza…')} autocomplete="off" />
       </div>
       <div class="field">
-        <span class="label">Colore</span>
-        <div class="swatches" role="radiogroup" aria-label="Colore">
+        <span class="label">{t('Colore')}</span>
+        <div class="swatches" role="radiogroup" aria-label={t('Colore')}>
           {#each PALETTE as col}
             <button type="button" role="radio" aria-checked={draft.color.toLowerCase() === col.toLowerCase()} aria-label={col} style:--sw={col} onclick={() => (draft.color = col)}></button>
           {/each}
-          <label class="custom" class:checked={customColor} title="Altro colore" style:--sw={draft.color}>
-            <input type="color" bind:value={draft.color} aria-label="Scegli un altro colore" />
+          <label class="custom" class:checked={customColor} title={t('Altro colore')} style:--sw={draft.color}>
+            <input type="color" bind:value={draft.color} aria-label={t('Scegli un altro colore')} />
           </label>
         </div>
       </div>
       <div class="field">
-        <span class="label">Lato preferito delle card</span>
-        <Segmented label="Lato preferito" options={sides} bind:value={draft.preferredSide} />
-        <p class="hint">Con "Automatico" le categorie si alternano e una card può cambiare lato per trovare spazio.</p>
+        <span class="label">{t('Lato preferito delle card')}</span>
+        <Segmented label={t('Lato preferito delle card')} options={sides} bind:value={draft.preferredSide} />
+        <p class="hint">{t('Con «Automatico» le categorie si alternano e una card può cambiare lato per trovare spazio.')}</p>
       </div>
       {#if view === 'edit'}
-        <Toggle label="Mostra la linea che collega i suoi eventi" bind:checked={draft.showConnectors} />
+        <Toggle label={t('Mostra la linea che collega i suoi eventi')} bind:checked={draft.showConnectors} />
       {/if}
       {#if error}<p class="error">{error}</p>{/if}
 
       {#if view === 'edit' && draft.id && eventsOf(draft.id).length}
         {@const evs = eventsOf(draft.id)}
         <details class="move">
-          <summary>Sposta alcuni eventi in un'altra categoria ({evs.length})</summary>
-          <p class="hint">Utile per dividere una categoria in due. Salva prima le altre modifiche.</p>
+          <summary>{t("Sposta alcuni eventi in un'altra categoria ({n})", { n: evs.length })}</summary>
+          <p class="hint">{t('Utile per dividere una categoria in due. Salva prima le altre modifiche.')}</p>
           <ul class="evs">
             {#each evs as e (e.id)}
               <li><label><input type="checkbox" value={e.id} bind:group={moving} /> <b class="num">{formatDate(eventStart(e))}</b> {e.title}</label></li>
             {/each}
           </ul>
           <div class="row">
-            <select bind:value={moveTo} aria-label="Categoria di destinazione">
-              <option value="" disabled>Sposta in…</option>
+            <select bind:value={moveTo} aria-label={t('Categoria di destinazione')}>
+              <option value="" disabled>{t('Sposta in…')}</option>
               {#each timeline.categories.filter((c) => c.id !== draft.id) as c (c.id)}<option value={c.id}>{c.name}</option>{/each}
-              <option value="__new__">Una nuova categoria…</option>
+              <option value="__new__">{t('Una nuova categoria…')}</option>
             </select>
             {#if moveTo === '__new__'}
-              <input type="text" bind:value={moveNewName} placeholder="Nome della nuova categoria" aria-label="Nome della nuova categoria" />
+              <input type="text" bind:value={moveNewName} placeholder={t('Nome della nuova categoria')} aria-label={t('Nome della nuova categoria')} />
             {/if}
-            <Button onclick={applyMove} disabled={!moving.length || !moveTo}>Sposta {moving.length || ''}</Button>
+            <Button onclick={applyMove} disabled={!moving.length || !moveTo}>{t('Sposta')} {moving.length || ''}</Button>
           </div>
         </details>
       {/if}
@@ -243,33 +244,33 @@
   {#snippet footer()}
     {#if view === 'list'}
       {#if selecting}
-        <Button onclick={startMerge} disabled={selected.length < 2}>Unisci {selected.length || ''}</Button>
+        <Button onclick={startMerge} disabled={selected.length < 2}>{t('Unisci')} {selected.length || ''}</Button>
         {#if confirmDelete}
-          <Button onclick={() => { remove(selected); confirmDelete = false; }} disabled={!selected.length} style="background: var(--bad); color: var(--panel); border-color: var(--bad);">Sì, elimina {selected.length}</Button>
-          <Button variant="ghost" onclick={() => (confirmDelete = false)}>No</Button>
+          <Button onclick={() => { remove(selected); confirmDelete = false; }} disabled={!selected.length} style="background: var(--bad); color: var(--panel); border-color: var(--bad);">{t('Sì, elimina')} {selected.length}</Button>
+          <Button variant="ghost" onclick={() => (confirmDelete = false)}>{t('No')}</Button>
         {:else}
-          <Button variant="ghost" onclick={() => (confirmDelete = true)} disabled={!selected.length} style="color: var(--bad);">Elimina {selected.length || ''}</Button>
+          <Button variant="ghost" onclick={() => (confirmDelete = true)} disabled={!selected.length} style="color: var(--bad);">{t('Elimina')} {selected.length || ''}</Button>
         {/if}
       {/if}
       <span class="spacer"></span>
-      <Button onclick={() => (open = false)}>Chiudi</Button>
+      <Button onclick={() => (open = false)}>{t('Chiudi')}</Button>
     {:else if view === 'edit'}
       {#if draft.id}
         {#if confirmDelete}
-          <span class="warn">Gli eventi restano, senza questa categoria.</span>
-          <Button onclick={() => remove([draft.id!])} style="background: var(--bad); color: var(--panel); border-color: var(--bad);">Sì, elimina</Button>
-          <Button variant="ghost" onclick={() => (confirmDelete = false)}>No</Button>
+          <span class="warn">{t('Gli eventi restano, senza questa categoria.')}</span>
+          <Button onclick={() => remove([draft.id!])} style="background: var(--bad); color: var(--panel); border-color: var(--bad);">{t('Sì, elimina')}</Button>
+          <Button variant="ghost" onclick={() => (confirmDelete = false)}>{t('No')}</Button>
         {:else}
-          <Button variant="ghost" onclick={() => (confirmDelete = true)} style="color: var(--bad);">Elimina</Button>
+          <Button variant="ghost" onclick={() => (confirmDelete = true)} style="color: var(--bad);">{t('Elimina')}</Button>
         {/if}
       {/if}
       <span class="spacer"></span>
-      <Button onclick={() => (view = 'list')}>Indietro</Button>
-      <Button variant="primary" onclick={save}>Salva</Button>
+      <Button onclick={() => (view = 'list')}>{t('Indietro')}</Button>
+      <Button variant="primary" onclick={save}>{t('Salva')}</Button>
     {:else}
       <span class="spacer"></span>
-      <Button onclick={() => (view = 'list')}>Indietro</Button>
-      <Button variant="primary" onclick={merge}>Unisci {selected.length} categorie</Button>
+      <Button onclick={() => (view = 'list')}>{t('Indietro')}</Button>
+      <Button variant="primary" onclick={merge}>{t('Unisci {n} categorie', { n: selected.length })}</Button>
     {/if}
   {/snippet}
 </Dialog>

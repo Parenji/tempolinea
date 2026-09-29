@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$shared/i18n';
   // Ricerca: mentre scrivi gli eventi che non corrispondono si attenuano; ‹ › (o Invio) passano
   // da un risultato all'altro. Un anno ("1492", "44 a.C.") senza risultati porta a quell'anno.
   import { parseYear, searchEvents } from '../data/search';
@@ -60,18 +61,18 @@
     type="search"
     bind:value={query}
     onkeydown={onKey}
-    placeholder="Cerca evento o anno"
-    aria-label="Cerca un evento o un anno"
+    placeholder={t('Cerca evento o anno')}
+    aria-label={t('Cerca un evento o un anno')}
     enterkeyhint="search"
     autocomplete="off"
   />
   {#if query}
     <span class="count num" aria-live="polite">
-      {#if matches?.length}{index + 1}/{matches.length}{:else if parseYear(query) != null}anno{:else}0{/if}
+      {#if matches?.length}{index + 1}/{matches.length}{:else if parseYear(query) != null}{t('anno')}{:else}0{/if}
     </span>
-    <button type="button" onclick={() => go(-1)} aria-label="Risultato precedente" disabled={!matches?.length}>‹</button>
-    <button type="button" onclick={() => go(1)} aria-label="Risultato successivo">›</button>
-    <button type="button" onclick={() => (query = '')} aria-label="Cancella la ricerca">×</button>
+    <button type="button" onclick={() => go(-1)} aria-label={t('Risultato precedente')} disabled={!matches?.length}>‹</button>
+    <button type="button" onclick={() => go(1)} aria-label={t('Risultato successivo')}>›</button>
+    <button type="button" onclick={() => (query = '')} aria-label={t('Cancella la ricerca')}>×</button>
   {/if}
 </div>
 

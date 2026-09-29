@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '../i18n';
   // Finestra modale basata su <dialog>: il browser gestisce focus, Esc e accessibilità.
   // Su schermo stretto diventa un pannello che sale dal basso.
   import type { Snippet } from 'svelte';
@@ -36,7 +37,7 @@
   {#if open}
     <header>
       <h2>{title}</h2>
-      <button type="button" class="x" onclick={close} aria-label="Chiudi">×</button>
+      <button type="button" class="x" onclick={close} aria-label={t('Chiudi')}>×</button>
     </header>
     {@render header?.()}
     <div class="body">{@render children()}</div>

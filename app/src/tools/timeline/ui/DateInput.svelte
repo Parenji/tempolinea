@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$shared/i18n';
   // Data storica: anno (positivo) + interruttore a.C./d.C., mese e giorno facoltativi.
   // Più chiaro del "numero negativo = a.C." della v1, soprattutto per ragazzi e insegnanti.
   import { MONTHS, type DateParts } from '../data/ops';
@@ -21,25 +22,25 @@
   <legend>{label}{required ? ' *' : ''}</legend>
   <div class="parts">
     <label class="year">
-      <span class="visually-hidden">Anno</span>
+      <span class="visually-hidden">{t('Anno')}</span>
       <input
         id="{id}-year"
         type="number"
         inputmode="numeric"
         min="0"
-        placeholder="Anno"
+        placeholder={t('Anno')}
         value={value.year ?? ''}
         aria-invalid={!!error}
         oninput={(e) => (value.year = num(e.currentTarget.value))}
       />
     </label>
-    <div class="era" role="group" aria-label="Era">
-      <button type="button" aria-pressed={!value.bc} onclick={() => (value.bc = false)}>d.C.</button>
-      <button type="button" aria-pressed={value.bc} onclick={() => (value.bc = true)}>a.C.</button>
+    <div class="era" role="group" aria-label={t('Era')}>
+      <button type="button" aria-pressed={!value.bc} onclick={() => (value.bc = false)}>{t('d.C.')}</button>
+      <button type="button" aria-pressed={value.bc} onclick={() => (value.bc = true)}>{t('a.C.')}</button>
     </div>
     {#if !yearOnly}
       <label class="month">
-        <span class="visually-hidden">Mese</span>
+        <span class="visually-hidden">{t('Mese')}</span>
         <select
           value={value.month ?? ''}
           onchange={(e) => {
@@ -47,18 +48,18 @@
             if (value.month == null) value.day = null;
           }}
         >
-          <option value="">Mese —</option>
+          <option value="">{t('Mese —')}</option>
           {#each MONTHS as m, i}<option value={i + 1}>{m}</option>{/each}
         </select>
       </label>
       <label class="day">
-        <span class="visually-hidden">Giorno</span>
+        <span class="visually-hidden">{t('Giorno')}</span>
         <input
           type="number"
           inputmode="numeric"
           min="1"
           max="31"
-          placeholder="Giorno"
+          placeholder={t('Giorno')}
           disabled={value.month == null}
           value={value.day ?? ''}
           oninput={(e) => (value.day = num(e.currentTarget.value))}

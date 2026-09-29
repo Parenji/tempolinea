@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$shared/i18n';
   // Disegna il risultato del motore di layout. Card (HTML) e linee (SVG) stanno nello stesso
   // contenitore e leggono le stesse coordinate: nessuna misura dello schermo per posizionare le linee.
   import { computeLayout, headingKey, type Layout } from '../engine/layout';
@@ -217,7 +218,7 @@
           style:fill={p.color}
           role="button"
           tabindex="-1"
-          aria-label="Periodo: {eventById.get(p.id)?.title}"
+          aria-label={t('Periodo: {name}', { name: eventById.get(p.id)?.title ?? '' })}
           onclick={() => (openPeriod = p.id)}
           onkeydown={() => {}}
         />
@@ -273,7 +274,7 @@
         style:left="{layout.axisX}px"
         onclick={() => { const y = quick!.year; quick = null; oncreate(y); }}
       >
-        + Nuovo evento nel {quick.year < 0 ? `${-quick.year} a.C.` : quick.year}
+        + {t('Nuovo evento nel {year}', { year: formatDate({ year: quick.year }) })}
       </button>
     {/if}
 
@@ -318,18 +319,18 @@
 </div>
 
 {#if period}
-  <aside class="period-sheet" aria-label="Dettagli del periodo">
-    <button type="button" class="close" onclick={() => (openPeriod = null)} aria-label="Chiudi">×</button>
-    <p class="eyebrow">Periodo</p>
+  <aside class="period-sheet" aria-label={t('Dettagli del periodo')}>
+    <button type="button" class="close" onclick={() => (openPeriod = null)} aria-label={t('Chiudi')}>×</button>
+    <p class="eyebrow">{t('Periodo')}</p>
     <h2>{period.title}</h2>
     <p class="num when">{periodDates(period)}</p>
     {#if period.imageUrl}
-      <button type="button" class="img" onclick={() => showImage(period.imageUrl!, period.title ?? '')} aria-label="Ingrandisci l'immagine">
+      <button type="button" class="img" onclick={() => showImage(period.imageUrl!, period.title ?? '')} aria-label={t("Ingrandisci l'immagine")}>
         <img src={period.imageUrl} alt={period.title ?? ''} loading="lazy" />
       </button>
     {/if}
     {#if period.description}<p>{@html formatDescription(period.description)}</p>{/if}
-    <div><button type="button" class="edit" onclick={() => { const id = openPeriod!; openPeriod = null; onedit(id); }}>Modifica</button></div>
+    <div><button type="button" class="edit" onclick={() => { const id = openPeriod!; openPeriod = null; onedit(id); }}>{t('Modifica')}</button></div>
   </aside>
 {/if}
 

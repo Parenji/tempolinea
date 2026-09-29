@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '../i18n';
   // Immagine a tutto schermo. Si chiude toccando ovunque o con Esc.
   interface Props {
     src: string | null;
@@ -14,13 +15,13 @@
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions (Esc è gestito da <dialog>) -->
-<dialog bind:this={dialog} aria-label={caption || 'Immagine'} onclick={() => (src = null)} onclose={() => (src = null)}>
+<dialog bind:this={dialog} aria-label={caption || t('Immagine')} onclick={() => (src = null)} onclose={() => (src = null)}>
   {#if src}
     <figure>
       <img {src} alt={caption} />
       {#if caption}<figcaption>{caption}</figcaption>{/if}
     </figure>
-    <button type="button" class="x" aria-label="Chiudi">×</button>
+    <button type="button" class="x" aria-label={t('Chiudi')}>×</button>
   {/if}
 </dialog>
 

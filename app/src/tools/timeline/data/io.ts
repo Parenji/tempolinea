@@ -1,4 +1,5 @@
 // Import ed export dei file JSON, con gli stessi formati accettati dalla versione 1.
+import { t } from '$shared/i18n';
 import { normalizeCategory, normalizeEvent, validateTimeline, type ValidationProblem } from './normalize';
 import type { Category, Segment, Timeline, TimelineEvent } from './schema';
 
@@ -33,12 +34,12 @@ export function parseImportFile(text: string): ImportResult {
   if (data?.timeline?.events && data.timeline.categories) {
     rawEvents = data.timeline.events;
     rawCategories = data.timeline.categories;
-    name = data.timeline.name || 'Importata';
+    name = data.timeline.name || t('Importata');
     rawSegments = data.timeline.segments;
   } else if (Array.isArray(data?.events)) {
     rawEvents = data.events;
     rawCategories = data.categories || [];
-    name = 'Importata (legacy)';
+    name = t('Importata (legacy)');
   } else {
     return { ok: false, error: 'format' };
   }

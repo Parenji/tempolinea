@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t, lang, setLang } from '../i18n';
   // Intestazione comune: ritorno all'indice, titolo, materia, controlli di visualizzazione.
   import type { Snippet } from 'svelte';
   import { display, type Theme } from '../display.svelte';
@@ -13,9 +14,9 @@
   let { title, subject, home = true, actions }: Props = $props();
 
   const themes: { value: Theme; label: string; icon: string }[] = [
-    { value: 'auto', label: 'Tema automatico', icon: '◐' },
-    { value: 'light', label: 'Tema chiaro', icon: '☀' },
-    { value: 'dark', label: 'Tema scuro', icon: '☾' },
+    { value: 'auto', label: t('Tema automatico'), icon: '◐' },
+    { value: 'light', label: t('Tema chiaro'), icon: '☀' },
+    { value: 'dark', label: t('Tema scuro'), icon: '☾' },
   ];
   const current = $derived(themes.find((t) => t.value === display.theme) ?? themes[0]);
 
@@ -27,13 +28,16 @@
 
 <header class="app-header no-print">
   <div class="title">
-    {#if home}<a class="home" href={import.meta.env.BASE_URL} aria-label="Torna all'indice">‹<span class="lbl">&nbsp;Quaderno</span></a>{/if}
+    {#if home}<a class="home" href={import.meta.env.BASE_URL} aria-label={t("Torna all'indice")}>‹<span class="lbl">&nbsp;Quaderno</span></a>{/if}
     <h1>{title}</h1>
     {#if subject}<span class="subject">{subject}</span>{/if}
   </div>
   <div class="tools">
     {@render actions?.()}
-    <button type="button" class="icon" onclick={nextTheme} title={current.label} aria-label="{current.label}: cambia">
+    <button type="button" class="icon lang" onclick={() => setLang(lang === 'it' ? 'en' : 'it')} title={t('Lingua')} aria-label={lang === 'it' ? 'Switch to English' : 'Passa all\'italiano'}>
+      {lang === 'it' ? 'EN' : 'IT'}
+    </button>
+    <button type="button" class="icon" onclick={nextTheme} title={current.label} aria-label={t('{theme}: cambia', { theme: current.label })}>
       <span aria-hidden="true">{current.icon}</span>
     </button>
     <button
@@ -41,9 +45,9 @@
       class="icon projector"
       aria-pressed={display.projector}
       onclick={() => (display.projector = !display.projector)}
-      title="Modalità proiettore: testo grande e più contrasto"
+      title={t('Modalità proiettore: testo grande e più contrasto')}
     >
-      <span aria-hidden="true">▣</span><span class="lbl">Proiettore</span>
+      <span aria-hidden="true">▣</span><span class="lbl">{t('Proiettore')}</span>
     </button>
   </div>
 </header>

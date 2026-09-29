@@ -1,6 +1,7 @@
 // Operazioni di modifica su una timeline. Funzioni pure sui dati (modificano l'oggetto ricevuto):
 // l'interfaccia le chiama dentro `edit()` dello store, che si occupa di annulla/ripeti e salvataggio.
 // I campi che non conosciamo vengono conservati, così i file restano compatibili con la v1.
+import { t } from '$shared/i18n';
 import { generateId } from './normalize';
 import type { Category, Link, Timeline, TimelineEvent } from './schema';
 
@@ -17,7 +18,7 @@ export interface DateParts {
 export const MONTHS = [
   'gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
   'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre',
-];
+].map((m) => t(m));
 
 export function emptyDate(): DateParts {
   return { year: null, bc: false, month: null, day: null };
@@ -94,22 +95,22 @@ export function validateDraft(d: EventDraft): DraftError[] {
   const errors: DraftError[] = [];
   const checkDate = (p: DateParts, field: 'start' | 'end', label: string) => {
     if (p.year == null) return;
-    if (!Number.isInteger(p.year) || p.year < 0) errors.push({ field, message: `${label}: l'anno deve essere un numero intero.` });
-    if (p.day != null && p.month == null) errors.push({ field, message: `${label}: se indichi il giorno serve anche il mese.` });
+    if (!Number.isInteger(p.year) || p.year < 0) errors.push({ field, message: t("{label}: l'anno deve essere un numero intero.", { label }) });
+    if (p.day != null && p.month == null) errors.push({ field, message: t('{label}: se indichi il giorno serve anche il mese.', { label }) });
     if (p.month != null && p.day != null && (p.day < 1 || p.day > daysIn(p.month, signedYear(p)!))) {
-      errors.push({ field, message: `${label}: ${MONTHS[p.month - 1]} non ha il giorno ${p.day}.` });
+      errors.push({ field, message: t('{label}: {month} non ha il giorno {day}.', { label, month: MONTHS[p.month - 1], day: p.day }) });
     }
   };
-  if (d.kind !== 'note' && !d.title.trim()) errors.push({ field: 'title', message: 'Serve un titolo.' });
-  if (d.start.year == null) errors.push({ field: 'start', message: 'Serve almeno l\'anno.' });
-  checkDate(d.start, 'start', 'Inizio');
-  if (d.kind === 'period' && d.end.year == null) errors.push({ field: 'end', message: 'Un periodo ha bisogno della data di fine.' });
+  if (d.kind !== 'note' && !d.title.trim()) errors.push({ field: 'title', message: t('Serve un titolo.') });
+  if (d.start.year == null) errors.push({ field: 'start', message: t("Serve almeno l'anno.") });
+  checkDate(d.start, 'start', t('Inizio'));
+  if (d.kind === 'period' && d.end.year == null) errors.push({ field: 'end', message: t('Un periodo ha bisogno della data di fine.') });
   if (d.kind !== 'note' && d.end.year != null) {
-    checkDate(d.end, 'end', 'Fine');
+    checkDate(d.end, 'end', t('Fine'));
     const a = [signedYear(d.start) ?? 0, d.start.month ?? 0, d.start.day ?? 0];
     const b = [signedYear(d.end)!, d.end.month ?? 99, d.end.day ?? 99];
     if (b[0] < a[0] || (b[0] === a[0] && (b[1] < a[1] || (b[1] === a[1] && b[2] < a[2])))) {
-      errors.push({ field: 'end', message: 'La fine viene prima dell\'inizio.' });
+      errors.push({ field: 'end', message: t("La fine viene prima dell'inizio.") });
     }
   }
   return errors;

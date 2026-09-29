@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$shared/i18n';
   import { safeColor } from '../format';
   // Una card della timeline. Non decide dove stare: riceve posizione e larghezza dal motore di layout
   // e gli restituisce la sua altezza reale (bind:height), così le card successive e le linee si adeguano.
@@ -46,13 +47,13 @@
 >
   <button type="button" class="head" onclick={ontoggle} aria-expanded={expanded}>
     <span class="date num">{dateText}</span>
-    <span class="title">{event.title || 'Senza titolo'}</span>
-    {#if event.imageUrl && !expanded}<span class="has-img" aria-label="con immagine">▣</span>{/if}
+    <span class="title">{event.title || t('Senza titolo')}</span>
+    {#if event.imageUrl && !expanded}<span class="has-img" aria-label={t('con immagine')}>▣</span>{/if}
   </button>
   {#if expanded}
     <div class="body">
       {#if event.imageUrl}
-        <button type="button" class="img" onclick={() => onimage(event.imageUrl!, event.title ?? '')} aria-label="Ingrandisci l'immagine">
+        <button type="button" class="img" onclick={() => onimage(event.imageUrl!, event.title ?? '')} aria-label={t("Ingrandisci l'immagine")}>
           <img src={event.imageUrl} alt={event.title ?? ''} loading="lazy" />
         </button>
       {/if}
@@ -67,7 +68,7 @@
         </div>
       {/if}
       <div class="actions">
-        <button type="button" class="edit" onclick={onedit}>Modifica</button>
+        <button type="button" class="edit" onclick={onedit}>{t('Modifica')}</button>
       </div>
     </div>
   {/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$shared/i18n';
   import AppHeader from '$shared/ui/AppHeader.svelte';
   import { syncDisplay } from '$shared/display.svelte';
 
@@ -8,12 +9,12 @@
   // Catalogo degli strumenti. Uno strumento "in arrivo" non ha ancora un link.
   const subjects = [
     {
-      name: 'Storia', v: 'sto',
-      tools: [{ title: 'Linea del tempo', desc: 'Eventi, periodi e collegamenti su una linea del tempo.', href: base + 'timeline/' as string | null }],
+      name: t('Storia'), v: 'sto',
+      tools: [{ title: t('Linea del tempo'), desc: t('Eventi, periodi e collegamenti su una linea del tempo.'), href: base + 'timeline/' as string | null }],
     },
     {
-      name: 'Matematica', v: 'mat',
-      tools: [{ title: 'Laboratorio dei quadrilateri', desc: 'Trascina i vertici e scopri angoli, lati paralleli e diagonali.', href: null as string | null }],
+      name: t('Matematica'), v: 'mat',
+      tools: [{ title: t('Laboratorio dei quadrilateri'), desc: t('Trascina i vertici e scopri angoli, lati paralleli e diagonali.'), href: null as string | null }],
     },
   ];
 </script>
@@ -21,22 +22,22 @@
 <AppHeader title="Quaderno" home={false} />
 
 <main>
-  <p class="lead">Strumenti per studiare e fare lezione: funzionano su computer, iPad e proiettore.</p>
+  <p class="lead">{t('Strumenti per studiare e fare lezione: funzionano su computer, iPad e proiettore.')}</p>
   {#each subjects as s}
     <section style:--accent="var(--{s.v})" style:--accent-soft="var(--{s.v}-soft)">
       <h2>{s.name}</h2>
       <div class="cards">
-        {#each s.tools as t}
-          <svelte:element this={t.href ? 'a' : 'div'} class="tool" href={t.href} aria-disabled={!t.href}>
-            <h3>{t.title}</h3>
-            <p class="muted">{t.desc}</p>
-            {#if !t.href}<span class="soon">In arrivo</span>{/if}
+        {#each s.tools as tool}
+          <svelte:element this={tool.href ? 'a' : 'div'} class="tool" href={tool.href} aria-disabled={!tool.href}>
+            <h3>{tool.title}</h3>
+            <p class="muted">{tool.desc}</p>
+            {#if !tool.href}<span class="soon">{t('In arrivo')}</span>{/if}
           </svelte:element>
         {/each}
       </div>
     </section>
   {/each}
-  <p class="muted foot"><a href="{base}stile/">Lo stile del Quaderno</a></p>
+  <p class="muted foot"><a href="{base}stile/">{t('Lo stile del Quaderno')}</a></p>
 </main>
 
 <style>

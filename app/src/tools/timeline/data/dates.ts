@@ -1,5 +1,6 @@
 // Date storiche: anni negativi (a.C.), anni 0–99, mese e giorno facoltativi.
 // Non usare mai `new Date(anno, …)`: per gli anni 0–99 JavaScript li trasforma in 1900–1999.
+import { lang } from '$shared/i18n';
 
 export interface PartialDate {
   year: number;
@@ -17,12 +18,13 @@ export function eventStart(e: { startYear: number; startMonth?: number | null; s
 }
 
 const MONTHS_IT = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 /** "476", "44 a.C.", "1492 Ott 12": stesso formato della versione 1. */
 export function formatDate({ year, month, day }: PartialDate): string {
-  let out = year < 0 ? `${Math.abs(year)} a.C.` : String(year);
+  let out = year < 0 ? `${Math.abs(year)} ${lang === 'en' ? 'BC' : 'a.C.'}` : String(year);
   if (month) {
-    out += ' ' + MONTHS_IT[month - 1];
+    out += ' ' + (lang === 'en' ? MONTHS_EN : MONTHS_IT)[month - 1];
     if (day) out += ' ' + day;
   }
   return out;

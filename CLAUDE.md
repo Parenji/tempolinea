@@ -18,7 +18,9 @@ Pubblicata su Vercel (`tempolinea.vercel.app`). Usata da computer, iPad della sc
 - Timeline: le posizioni si calcolano solo in `engine/layout.ts` (funzione pura, testata in `tests/layout.test.ts`); i componenti disegnano e basta. Le modifiche ai dati sono funzioni in `data/ops.ts` chiamate dentro `edit()` dello store (annulla/ripeti + salvataggio): non modificare la timeline in altri modi.
 - Date storiche: mai `new Date(anno, …)` (gli anni 0–99 diventano 1900–1999). Usare `src/tools/timeline/data/dates.ts`.
 - Pensare a iPad e proiettore: niente funzioni solo al passaggio del mouse, aree toccabili ≥ `var(--target)`, controllare la modalità proiettore e il tema scuro.
-- Testi dell'interfaccia in italiano.
+- Testi dell'interfaccia: scritti in italiano e passati da `t('…')` (`src/shared/i18n.ts`); la traduzione inglese va nei file `messages.en.ts`. `tests/i18n.test.ts` fallisce se una frase non ha la traduzione. Per frasi italiane uguali con significati diversi: `tc('contesto', '…')`.
+- La v1 (tempolinea classica) non va eliminata né modificata finché l'utente non lo dice. La build la copia in `dist/legacy/` (`app/scripts/copy-legacy.mjs`).
+- `main` = produzione su tempolinea.vercel.app (ancora la v1). Si lavora su `v2`; non fare merge su `main` senza il via esplicito dell'utente.
 
 ## Comandi (da `app/`)
 

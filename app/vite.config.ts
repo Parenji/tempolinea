@@ -12,7 +12,12 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg'],
-      workbox: { globPatterns: ['**/*.{js,css,html,svg,woff2}'] },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,woff2}'],
+        // la v1 in /legacy/ non passa dal service worker della nuova app
+        globIgnores: ['legacy/**'],
+        navigateFallback: null,
+      },
       manifest: {
         name: 'Quaderno',
         short_name: 'Quaderno',

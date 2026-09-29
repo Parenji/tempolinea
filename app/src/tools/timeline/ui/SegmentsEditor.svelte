@@ -1,5 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
+  import { t } from '$shared/i18n';
+  import { formatDate } from '../data/dates';
   // Editor della spaziatura delle epoche. Ogni riga: da che anno parte, quanto spazio ha un anno,
   // ogni quanto il righello mostra una tacca. L'anteprima mostra quanto è alta ogni epoca.
   import Dialog from '$shared/ui/Dialog.svelte';
@@ -34,7 +36,7 @@
     const total = segs.reduce((s, g) => s + (g.end - g.start) * g.density, 0) || 1;
     return segs.map((g) => ({ ...g, share: ((g.end - g.start) * g.density) / total }));
   });
-  const y = (n: number) => (n < 0 ? `${-n} a.C.` : String(n));
+  const y = (n: number) => formatDate({ year: n });
 
   function add() {
     const last = rows[rows.length - 1];
@@ -53,56 +55,55 @@
   const num = (v: string) => (v.trim() === '' ? null : Math.trunc(Number(v)));
 </script>
 
-<Dialog bind:open title="Spaziatura delle epoche" width={640}>
+<Dialog bind:open title={t('Spaziatura delle epoche')} width={640}>
   <p class="muted small">
-    Quanto spazio ha un anno in ogni epoca. Più spazio a un'epoca = eventi più distanziati. Per esempio: poco
-    spazio per la preistoria, molto per il Novecento.
+    {t("Quanto spazio ha un anno in ogni epoca. Più spazio a un'epoca = eventi più distanziati. Per esempio: poco spazio per la preistoria, molto per il Novecento.")}
   </p>
 
-  <div class="table" role="table" aria-label="Epoche">
+  <div class="table" role="table" aria-label={t('Epoche')}>
     <div class="head" role="row">
-      <span role="columnheader">Dall'anno</span>
-      <span role="columnheader">Spazio per anno</span>
-      <span role="columnheader">Tacche</span>
+      <span role="columnheader">{t("Dall'anno")}</span>
+      <span role="columnheader">{t('Spazio per anno')}</span>
+      <span role="columnheader">{t('Tacche')}</span>
       <span></span>
     </div>
     {#each rows as r, i}
       <div class="r" role="row">
         <span class="yr">
-          <input type="number" inputmode="numeric" min="0" value={r.from == null ? '' : Math.abs(r.from)} aria-label="Anno d'inizio, riga {i + 1}"
+          <input type="number" inputmode="numeric" min="0" value={r.from == null ? '' : Math.abs(r.from)} aria-label={t("Anno d'inizio, riga {n}", { n: i + 1 })}
             oninput={(e) => { const v = num(e.currentTarget.value); r.from = v == null ? null : (r.from ?? 0) < 0 ? -v : v; }} />
-          <button type="button" class="era" aria-pressed={(r.from ?? 0) < 0} onclick={() => (r.from = r.from == null ? null : -r.from)} title="Avanti Cristo">a.C.</button>
+          <button type="button" class="era" aria-pressed={(r.from ?? 0) < 0} onclick={() => (r.from = r.from == null ? null : -r.from)} title={t('Avanti Cristo')}>{t('a.C.')}</button>
         </span>
-        <span class="dens"><input type="number" min="0.1" step="0.5" bind:value={r.density} aria-label="Spazio per anno, riga {i + 1}" /><small>px</small></span>
-        <select bind:value={r.step} aria-label="Tacche del righello, riga {i + 1}">
-          <option value={1}>ogni anno</option>
-          <option value={10}>ogni 10 anni</option>
-          <option value={100}>ogni secolo</option>
+        <span class="dens"><input type="number" min="0.1" step="0.5" bind:value={r.density} aria-label={t('Spazio per anno, riga {n}', { n: i + 1 })} /><small>px</small></span>
+        <select bind:value={r.step} aria-label={t('Tacche del righello, riga {n}', { n: i + 1 })}>
+          <option value={1}>{t('ogni anno')}</option>
+          <option value={10}>{t('ogni 10 anni')}</option>
+          <option value={100}>{t('ogni secolo')}</option>
         </select>
-        <button type="button" class="rm" onclick={() => rows.splice(i, 1)} disabled={rows.length < 2} aria-label="Togli questa epoca">×</button>
+        <button type="button" class="rm" onclick={() => rows.splice(i, 1)} disabled={rows.length < 2} aria-label={t('Togli questa epoca')}>×</button>
       </div>
     {/each}
     <div class="r end" role="row">
       <span class="yr">
-        <input type="number" inputmode="numeric" value={end == null ? '' : Math.abs(end)} aria-label="Fine dell'ultima epoca"
+        <input type="number" inputmode="numeric" value={end == null ? '' : Math.abs(end)} aria-label={t("Fine dell'ultima epoca")}
           oninput={(e) => { const v = num(e.currentTarget.value); end = v == null ? null : (end ?? 0) < 0 ? -v : v; }} />
-        <button type="button" class="era" aria-pressed={(end ?? 0) < 0} onclick={() => (end = end == null ? null : -end)}>a.C.</button>
+        <button type="button" class="era" aria-pressed={(end ?? 0) < 0} onclick={() => (end = end == null ? null : -end)}>{t('a.C.')}</button>
       </span>
-      <span class="muted">fine dell'ultima epoca</span>
+      <span class="muted">{t("fine dell'ultima epoca")}</span>
     </div>
   </div>
 
   {#each errors as e}<p class="error">{e}</p>{/each}
 
   <div class="row">
-    <Button onclick={add}>+ Aggiungi un'epoca</Button>
-    <Button variant="ghost" onclick={() => load(singleSegment(timeline.events))}>Un'unica epoca</Button>
-    <Button variant="ghost" onclick={() => load(defaultSegments())}>Ripristina le predefinite</Button>
+    <Button onclick={add}>+ {t("Aggiungi un'epoca")}</Button>
+    <Button variant="ghost" onclick={() => load(singleSegment(timeline.events))}>{t("Un'unica epoca")}</Button>
+    <Button variant="ghost" onclick={() => load(defaultSegments())}>{t('Ripristina le predefinite')}</Button>
   </div>
 
   {#if preview.length}
     <div class="field">
-      <span class="label">Anteprima: quanto è lunga ogni epoca</span>
+      <span class="label">{t('Anteprima: quanto è lunga ogni epoca')}</span>
       <div class="preview">
         {#each preview as g}
           <div class="seg" style:flex-grow={Math.max(g.share, 0.02)} title="{y(g.start)} – {y(g.end)}">
@@ -115,8 +116,8 @@
 
   {#snippet footer()}
     <span class="spacer"></span>
-    <Button onclick={() => (open = false)}>Annulla</Button>
-    <Button variant="primary" onclick={save}>Salva</Button>
+    <Button onclick={() => (open = false)}>{t('Annulla')}</Button>
+    <Button variant="primary" onclick={save}>{t('Salva')}</Button>
   {/snippet}
 </Dialog>
 

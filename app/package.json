@@ -6,7 +6,7 @@
   "description": "Quaderno: strumenti per lo studio (timeline, matematica, scienze...)",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/copy-legacy.mjs",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",
